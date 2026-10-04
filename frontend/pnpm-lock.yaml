@@ -23,6 +23,9 @@ importers:
       '@amadya/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@amadya/staff-auth':
+        specifier: workspace:*
+        version: link:../../packages/staff-auth
       '@amadya/theme':
         specifier: workspace:*
         version: link:../../packages/theme
@@ -47,6 +50,64 @@ importers:
       recharts:
         specifier: 3.10.1
         version: 3.10.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react-is@19.3.0)(react@19.3.0)(redux@5.0.1)
+      use-intl:
+        specifier: 4.14.9
+        version: 4.14.9(@types/react@19.3.0)(react@19.3.0)
+      zustand:
+        specifier: 5.0.15
+        version: 5.0.15(@types/react@19.3.0)(immer@11.1.21)(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
+    devDependencies:
+      '@amadya/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@tailwindcss/vite':
+        specifier: 4.3.3
+        version: 4.3.3(vite@8.3.2(@types/node@26.6.4)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 6.1.1
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.2(@types/node@26.6.4)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vite:
+        specifier: 8.3.2
+        version: 8.3.2(@types/node@26.6.4)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  apps/kitchen:
+    dependencies:
+      '@amadya/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@amadya/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
+      '@amadya/staff-auth':
+        specifier: workspace:*
+        version: link:../../packages/staff-auth
+      '@amadya/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: 1.52.0
+        version: 1.52.0(@types/react@19.3.0)(react@19.3.0)
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
       use-intl:
         specifier: 4.14.9
         version: 4.14.9(@types/react@19.3.0)(react@19.3.0)
@@ -297,6 +358,22 @@ importers:
       vitest:
         specifier: 5.0.3
         version: 5.0.3(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/staff-auth:
+    dependencies:
+      '@amadya/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      zustand:
+        specifier: 5.0.15
+        version: 5.0.15(@types/react@19.3.0)(immer@11.1.21)(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
+    devDependencies:
+      '@amadya/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/theme:
     devDependencies:

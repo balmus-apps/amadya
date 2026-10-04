@@ -12,6 +12,7 @@ interface RestaurantSettingsApi {
     fun orderNumberPrefix(): String
     fun vatRate(id: UUID): VatRateInfo?
     fun station(id: UUID): StationInfo?
+    fun stations(): List<StationInfo>
 }
 
 data class FeatureFlags(

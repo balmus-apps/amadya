@@ -59,6 +59,32 @@ ADMIN / MANAGER staff only. Sessions use a 15-minute access token kept in memory
 | Purchasing | **Suppliers**. **Invoices**: e-Factura XML import, line matching remembered per supplier. **NIR**: draft, discrepancy reasons, post, reverse, printable legal layout |
 | Settings | **Restaurant**: profile, branding with live preview, features, languages, opening hours. **VAT rates**, **kitchen stations**, **users and roles** |
 
+### kitchen — kitchen & bar display (Vite + React, installable PWA)
+
+```bash
+pnpm --filter @amadya/kitchen dev          # http://localhost:5174/kitchen
+```
+
+- **Who uses it:** cooks and bartenders (role KITCHEN, or MANAGER / ADMIN).
+- **Station:** each tablet or wall screen picks its station (Bucătărie, Grătar, Bar) and remembers it.
+- **Board:** three columns, each with its own colour:
+
+  | Column | Colour |
+  |---|---|
+  | **În așteptare / Pending** | light yellow |
+  | **În preparare / In preparation** | orange |
+  | **Gata / Done** | green |
+
+  - Tap a card to move it to the next status.
+  - Done cards keep an **Undo** button for 10 minutes.
+  - Late tickets get a red border.
+- **Card contents:** order number, channel, the takeaway customer's first name, elapsed time and ETA, items with sauces and extras. Notes and allergies are highlighted.
+- **Live updates:** new orders arrive over SSE (`/kitchen/events`) with a chime. The board also reloads every 15 s as a safety net.
+- **Customer side:** each status change reaches the customer's tracking page and the push notification.
+- **Changing colours:** the status colours are CSS variables in `apps/kitchen/src/styles.css`. Swapping orange for blue is one line.
+
+`@amadya/staff-auth` holds the session shared by the staff apps (admin, kitchen; waiter next).
+
 ## Checks
 
 ```bash

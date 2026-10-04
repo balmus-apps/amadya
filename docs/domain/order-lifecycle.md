@@ -31,8 +31,17 @@ stateDiagram-v2
 - On `OrderPlaced`, lines are grouped by **station** (from `product.station_id`), giving one `kitchen_ticket` per station.
 - Each ticket gets `estimated_ready_at = queued_at + max(prep_time_sec of its lines) + queue delay`, where the
   queue delay depends on the station's current load (configurable number of parallel slots per station).
-- KDS shows tickets ordered by `queued_at` with a countdown: green, then amber at 80%, then red when late.
-  Actions: start, bump (ready), recall.
+- The kitchen & bar display (`apps/kitchen`) shows three columns per station:
+
+  | Column | Ticket status | Colour |
+  |---|---|---|
+  | **În așteptare / Pending** | `QUEUED` | light yellow |
+  | **În preparare / In preparation** | `IN_PROGRESS` | orange |
+  | **Gata / Done** | `READY` | green |
+
+  - Cooks and bartenders tap a card to start it and tap again to finish it. Undo (recall) stays available for 10 minutes.
+  - A ticket past its estimate gets a red border and a "late" label.
+  - Changes reach the displays live over `GET /kitchen/events?stationId=` (SSE).
 - When a ticket is created, a print job is also sent to the station's printer, if one is configured.
 - When **all** tickets of an order are READY, the order moves to READY.
 

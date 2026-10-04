@@ -1,0 +1,43 @@
+{
+ "title": "Kitchen & Bar",
+ "login": {
+  "title": "Kitchen display",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Sign in",
+  "error": "Wrong email or password",
+  "notAllowed": "This account cannot use the kitchen display."
+ },
+ "station": {
+  "choose": "Choose your station",
+  "change": "Change station"
+ },
+ "status": {
+  "QUEUED": "Pending",
+  "IN_PROGRESS": "In preparation",
+  "READY": "Done"
+ },
+ "action": {
+  "QUEUED": "Start",
+  "IN_PROGRESS": "Done",
+  "undo": "Undo"
+ },
+ "channel": {
+  "TAKEAWAY": "Takeaway",
+  "DINE_IN": "Table",
+  "COUNTER": "Counter"
+ },
+ "card": {
+  "late": "Late",
+  "eta": "ETA {time}",
+  "table": "Table {label}",
+  "started": "started {time}"
+ },
+ "empty": "No orders",
+ "live": "Live",
+ "offline": "Reconnecting…",
+ "sound": "Sound",
+ "fullscreen": "Full screen",
+ "logout": "Sign out",
+ "language": "Language"
+}

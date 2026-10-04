@@ -128,6 +128,9 @@ import type {
   ListCategoriesData,
   ListCategoriesErrors,
   ListCategoriesResponses,
+  ListKitchenStationsData,
+  ListKitchenStationsErrors,
+  ListKitchenStationsResponses,
   ListKitchenTicketsData,
   ListKitchenTicketsErrors,
   ListKitchenTicketsResponses,
@@ -218,6 +221,10 @@ import type {
   StartKitchenTicketData,
   StartKitchenTicketErrors,
   StartKitchenTicketResponses,
+  StreamKitchenEventsData,
+  StreamKitchenEventsErrors,
+  StreamKitchenEventsResponse,
+  StreamKitchenEventsResponses,
   StreamOrderEventsData,
   StreamOrderEventsErrors,
   StreamOrderEventsResponse,
@@ -961,6 +968,26 @@ export const listKitchenTickets = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * Active preparation stations (kitchen, grill, bar) for the kitchen display station picker
+ */
+export const listKitchenStations = <ThrowOnError extends boolean = false>(
+  options?: Options<ListKitchenStationsData, ThrowOnError>,
+): RequestResult<
+  ListKitchenStationsResponses,
+  ListKitchenStationsErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    ListKitchenStationsResponses,
+    ListKitchenStationsErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/kitchen/stations",
+    ...options,
+  });
+
+/**
  * Start preparing a ticket
  */
 export const startKitchenTicket = <ThrowOnError extends boolean = false>(
@@ -1097,6 +1124,26 @@ export const streamOrderEvents = <ThrowOnError extends boolean = false>(
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/orders/{orderId}/events",
+    ...options,
+  });
+
+/**
+ * Server-Sent Events for a kitchen display: event `ticket` with KitchenTicketEvent for one station (KITCHEN, MANAGER, ADMIN)
+ */
+export const streamKitchenEvents = <ThrowOnError extends boolean = false>(
+  options: Options<
+    StreamKitchenEventsData,
+    ThrowOnError,
+    StreamKitchenEventsResponse
+  >,
+): Promise<ServerSentEventsResult<StreamKitchenEventsResponses>> =>
+  (options.client ?? client).sse.get<
+    StreamKitchenEventsResponses,
+    StreamKitchenEventsErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/kitchen/events",
     ...options,
   });
 

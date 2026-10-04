@@ -636,6 +636,19 @@ paths:
               schema: { type: array, items: { $ref: "#/components/schemas/KitchenTicket" } }
         "403": { $ref: "#/components/responses/Problem" }
 
+  /kitchen/stations:
+    get:
+      tags: [kitchen]
+      operationId: listKitchenStations
+      summary: Active preparation stations (kitchen, grill, bar) for the kitchen display station picker
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Station" } }
+        "403": { $ref: "#/components/responses/Problem" }
+
   /kitchen/tickets/{ticketId}/start:
     post:
       tags: [kitchen]
@@ -747,6 +760,25 @@ paths:
             text/event-stream:
               schema: { $ref: "#/components/schemas/OrderStatusChanged" }
         "404": { $ref: "#/components/responses/Problem" }
+
+  /kitchen/events:
+    get:
+      tags: [streams]
+      operationId: streamKitchenEvents
+      summary: "Server-Sent Events for a kitchen display: event `ticket` with KitchenTicketEvent for one station (KITCHEN, MANAGER, ADMIN)"
+      parameters:
+        - name: stationId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/KitchenTicketEvent" }
+        "403": { $ref: "#/components/responses/Problem" }
 
   /queue/events:
     get:
@@ -2032,9 +2064,20 @@ components:
         readyAt: { type: string, format: date-time }
         estimatedReadyAt: { type: string, format: date-time }
         notes: { type: string }
+        customerName: { type: string, description: Takeaway customer (first name shown on the ticket) }
+        tableLabel: { type: string, description: Table for dine-in orders }
         lines:
           type: array
           items: { $ref: "#/components/schemas/KitchenTicketLine" }
+
+    KitchenTicketEvent:
+      type: object
+      required: [type, ticketId, stationId]
+      properties:
+        type: { type: string, enum: [UPSERT, REMOVED] }
+        ticketId: { type: string, format: uuid }
+        stationId: { type: string, format: uuid }
+        ticket: { $ref: "#/components/schemas/KitchenTicket", description: Present for UPSERT }
 
     KitchenTicketLine:
       type: object

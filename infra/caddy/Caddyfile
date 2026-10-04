@@ -12,7 +12,10 @@
 		reverse_proxy admin:80
 	}
 	# handle_path /waiter/*  { reverse_proxy waiter:80 }
-	# handle_path /kitchen/* { reverse_proxy kitchen:80 }
+	redir /kitchen /kitchen/
+	handle_path /kitchen/* {
+		reverse_proxy kitchen:80
+	}
 	# handle_path /queue/*   { reverse_proxy queue-display:80 }
 
 	# Customer menu is the default site

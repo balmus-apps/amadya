@@ -436,7 +436,25 @@ export type KitchenTicket = {
   readyAt?: string;
   estimatedReadyAt: string;
   notes?: string;
+  /**
+   * Takeaway customer (first name shown on the ticket)
+   */
+  customerName?: string;
+  /**
+   * Table for dine-in orders
+   */
+  tableLabel?: string;
   lines: Array<KitchenTicketLine>;
+};
+
+export type KitchenTicketEvent = {
+  type: "UPSERT" | "REMOVED";
+  ticketId: string;
+  stationId: string;
+  /**
+   * Present for UPSERT
+   */
+  ticket?: KitchenTicket;
 };
 
 export type KitchenTicketLine = {
@@ -1954,6 +1972,33 @@ export type ListKitchenTicketsResponses = {
 export type ListKitchenTicketsResponse =
   ListKitchenTicketsResponses[keyof ListKitchenTicketsResponses];
 
+export type ListKitchenStationsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/kitchen/stations";
+};
+
+export type ListKitchenStationsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListKitchenStationsError =
+  ListKitchenStationsErrors[keyof ListKitchenStationsErrors];
+
+export type ListKitchenStationsResponses = {
+  /**
+   * OK
+   */
+  200: Array<Station>;
+};
+
+export type ListKitchenStationsResponse =
+  ListKitchenStationsResponses[keyof ListKitchenStationsResponses];
+
 export type StartKitchenTicketData = {
   body?: never;
   path: {
@@ -2171,6 +2216,38 @@ export type StreamOrderEventsResponses = {
 
 export type StreamOrderEventsResponse =
   StreamOrderEventsResponses[keyof StreamOrderEventsResponses];
+
+export type StreamKitchenEventsData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path?: never;
+  query: {
+    stationId: string;
+  };
+  url: "/kitchen/events";
+};
+
+export type StreamKitchenEventsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type StreamKitchenEventsError =
+  StreamKitchenEventsErrors[keyof StreamKitchenEventsErrors];
+
+export type StreamKitchenEventsResponses = {
+  /**
+   * Event stream
+   */
+  200: KitchenTicketEvent;
+};
+
+export type StreamKitchenEventsResponse =
+  StreamKitchenEventsResponses[keyof StreamKitchenEventsResponses];
 
 export type StreamQueueEventsData = {
   body?: never;
