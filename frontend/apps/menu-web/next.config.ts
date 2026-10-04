@@ -8,7 +8,7 @@ const config: NextConfig = {
   output: "standalone",
   // Trace workspace packages from the monorepo root so the standalone server includes them.
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
-  transpilePackages: ["@amadya/ui", "@amadya/api-client", "@amadya/i18n", "@amadya/theme"],
+  transpilePackages: ["@amadya/ui", "@amadya/api-client", "@amadya/i18n", "@amadya/theme", "@amadya/customer-core"],
   poweredByHeader: false,
   // Same-origin API in development; in Docker, Caddy routes /api to the Core API before Next.js sees it.
   async rewrites() {

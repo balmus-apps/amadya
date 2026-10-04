@@ -19,9 +19,12 @@ import kotlin.test.assertTrue
  * Black-box tests over HTTP against PostgreSQL (Testcontainers) with the dev demo menu (BurRegescu) loaded.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration::class)
+@Import(TestcontainersConfiguration::class, PushTestConfiguration::class)
 @ActiveProfiles("test")
 class ApiIntegrationTests {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private lateinit var push: RecordingPushSender
 
     @LocalServerPort
     private var port: Int = 0
@@ -244,6 +247,35 @@ class ApiIntegrationTests {
         await atMost Duration.ofSeconds(10) untilAsserted {
             assertEquals("REFUNDED", api.get("/api/v1/orders/$orderId", manager).text("paymentStatus"))
             assertTrue(api.get("/api/v1/kitchen/tickets", kitchen).body.none { it.path("orderId").asString() == orderId })
+        }
+    }
+
+    @Test
+    fun `customer app gets a push notification when the order is ready`() {
+        val cashier = staff("CASHIER")
+        val order = api.post(
+            "/api/v1/orders",
+            mapOf("channel" to "COUNTER", "lines" to listOf(mapOf("productId" to chickenPita, "quantity" to 1, "modifierOptionIds" to listOf(cheeseSauce)))),
+            cashier,
+        )
+        val orderId = order.text("id")
+        val token = order.text("trackingToken")
+        val expoToken = "ExponentPushToken[test-${UUID.randomUUID()}]"
+        assertEquals(400, api.post("/api/v1/orders/$orderId/push-subscriptions?token=$token", mapOf("expoPushToken" to "nope")).status)
+        assertEquals(404, api.post("/api/v1/orders/$orderId/push-subscriptions?token=wrong", mapOf("expoPushToken" to expoToken)).status)
+        assertEquals(204, api.post("/api/v1/orders/$orderId/push-subscriptions?token=$token", mapOf("expoPushToken" to expoToken, "locale" to "ro")).status)
+
+        val kitchen = staff("KITCHEN")
+        lateinit var ticketId: String
+        await atMost Duration.ofSeconds(10) untilAsserted {
+            ticketId = api.get("/api/v1/kitchen/tickets", kitchen).body.first { it.path("orderId").asString() == orderId }.path("id").asString()
+        }
+        api.post("/api/v1/kitchen/tickets/$ticketId/ready", token = kitchen)
+
+        await atMost Duration.ofSeconds(10) untilAsserted {
+            val message = push.sent.first { it.to == expoToken }
+            assertEquals("BurRegescu", message.title)
+            assertEquals("Comanda ${order.text("number")} este gata de ridicare!", message.body)
         }
     }
 

@@ -446,6 +446,11 @@ export type KitchenTicketLine = {
   notes?: string;
 };
 
+export type PushSubscriptionRequest = {
+  expoPushToken: string;
+  locale?: Locale;
+};
+
 export type PaymentIntent = {
   paymentId: string;
   provider: "stripe" | "fake";
@@ -1605,6 +1610,40 @@ export type SimulatePaymentCaptureResponses = {
 
 export type SimulatePaymentCaptureResponse =
   SimulatePaymentCaptureResponses[keyof SimulatePaymentCaptureResponses];
+
+export type RegisterPushSubscriptionData = {
+  body: PushSubscriptionRequest;
+  path: {
+    orderId: string;
+  };
+  query?: {
+    /**
+     * Per-order tracking token returned when the order is created (not needed for staff)
+     */
+    token?: string;
+  };
+  url: "/orders/{orderId}/push-subscriptions";
+};
+
+export type RegisterPushSubscriptionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type RegisterPushSubscriptionError =
+  RegisterPushSubscriptionErrors[keyof RegisterPushSubscriptionErrors];
+
+export type RegisterPushSubscriptionResponses = {
+  /**
+   * Registered
+   */
+  204: void;
+};
+
+export type RegisterPushSubscriptionResponse =
+  RegisterPushSubscriptionResponses[keyof RegisterPushSubscriptionResponses];
 
 export type StreamOrderEventsData = {
   body?: never;

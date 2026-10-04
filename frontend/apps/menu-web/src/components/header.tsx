@@ -5,7 +5,7 @@ import { ClockIcon, ReceiptTextIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
-import { isOpenNow, todaysHours } from "@/lib/opening-hours";
+import { isOpenNow, todaysHours } from "@amadya/customer-core";
 import { useRecentOrders } from "@/lib/recent-orders";
 import { useSettings } from "./providers";
 

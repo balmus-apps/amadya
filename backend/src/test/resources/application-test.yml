@@ -11,6 +11,9 @@ amadya:
     admin-password: Admin12345!
   payments:
     provider: fake
+  notifications:
+    expo:
+      enabled: false
   printing:
     mode: log
 

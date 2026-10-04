@@ -35,6 +35,8 @@ class SettingsService(
     private fun row(): RestaurantSettingsEntity = settings.findByIdOrNull(1) ?: error("restaurant_settings row missing")
 
     // ---------------------------------------------------------------- RestaurantSettingsApi
+    override fun name(): String = row().name
+
     override fun currency(): String = row().currency
 
     override fun features(): FeatureFlags = row().features.let {

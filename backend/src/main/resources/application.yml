@@ -65,6 +65,11 @@ amadya:
       secret-key: ${STRIPE_SECRET_KEY:}
       publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
       webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  notifications:
+    expo:
+      enabled: ${EXPO_PUSH_ENABLED:true}
+      url: https://exp.host/--/api/v2/push/send
+      access-token: ${EXPO_ACCESS_TOKEN:}
   printing:
     mode: ${PRINTING_MODE:log}
     out-dir: ${PRINTING_OUT_DIR:}

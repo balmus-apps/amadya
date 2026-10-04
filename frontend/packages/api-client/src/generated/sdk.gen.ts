@@ -106,6 +106,9 @@ import type {
   RefreshTokenData,
   RefreshTokenErrors,
   RefreshTokenResponses,
+  RegisterPushSubscriptionData,
+  RegisterPushSubscriptionErrors,
+  RegisterPushSubscriptionResponses,
   SimulatePaymentCaptureData,
   SimulatePaymentCaptureErrors,
   SimulatePaymentCaptureResponses,
@@ -928,6 +931,30 @@ export const simulatePaymentCapture = <ThrowOnError extends boolean = false>(
     SimulatePaymentCaptureErrors,
     ThrowOnError
   >({ url: "/payments/{paymentId}/simulate-capture", ...options });
+
+/**
+ * Register an Expo push token to be notified when the order is ready (customer app)
+ */
+export const registerPushSubscription = <ThrowOnError extends boolean = false>(
+  options: Options<RegisterPushSubscriptionData, ThrowOnError>,
+): RequestResult<
+  RegisterPushSubscriptionResponses,
+  RegisterPushSubscriptionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    RegisterPushSubscriptionResponses,
+    RegisterPushSubscriptionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/orders/{orderId}/push-subscriptions",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
 
 /**
  * Server-Sent Events with status changes of one order (customer tracking)

@@ -42,6 +42,7 @@ import {
   type Options,
   recallKitchenTicket,
   refreshToken,
+  registerPushSubscription,
   simulatePaymentCapture,
   startKitchenTicket,
   stripeWebhook,
@@ -150,6 +151,9 @@ import type {
   RefreshTokenData,
   RefreshTokenError,
   RefreshTokenResponse,
+  RegisterPushSubscriptionData,
+  RegisterPushSubscriptionError,
+  RegisterPushSubscriptionResponse,
   SimulatePaymentCaptureData,
   SimulatePaymentCaptureError,
   SimulatePaymentCaptureResponse,
@@ -1321,6 +1325,33 @@ export const simulatePaymentCaptureMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await simulatePaymentCapture({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Register an Expo push token to be notified when the order is ready (customer app)
+ */
+export const registerPushSubscriptionMutation = (
+  options?: Partial<Options<RegisterPushSubscriptionData>>,
+): UseMutationOptions<
+  RegisterPushSubscriptionResponse,
+  RegisterPushSubscriptionError,
+  Options<RegisterPushSubscriptionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RegisterPushSubscriptionResponse,
+    RegisterPushSubscriptionError,
+    Options<RegisterPushSubscriptionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await registerPushSubscription({
         ...options,
         ...fnOptions,
         throwOnError: true,

@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Link, useRouter } from "@/i18n/navigation";
-import { cartTotals, fromCents, lineCents, useCart } from "@/lib/cart";
+import { cartTotals, fromCents, lineCents, toOrderLines, useCart } from "@/lib/cart";
 import { useRecentOrders, useSavedContact } from "@/lib/recent-orders";
 import { useHydrated } from "../header";
 import { useSettings } from "../providers";
@@ -89,12 +89,7 @@ export function CheckoutScreen() {
             customer: { name: values.name.trim(), phone, email: values.email || undefined },
             pickupAt: values.pickup === "scheduled" ? toPickupIso(values.pickupTime) : undefined,
             notes: values.notes.trim() || undefined,
-            lines: items.map((i) => ({
-              productId: i.productId,
-              quantity: i.quantity,
-              modifierOptionIds: i.options.map((o) => o.id),
-              notes: i.notes,
-            })),
+            lines: toOrderLines(items),
           },
         }),
       );

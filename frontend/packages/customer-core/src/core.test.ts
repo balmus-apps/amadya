@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cartKey, cartTotals, fromCents, unitCents, type CartItem } from "./cart";
+import { initialSelection, missingGroups, toggleOption } from "./modifiers";
 import { isOpenNow } from "./opening-hours";
 
 const pita: CartItem = {
@@ -45,5 +46,27 @@ describe("opening hours", () => {
 
   it("is always open without a schedule", () => {
     expect(isOpenNow([], monday1230)).toBe(true);
+  });
+});
+
+describe("modifiers", () => {
+  const sauce = { id: "g1", name: "Sos", minSelect: 1, maxSelect: 1, options: [{ id: "a", name: "Cheese", priceDelta: { amount: "0", currency: "RON" } }, { id: "b", name: "Usturoi", priceDelta: { amount: "0", currency: "RON" } }] };
+  const extras = { id: "g2", name: "Extra", minSelect: 0, maxSelect: 2, options: ["x", "y", "z"].map((id) => ({ id, name: id, priceDelta: { amount: "1", currency: "RON" } })) };
+
+  it("preselects required single choices", () => {
+    expect(initialSelection([sauce, extras])).toEqual({ g1: ["a"] });
+  });
+
+  it("enforces the maximum", () => {
+    let s = toggleOption({}, extras, "x", true);
+    s = toggleOption(s, extras, "y", true);
+    s = toggleOption(s, extras, "z", true);
+    expect(s.g2).toEqual(["x", "y"]);
+    expect(toggleOption(s, sauce, "b", true).g1).toEqual(["b"]);
+  });
+
+  it("reports missing required groups", () => {
+    expect(missingGroups([sauce], {}).map((g) => g.id)).toEqual(["g1"]);
+    expect(missingGroups([sauce], { g1: ["a"] })).toEqual([]);
   });
 });

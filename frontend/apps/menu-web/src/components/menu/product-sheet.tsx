@@ -21,8 +21,8 @@ import {
 } from "@amadya/ui";
 import { ClockIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
-import { fromCents, toCents, useCart } from "@/lib/cart";
+import { useMemo, useState } from "react";
+import { chosenOptions, fromCents, initialSelection, missingGroups, toCents, toggleOption, useCart, type Selection } from "@/lib/cart";
 import { ProductArt } from "./product-art";
 
 export function ProductSheet({ product, onClose, canOrder }: { product: MenuProduct | null; onClose: () => void; canOrder: boolean }) {
@@ -39,30 +39,17 @@ function ProductForm({ product, onDone, canOrder }: { product: MenuProduct; onDo
   const t = useTranslations("menu");
   const locale = useLocale() as AppLocale;
   const add = useCart((s) => s.add);
-  const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [selected, setSelected] = useState<Selection>(() => initialSelection(product.modifierGroups));
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
 
-  // Preselect the first option of required single-choice groups (e.g. "Choose your sauce").
-  useEffect(() => {
-    setSelected(Object.fromEntries(product.modifierGroups.filter((g) => g.minSelect === 1 && g.maxSelect === 1).map((g) => [g.id, g.options[0] ? [g.options[0].id] : []])));
-  }, [product]);
-
-  const chosen = useMemo(
-    () => product.modifierGroups.flatMap((g) => g.options.filter((o) => selected[g.id]?.includes(o.id))),
-    [product, selected],
-  );
-  const missing = product.modifierGroups.filter((g) => (selected[g.id]?.length ?? 0) < g.minSelect);
+  const chosen = useMemo(() => chosenOptions(product.modifierGroups, selected), [product, selected]);
+  const missing = missingGroups(product.modifierGroups, selected);
   const unitCents = toCents(product.price.amount) + chosen.reduce((sum, o) => sum + toCents(o.priceDelta.amount), 0);
   const total = { amount: fromCents(unitCents * quantity), currency: product.price.currency };
 
   function toggle(group: MenuModifierGroup, optionId: string, checked: boolean) {
-    setSelected((prev) => {
-      const current = prev[group.id] ?? [];
-      if (group.maxSelect === 1) return { ...prev, [group.id]: checked ? [optionId] : [] };
-      const next = checked ? [...current, optionId] : current.filter((id) => id !== optionId);
-      return next.length > group.maxSelect ? prev : { ...prev, [group.id]: next };
-    });
+    setSelected((prev) => toggleOption(prev, group, optionId, checked));
   }
 
   function submit() {
