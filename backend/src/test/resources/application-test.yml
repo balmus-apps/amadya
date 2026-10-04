@@ -1,0 +1,18 @@
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed-dev
+
+amadya:
+  security:
+    jwt-secret: test-secret-test-secret-test-secret-0123456789
+  bootstrap:
+    admin-email: admin@test.local
+    admin-password: Admin12345!
+  payments:
+    provider: fake
+  printing:
+    mode: log
+
+logging:
+  level:
+    ro.amadya: INFO

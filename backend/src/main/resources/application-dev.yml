@@ -1,0 +1,16 @@
+# Local development: demo data, permissive CORS for the Vite/Next dev servers, generated secrets allowed.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed-dev
+
+amadya:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:8081}
+  security:
+    allow-generated-secret: true
+  bootstrap:
+    admin-email: ${AMADYA_ADMIN_EMAIL:admin@amadya.local}
+
+logging:
+  level:
+    ro.amadya: DEBUG
