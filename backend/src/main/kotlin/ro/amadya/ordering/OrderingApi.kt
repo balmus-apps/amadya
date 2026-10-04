@@ -19,6 +19,8 @@ data class OrderPlaced(
 )
 
 data class PlacedLine(
+    val productId: UUID,
+    val modifierOptionIds: List<UUID>,
     val productName: LocalizedText,
     val stationId: UUID?,
     val prepTimeSec: Int,

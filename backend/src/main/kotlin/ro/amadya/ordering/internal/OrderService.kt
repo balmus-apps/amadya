@@ -267,6 +267,8 @@ class OrderService(
                 notes = order.notes,
                 lines = order.lines.map { l ->
                     PlacedLine(
+                        productId = l.productId,
+                        modifierOptionIds = l.modifiers.map { it.optionId },
                         productName = LocalizedText.fromMap(l.productName)!!,
                         stationId = l.stationId,
                         prepTimeSec = l.prepTimeSec,

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Demo e-Factura (UBL 2.1, RO_CIUS) from a fictional supplier; import it in the admin app or POST to /api/v1/admin/invoices/import/efactura -->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:efactura.mfinante.ro:CIUS-RO:1.0.1</cbc:CustomizationID>
+  <cbc:ID>ADS 1042</cbc:ID>
+  <cbc:IssueDate>2026-10-03</cbc:IssueDate>
+  <cbc:DueDate>2026-10-17</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:DocumentCurrencyCode>RON</cbc:DocumentCurrencyCode>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PostalAddress>
+        <cbc:StreetName>Str. Depozitelor 1</cbc:StreetName>
+        <cbc:CityName>Galați</cbc:CityName>
+        <cbc:CountrySubentity>RO-GL</cbc:CountrySubentity>
+        <cac:Country><cbc:IdentificationCode>RO</cbc:IdentificationCode></cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>RO12345678</cbc:CompanyID>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Aprovizionare Demo SRL</cbc:RegistrationName>
+        <cbc:CompanyID>J17/123/2020</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyLegalEntity><cbc:RegistrationName>BurRegescu Fast Food (demo)</cbc:RegistrationName></cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="KGM">10</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="RON">320.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Carne tocată de vită</cbc:Name>
+      <cac:SellersItemIdentification><cbc:ID>ADS-VITA-01</cbc:ID></cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>11</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="RON">32.00</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="KGM">2</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="RON">90.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Cheddar felii</cbc:Name>
+      <cac:SellersItemIdentification><cbc:ID>ADS-CHED-02</cbc:ID></cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>11</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="RON">45.00</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>3</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="H87">48</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="RON">48.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Chiflă burger</cbc:Name>
+      <cac:SellersItemIdentification><cbc:ID>ADS-CHIF-03</cbc:ID></cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>11</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="RON">1.00</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>4</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="XBX">2</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="RON">96.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>COCA-COLA DOZA 0.33L BAX 24</cbc:Name>
+      <cac:SellersItemIdentification><cbc:ID>ADS-CC-330</cbc:ID></cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>21</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="RON">48.00</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

@@ -38,10 +38,14 @@ An install can have several warehouses of the same type (e.g. "Kitchen" and "Bar
 
 Modifier options can deduct their own stock item too (e.g. "cheese sauce" = 30 g sauce).
 
-Consumption is posted on `OrderPaid` for takeaway and on `OrderServed` / session close for dine-in. Negative
+Consumption is posted when the order reaches the kitchen (`OrderPlaced`: paid takeaway, counter or dine-in round) and returned to
+the same lots if the order is cancelled (`OrderCancelled`). Negative
 stock is **allowed but flagged**, since kitchens can't stop serving mid-shift. With FIFO, any uncovered quantity is recorded as a
 **deficit** (`stock_deficit`) at the last known cost. When the next lot arrives, the deficit is settled against it first and the cost
-difference is posted as an adjustment. A low-stock alert is raised and shown on the dashboard.
+difference corrects the original movement's cost. A low-stock alert is raised and shown on the dashboard.
+
+Implementation: `inventory.internal.FifoLedger` (explicit SQL with row locks). `stock_balance` is recomputed from lots and open
+deficits after every change, so it can always be rebuilt from the ledger.
 
 ## Other documents
 - **Transfer note**: from one warehouse to another; lots move with their original cost and receipt date (FIFO preserved).

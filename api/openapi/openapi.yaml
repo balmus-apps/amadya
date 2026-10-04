@@ -33,6 +33,10 @@ tags:
     description: Online payments
   - name: notifications
     description: Push notification subscriptions
+  - name: inventory
+    description: Units, warehouses, stock items, FIFO ledger, stock documents, recipes
+  - name: procurement
+    description: Suppliers, purchase invoices (e-Factura import), NIR
   - name: streams
     description: Server-Sent Events (hand-implemented)
   - name: webhooks
@@ -774,6 +778,595 @@ paths:
         "200": { description: Accepted }
         "400": { $ref: "#/components/responses/Problem" }
 
+  # ---------------------------------------------------------------- inventory
+  /admin/units:
+    get:
+      tags: [inventory]
+      operationId: listMeasureUnits
+      summary: Units of measure (reference unit per dimension + conversion factors)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/MeasureUnit" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [inventory]
+      operationId: createMeasureUnit
+      summary: Create a unit (factor relative to the dimension's reference unit)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MeasureUnitRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeasureUnit" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/units/{id}:
+    put:
+      tags: [inventory]
+      operationId: updateMeasureUnit
+      summary: Update a unit; mapping an UNMAPPED unit (from an invoice) sets its dimension and factor
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MeasureUnitRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeasureUnit" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/warehouses:
+    get:
+      tags: [inventory]
+      operationId: listWarehouses
+      summary: List warehouses (gestiuni)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Warehouse" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [inventory]
+      operationId: createWarehouse
+      summary: Create a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WarehouseRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Warehouse" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/warehouses/{id}:
+    put:
+      tags: [inventory]
+      operationId: updateWarehouse
+      summary: Update a warehouse
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WarehouseRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Warehouse" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock-items:
+    get:
+      tags: [inventory]
+      operationId: listStockItems
+      summary: List stock items with their total quantity on hand
+      parameters:
+        - name: type
+          in: query
+          schema: { $ref: "#/components/schemas/WarehouseType" }
+        - name: q
+          in: query
+          description: Search in name or SKU
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StockItem" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [inventory]
+      operationId: createStockItem
+      summary: Create a stock item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StockItemRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockItem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock-items/{id}:
+    get:
+      tags: [inventory]
+      operationId: getStockItem
+      summary: Get a stock item
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockItem" }
+        "404": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [inventory]
+      operationId: updateStockItem
+      summary: Update a stock item and replace its packagings
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StockItemRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockItem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock/balances:
+    get:
+      tags: [inventory]
+      operationId: listStockBalances
+      summary: Quantity and FIFO value per warehouse and item
+      parameters:
+        - name: warehouseId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: lowOnly
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StockBalance" } }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock/movements:
+    get:
+      tags: [inventory]
+      operationId: listStockMovements
+      summary: Stock ledger, newest first
+      parameters:
+        - name: warehouseId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: stockItemId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StockMovement" } }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock/lots:
+    get:
+      tags: [inventory]
+      operationId: listStockLots
+      summary: Open FIFO lots (oldest first)
+      parameters:
+        - name: warehouseId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: stockItemId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StockLot" } }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock/documents:
+    get:
+      tags: [inventory]
+      operationId: listStockDocuments
+      summary: Transfers, consumption notes, waste and inventory counts
+      parameters:
+        - name: type
+          in: query
+          schema: { $ref: "#/components/schemas/StockDocumentType" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/StockDocument" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [inventory]
+      operationId: createStockDocument
+      summary: Create and post a stock document (moves stock immediately)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StockDocumentRequest" }
+      responses:
+        "201":
+          description: Posted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockDocument" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/stock/documents/{id}:
+    get:
+      tags: [inventory]
+      operationId: getStockDocument
+      summary: Get a stock document
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockDocument" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/recipes/products/{productId}:
+    get:
+      tags: [inventory]
+      operationId: getProductRecipe
+      summary: Ingredients consumed when one unit of the product is sold
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "403": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [inventory]
+      operationId: replaceProductRecipe
+      summary: Replace the product's recipe
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/recipes/options/{optionId}:
+    get:
+      tags: [inventory]
+      operationId: getOptionRecipe
+      summary: Ingredients consumed by a modifier option (e.g. 30 g cheese sauce)
+      parameters:
+        - name: optionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "403": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [inventory]
+      operationId: replaceOptionRecipe
+      summary: Replace the modifier option's recipe
+      parameters:
+        - name: optionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- procurement
+  /admin/suppliers:
+    get:
+      tags: [procurement]
+      operationId: listSuppliers
+      summary: List suppliers
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Supplier" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [procurement]
+      operationId: createSupplier
+      summary: Create a supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Supplier" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/suppliers/{id}:
+    put:
+      tags: [procurement]
+      operationId: updateSupplier
+      summary: Update a supplier
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Supplier" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/invoices:
+    get:
+      tags: [procurement]
+      operationId: listPurchaseInvoices
+      summary: Purchase invoices, newest first
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PurchaseInvoice" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [procurement]
+      operationId: createPurchaseInvoice
+      summary: Enter a purchase invoice manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseInvoiceRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseInvoice" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/invoices/import/efactura:
+    post:
+      tags: [procurement]
+      operationId: importEFactura
+      summary: Import an ANAF e-Factura (UBL 2.1 / RO_CIUS XML); creates the supplier when unknown and matches lines to stock items
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema: { type: string }
+      responses:
+        "201":
+          description: Imported
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseInvoice" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/invoices/{id}:
+    get:
+      tags: [procurement]
+      operationId: getPurchaseInvoice
+      summary: Get a purchase invoice
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseInvoice" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/invoices/{id}/lines/{lineId}/match:
+    put:
+      tags: [procurement]
+      operationId: matchInvoiceLine
+      summary: Link an invoice line to a stock item (optionally remembered for this supplier)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - name: lineId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvoiceLineMatchRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseInvoice" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/nirs:
+    get:
+      tags: [procurement]
+      operationId: listNirs
+      summary: Goods receipt notes (NIR), newest first
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/NirStatus" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Nir" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [procurement]
+      operationId: createNir
+      summary: Create a draft NIR, empty or prefilled from a purchase invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NirRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nir" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/nirs/{id}:
+    get:
+      tags: [procurement]
+      operationId: getNir
+      summary: Get a NIR
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nir" }
+        "404": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [procurement]
+      operationId: updateNir
+      summary: Replace a draft NIR (header and lines)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NirRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nir" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/nirs/{id}/post:
+    post:
+      tags: [procurement]
+      operationId: postNir
+      summary: Post the NIR — stock is received as FIFO lots; the NIR becomes immutable
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Posted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nir" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/nirs/{id}/reverse:
+    post:
+      tags: [procurement]
+      operationId: reverseNir
+      summary: Post a reversing NIR (only while the received lots are unconsumed)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: The reversing NIR
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nir" }
+        "409": { $ref: "#/components/responses/Problem" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -920,7 +1513,7 @@ components:
         code: { type: string, examples: [STD] }
         name: { $ref: "#/components/schemas/LocalizedText" }
         percent: { type: string, pattern: '^\d{1,2}(\.\d{1,2})?$', examples: ["21.00"] }
-        fiscalGroup: { type: string, description: Fiscal printer VAT group letter, examples: [A] }
+        fiscalGroup: { type: string, description: "Fiscal printer VAT group letter, examples: [A]" }
         active: { type: boolean }
 
     VatRateRequest:
@@ -1344,3 +1937,423 @@ components:
         clientSecret: { type: string, description: Stripe PaymentIntent client secret }
         publishableKey: { type: string }
         amount: { $ref: "#/components/schemas/Money" }
+
+    # ---------------------------------------------------------- inventory
+    Quantity:
+      type: string
+      pattern: '^-?\d{1,9}(\.\d{1,3})?$'
+      description: Decimal quantity, up to 3 decimals
+      examples: ["2.500"]
+
+    Dimension:
+      type: string
+      enum: [MASS, VOLUME, COUNT, LENGTH]
+
+    UnitStatus:
+      type: string
+      enum: [ACTIVE, UNMAPPED]
+
+    MeasureUnit:
+      type: object
+      required: [id, code, name, factor, isReference, aliases, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, examples: [kg] }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        dimension: { $ref: "#/components/schemas/Dimension" }
+        factor: { type: string, description: How many reference units one unit equals (kg = 1000) }
+        isReference: { type: boolean }
+        aliases: { type: array, items: { type: string } }
+        status: { $ref: "#/components/schemas/UnitStatus" }
+
+    MeasureUnitRequest:
+      type: object
+      required: [code, name, dimension, factor]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 12 }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        dimension: { $ref: "#/components/schemas/Dimension" }
+        factor: { type: string, pattern: '^\d{1,12}(\.\d{1,6})?$' }
+        aliases: { type: array, items: { type: string, maxLength: 30 } }
+
+    WarehouseType:
+      type: string
+      enum: [INGREDIENTS, FINISHED_GOODS, FIXED_ASSETS, CONSUMABLES]
+
+    Warehouse:
+      type: object
+      required: [id, code, name, type, active]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        type: { $ref: "#/components/schemas/WarehouseType" }
+        active: { type: boolean }
+
+    WarehouseRequest:
+      type: object
+      required: [code, name, type]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 20, pattern: '^[A-Z0-9_]+$' }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        type: { $ref: "#/components/schemas/WarehouseType" }
+        active: { type: boolean, default: true }
+
+    Packaging:
+      type: object
+      required: [name, qtyInBase]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 40, examples: ["bax 24"] }
+        qtyInBase: { $ref: "#/components/schemas/Quantity" }
+        barcode: { type: string, maxLength: 40 }
+
+    StockItem:
+      type: object
+      required: [id, sku, name, type, baseUnitId, baseUnitCode, minStock, active, packagings, quantityOnHand]
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        type: { $ref: "#/components/schemas/WarehouseType" }
+        baseUnitId: { type: string, format: uuid, description: "Reference unit of the item's dimension (g, ml, buc)" }
+        baseUnitCode: { type: string }
+        displayUnitId: { type: string, format: uuid }
+        defaultWarehouseId: { type: string, format: uuid }
+        minStock: { $ref: "#/components/schemas/Quantity" }
+        active: { type: boolean }
+        packagings: { type: array, items: { $ref: "#/components/schemas/Packaging" } }
+        quantityOnHand: { $ref: "#/components/schemas/Quantity" }
+
+    StockItemRequest:
+      type: object
+      required: [sku, name, type, dimension]
+      properties:
+        sku: { type: string, minLength: 1, maxLength: 40 }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        type: { $ref: "#/components/schemas/WarehouseType" }
+        dimension: { $ref: "#/components/schemas/Dimension" }
+        displayUnitId: { type: string, format: uuid }
+        defaultWarehouseId: { type: string, format: uuid }
+        minStock: { $ref: "#/components/schemas/Quantity" }
+        active: { type: boolean, default: true }
+        packagings: { type: array, items: { $ref: "#/components/schemas/Packaging" } }
+
+    StockBalance:
+      type: object
+      required: [warehouseId, stockItemId, sku, itemName, quantity, unitCode, value, minStock, low]
+      properties:
+        warehouseId: { type: string, format: uuid }
+        stockItemId: { type: string, format: uuid }
+        sku: { type: string }
+        itemName: { type: string }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitCode: { type: string }
+        value: { $ref: "#/components/schemas/Money" }
+        minStock: { $ref: "#/components/schemas/Quantity" }
+        low: { type: boolean }
+
+    StockMovementType:
+      type: string
+      enum: [RECEIPT_NIR, CONSUMPTION_SALE, RETURN_SALE, TRANSFER_OUT, TRANSFER_IN, CONSUMPTION_NOTE, WASTE, COUNT_LOSS, COUNT_GAIN, REVERSAL]
+
+    StockMovement:
+      type: object
+      required: [id, warehouseId, stockItemId, itemName, type, quantity, unitCode, cost, occurredAt]
+      properties:
+        id: { type: string, format: uuid }
+        warehouseId: { type: string, format: uuid }
+        stockItemId: { type: string, format: uuid }
+        itemName: { type: string }
+        type: { $ref: "#/components/schemas/StockMovementType" }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitCode: { type: string }
+        cost: { $ref: "#/components/schemas/Money" }
+        sourceType: { type: string, examples: [NIR, ORDER, DOCUMENT] }
+        sourceId: { type: string, format: uuid }
+        sourceRef: { type: string, description: "Human reference, e.g. NIR-2026-000012 or order B-014" }
+        occurredAt: { type: string, format: date-time }
+
+    StockLot:
+      type: object
+      required: [id, warehouseId, stockItemId, receivedAt, quantityInitial, quantityRemaining, unitCost, unitCode]
+      properties:
+        id: { type: string, format: uuid }
+        warehouseId: { type: string, format: uuid }
+        stockItemId: { type: string, format: uuid }
+        receivedAt: { type: string, format: date-time }
+        quantityInitial: { $ref: "#/components/schemas/Quantity" }
+        quantityRemaining: { $ref: "#/components/schemas/Quantity" }
+        unitCost: { type: string, description: Cost per base unit (6 decimals) }
+        unitCode: { type: string }
+
+    StockDocumentType:
+      type: string
+      enum: [TRANSFER, CONSUMPTION, WASTE, COUNT]
+
+    StockDocumentLineRequest:
+      type: object
+      required: [stockItemId, quantity]
+      properties:
+        stockItemId: { type: string, format: uuid }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitId: { type: string, format: uuid, description: Unit of `quantity`; defaults to the item's base unit }
+        packagingId: { type: string, format: uuid, description: Alternative to unitId }
+        reason: { type: string, maxLength: 200 }
+
+    StockDocumentRequest:
+      type: object
+      required: [type, warehouseId, lines]
+      properties:
+        type: { $ref: "#/components/schemas/StockDocumentType" }
+        date: { type: string, format: date }
+        warehouseId: { type: string, format: uuid, description: Source warehouse (counted warehouse for COUNT) }
+        targetWarehouseId: { type: string, format: uuid, description: Required for TRANSFER }
+        note: { type: string, maxLength: 500 }
+        lines:
+          type: array
+          minItems: 1
+          description: For COUNT, `quantity` is the counted quantity
+          items: { $ref: "#/components/schemas/StockDocumentLineRequest" }
+
+    StockDocumentLine:
+      type: object
+      required: [stockItemId, itemName, quantity, unitCode]
+      properties:
+        stockItemId: { type: string, format: uuid }
+        itemName: { type: string }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitCode: { type: string }
+        systemQuantity: { $ref: "#/components/schemas/Quantity" }
+        difference: { $ref: "#/components/schemas/Quantity" }
+        cost: { $ref: "#/components/schemas/Money" }
+        reason: { type: string }
+
+    StockDocument:
+      type: object
+      required: [id, number, type, date, warehouseId, lines, totalCost, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string, examples: ["TR-2026-000004"] }
+        type: { $ref: "#/components/schemas/StockDocumentType" }
+        date: { type: string, format: date }
+        warehouseId: { type: string, format: uuid }
+        targetWarehouseId: { type: string, format: uuid }
+        note: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/StockDocumentLine" } }
+        totalCost: { $ref: "#/components/schemas/Money" }
+        createdAt: { type: string, format: date-time }
+
+    RecipeLineRequest:
+      type: object
+      required: [stockItemId, quantity]
+      properties:
+        stockItemId: { type: string, format: uuid }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitId: { type: string, format: uuid, description: Unit of `quantity`; defaults to the item's base unit }
+        warehouseId: { type: string, format: uuid, description: Defaults to the item's default warehouse }
+
+    RecipeRequest:
+      type: object
+      required: [lines]
+      properties:
+        lines: { type: array, items: { $ref: "#/components/schemas/RecipeLineRequest" } }
+
+    RecipeLine:
+      type: object
+      required: [stockItemId, itemName, quantity, unitCode]
+      properties:
+        stockItemId: { type: string, format: uuid }
+        itemName: { type: string }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitCode: { type: string, description: Base unit of the item }
+        warehouseId: { type: string, format: uuid }
+        estimatedCost: { $ref: "#/components/schemas/Money" }
+
+    Recipe:
+      type: object
+      required: [lines]
+      properties:
+        productId: { type: string, format: uuid }
+        optionId: { type: string, format: uuid }
+        lines: { type: array, items: { $ref: "#/components/schemas/RecipeLine" } }
+        estimatedCost: { $ref: "#/components/schemas/Money", description: Current FIFO cost of one portion }
+
+    # ---------------------------------------------------------- procurement
+    Supplier:
+      type: object
+      required: [id, name, active]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        cui: { type: string }
+        regCom: { type: string }
+        address: { type: string }
+        iban: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        active: { type: boolean }
+
+    SupplierRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        cui: { type: string, maxLength: 20 }
+        regCom: { type: string, maxLength: 40 }
+        address: { type: string, maxLength: 300 }
+        iban: { type: string, maxLength: 34 }
+        email: { type: string, maxLength: 120 }
+        phone: { type: string, maxLength: 30 }
+        active: { type: boolean, default: true }
+
+    InvoiceSource:
+      type: string
+      enum: [MANUAL, EFACTURA_XML, SCAN]
+
+    PurchaseInvoiceLine:
+      type: object
+      required: [id, position, description, quantity, unitCode, unitPrice, vatPercent, lineNet]
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer }
+        supplierCode: { type: string }
+        description: { type: string }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitCode: { type: string, description: "As written on the invoice (e.g. KGM, kg, BAX)" }
+        unitId: { type: string, format: uuid }
+        packagingId: { type: string, format: uuid }
+        unitPrice: { type: string, description: Net unit price }
+        vatPercent: { type: string }
+        lineNet: { type: string }
+        stockItemId: { type: string, format: uuid }
+        matched: { type: boolean, description: True when stock item and a convertible unit are known }
+
+    PurchaseInvoice:
+      type: object
+      required: [id, supplierId, supplierName, number, issueDate, currency, totalNet, totalVat, totalGross, source, lines]
+      properties:
+        id: { type: string, format: uuid }
+        supplierId: { type: string, format: uuid }
+        supplierName: { type: string }
+        series: { type: string }
+        number: { type: string }
+        issueDate: { type: string, format: date }
+        dueDate: { type: string, format: date }
+        currency: { type: string }
+        totalNet: { type: string }
+        totalVat: { type: string }
+        totalGross: { type: string }
+        source: { $ref: "#/components/schemas/InvoiceSource" }
+        nirId: { type: string, format: uuid, description: "NIR created from this invoice, if any" }
+        lines: { type: array, items: { $ref: "#/components/schemas/PurchaseInvoiceLine" } }
+
+    PurchaseInvoiceLineRequest:
+      type: object
+      required: [description, quantity, unitPrice, vatPercent]
+      properties:
+        supplierCode: { type: string, maxLength: 60 }
+        description: { type: string, minLength: 1, maxLength: 300 }
+        quantity: { $ref: "#/components/schemas/Quantity" }
+        unitCode: { type: string, maxLength: 20 }
+        unitId: { type: string, format: uuid }
+        packagingId: { type: string, format: uuid }
+        unitPrice: { type: string, pattern: '^\d{1,9}(\.\d{1,6})?$' }
+        vatPercent: { type: string, pattern: '^\d{1,2}(\.\d{1,2})?$' }
+        stockItemId: { type: string, format: uuid }
+
+    PurchaseInvoiceRequest:
+      type: object
+      required: [supplierId, number, issueDate, lines]
+      properties:
+        supplierId: { type: string, format: uuid }
+        series: { type: string, maxLength: 20 }
+        number: { type: string, minLength: 1, maxLength: 40 }
+        issueDate: { type: string, format: date }
+        dueDate: { type: string, format: date }
+        currency: { type: string, pattern: '^[A-Z]{3}$', default: RON }
+        lines: { type: array, minItems: 1, items: { $ref: "#/components/schemas/PurchaseInvoiceLineRequest" } }
+
+    InvoiceLineMatchRequest:
+      type: object
+      required: [stockItemId]
+      properties:
+        stockItemId: { type: string, format: uuid }
+        unitId: { type: string, format: uuid }
+        packagingId: { type: string, format: uuid }
+        remember: { type: boolean, default: true, description: Remember this supplier code/description for future invoices }
+
+    NirStatus:
+      type: string
+      enum: [DRAFT, POSTED, REVERSED]
+
+    NirLineRequest:
+      type: object
+      required: [stockItemId, quantityDocument, quantityReceived, unitPrice]
+      properties:
+        stockItemId: { type: string, format: uuid }
+        unitId: { type: string, format: uuid }
+        packagingId: { type: string, format: uuid }
+        quantityDocument: { $ref: "#/components/schemas/Quantity" }
+        quantityReceived: { $ref: "#/components/schemas/Quantity" }
+        unitPrice: { type: string, pattern: '^\d{1,9}(\.\d{1,6})?$', description: Net purchase price per unit of the line }
+        vatPercent: { type: string, pattern: '^\d{1,2}(\.\d{1,2})?$' }
+        discrepancyReason: { type: string, maxLength: 200 }
+
+    NirRequest:
+      type: object
+      required: [warehouseId]
+      properties:
+        invoiceId: { type: string, format: uuid, description: "Prefill supplier, references and lines from this invoice (create only)" }
+        warehouseId: { type: string, format: uuid }
+        supplierId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        invoiceRef: { type: string, maxLength: 60 }
+        deliveryNoteRef: { type: string, maxLength: 60 }
+        committee: { type: array, maxItems: 3, items: { type: string, maxLength: 80 } }
+        notes: { type: string, maxLength: 500 }
+        lines: { type: array, items: { $ref: "#/components/schemas/NirLineRequest" } }
+
+    NirLine:
+      type: object
+      required: [id, position, stockItemId, itemName, unitCode, quantityDocument, quantityReceived, difference, unitPrice, vatPercent, valueNet, vatValue]
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer }
+        stockItemId: { type: string, format: uuid }
+        itemName: { type: string }
+        unitId: { type: string, format: uuid }
+        packagingId: { type: string, format: uuid }
+        unitCode: { type: string }
+        quantityDocument: { $ref: "#/components/schemas/Quantity" }
+        quantityReceived: { $ref: "#/components/schemas/Quantity" }
+        difference: { $ref: "#/components/schemas/Quantity" }
+        unitPrice: { type: string }
+        vatPercent: { type: string }
+        valueNet: { type: string }
+        vatValue: { type: string }
+        discrepancyReason: { type: string }
+
+    Nir:
+      type: object
+      required: [id, status, date, warehouseId, committee, lines, totalNet, totalVat, currency]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string, description: "Assigned when posted, e.g. NIR-2026-000012" }
+        status: { $ref: "#/components/schemas/NirStatus" }
+        date: { type: string, format: date }
+        warehouseId: { type: string, format: uuid }
+        supplierId: { type: string, format: uuid }
+        supplierName: { type: string }
+        invoiceId: { type: string, format: uuid }
+        invoiceRef: { type: string }
+        deliveryNoteRef: { type: string }
+        committee: { type: array, items: { type: string } }
+        notes: { type: string }
+        reversalOfId: { type: string, format: uuid }
+        reversedById: { type: string, format: uuid }
+        postedAt: { type: string, format: date-time }
+        lines: { type: array, items: { $ref: "#/components/schemas/NirLine" } }
+        totalNet: { type: string }
+        totalVat: { type: string }
+        currency: { type: string }
