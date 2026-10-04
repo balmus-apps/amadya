@@ -55,6 +55,9 @@ class SettingsService(
     override fun vatRate(id: UUID): VatRateInfo? =
         vatRates.findByIdOrNull(id)?.let { VatRateInfo(it.id, it.code, it.percent, it.fiscalGroup, it.active) }
 
+    override fun stations(): List<StationInfo> =
+        stations.findAllByOrderByCodeAsc().map { StationInfo(it.id, it.code, LocalizedText.fromMap(it.name)!!, it.parallelSlots, it.active) }
+
     override fun station(id: UUID): StationInfo? =
         stations.findByIdOrNull(id)?.let { StationInfo(it.id, it.code, LocalizedText.fromMap(it.name)!!, it.parallelSlots, it.active) }
 

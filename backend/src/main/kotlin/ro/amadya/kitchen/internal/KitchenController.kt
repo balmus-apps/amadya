@@ -7,18 +7,19 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.RestController
 import ro.amadya.contract.api.KitchenApi
 import ro.amadya.contract.model.KitchenTicket
-import ro.amadya.contract.model.KitchenTicketLine
-import ro.amadya.shared.localized
-import java.time.ZoneOffset
+import ro.amadya.contract.model.Station
+import ro.amadya.settings.RestaurantSettingsApi
 import java.util.Locale
 import java.util.UUID
-import ro.amadya.contract.model.KitchenTicketStatus as KitchenTicketStatusDto
-import ro.amadya.contract.model.OrderChannel as OrderChannelDto
 
 @RestController
 @Transactional
 @PreAuthorize("hasAnyRole('ADMIN','MANAGER','KITCHEN')")
-class KitchenController(private val kitchen: KitchenService) : KitchenApi {
+class KitchenController(
+    private val kitchen: KitchenService,
+    private val mapper: KitchenTicketMapper,
+    private val settings: RestaurantSettingsApi,
+) : KitchenApi {
 
     override fun listKitchenTickets(stationId: UUID?): ResponseEntity<List<KitchenTicket>> {
         val locale = LocaleContextHolder.getLocale()
@@ -34,18 +35,8 @@ class KitchenController(private val kitchen: KitchenService) : KitchenApi {
     override fun recallKitchenTicket(ticketId: UUID): ResponseEntity<KitchenTicket> =
         ResponseEntity.ok(kitchen.recall(ticketId).toDto(LocaleContextHolder.getLocale()))
 
-    private fun KitchenTicketEntity.toDto(locale: Locale) = KitchenTicket(
-        id = id,
-        orderId = orderId,
-        orderNumber = orderNumber,
-        channel = OrderChannelDto.forValue(channel),
-        stationId = stationId,
-        status = KitchenTicketStatusDto.forValue(status.name),
-        queuedAt = queuedAt.atOffset(ZoneOffset.UTC),
-        estimatedReadyAt = estimatedReadyAt.atOffset(ZoneOffset.UTC),
-        lines = lines.map { l -> KitchenTicketLine(l.productName.localized(locale), l.quantity, l.modifiers.map { it.localized(locale) }, l.notes) },
-        startedAt = startedAt?.atOffset(ZoneOffset.UTC),
-        readyAt = readyAt?.atOffset(ZoneOffset.UTC),
-        notes = notes,
-    )
+    private fun KitchenTicketEntity.toDto(locale: Locale) = mapper.toDto(this, locale)
+
+    override fun listKitchenStations(): ResponseEntity<List<Station>> =
+        ResponseEntity.ok(settings.stations().filter { it.active }.map { Station(it.id, it.code, it.name.toDto(), it.parallelSlots, it.active) })
 }

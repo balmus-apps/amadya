@@ -16,6 +16,10 @@ data class OrderPlaced(
     val pickupAt: Instant?,
     val notes: String?,
     val lines: List<PlacedLine>,
+    /** Takeaway customer's name, shown on kitchen tickets. */
+    val customerName: String? = null,
+    /** Table label for dine-in orders (tables module, Phase 4). */
+    val tableLabel: String? = null,
 )
 
 data class PlacedLine(

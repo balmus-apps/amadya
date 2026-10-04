@@ -60,6 +60,8 @@ class KitchenService(
                     queuedAt = now,
                     estimatedReadyAt = now.plus(Duration.ofSeconds(prep + wait)),
                     notes = event.notes,
+                    customerName = event.customerName?.substringBefore(' '),
+                    tableLabel = event.tableLabel,
                     lines = lines.mapIndexed { i, l ->
                         KitchenTicketLineEntity(
                             position = i + 1,
@@ -72,15 +74,22 @@ class KitchenService(
                 ),
             )
         }
-        created.forEach { events.publishEvent(it.toEvent()) }
+        created.forEach {
+            events.publishEvent(it.toEvent())
+            events.publishEvent(KitchenTicketChanged(it.id, it.stationId))
+        }
         orders.updateEstimatedReadyAt(event.orderId, created.maxOf { it.estimatedReadyAt })
         log.info("Order {}: {} kitchen ticket(s) queued", event.number, created.size)
     }
 
     @ApplicationModuleListener
     fun on(event: OrderCancelled) {
-        tickets.deleteAll(tickets.findAllByOrderId(event.orderId))
+        val removed = tickets.findAllByOrderId(event.orderId)
+        tickets.deleteAll(removed)
+        removed.forEach { events.publishEvent(KitchenTicketChanged(it.id, it.stationId, removed = true)) }
     }
+
+    fun find(id: UUID): KitchenTicketEntity? = tickets.findByIdOrNull(id)
 
     fun openTickets(stationId: UUID?): List<KitchenTicketEntity> =
         tickets.findAllByStatusInOrReadyAtAfterOrderByQueuedAtAsc(open, clock.instant().minus(Duration.ofMinutes(10)))
@@ -92,6 +101,7 @@ class KitchenService(
         move(ticket, TicketStatus.IN_PROGRESS, TicketStatus.QUEUED)
         ticket.startedAt = clock.instant()
         orders.markPreparing(ticket.orderId)
+        events.publishEvent(KitchenTicketChanged(ticket.id, ticket.stationId))
         return ticket
     }
 
@@ -107,6 +117,7 @@ class KitchenService(
         } else {
             orders.markPreparing(ticket.orderId)
         }
+        events.publishEvent(KitchenTicketChanged(ticket.id, ticket.stationId))
         return ticket
     }
 
@@ -116,6 +127,7 @@ class KitchenService(
         move(ticket, TicketStatus.IN_PROGRESS, TicketStatus.READY)
         ticket.readyAt = null
         orders.reopen(ticket.orderId)
+        events.publishEvent(KitchenTicketChanged(ticket.id, ticket.stationId))
         return ticket
     }
 

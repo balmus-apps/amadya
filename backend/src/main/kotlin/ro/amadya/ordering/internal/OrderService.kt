@@ -265,6 +265,7 @@ class OrderService(
                 placedAt = now,
                 pickupAt = order.pickupAt,
                 notes = order.notes,
+                customerName = order.customerName,
                 lines = order.lines.map { l ->
                     PlacedLine(
                         productId = l.productId,

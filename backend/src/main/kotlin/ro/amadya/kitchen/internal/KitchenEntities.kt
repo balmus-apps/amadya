@@ -32,6 +32,8 @@ class KitchenTicketEntity(
     @Column(name = "queued_at") val queuedAt: Instant,
     @Column(name = "estimated_ready_at") var estimatedReadyAt: Instant,
     val notes: String? = null,
+    @Column(name = "customer_name") val customerName: String? = null,
+    @Column(name = "table_label") val tableLabel: String? = null,
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "ticket_id", nullable = false)
     @OrderBy("position ASC")
