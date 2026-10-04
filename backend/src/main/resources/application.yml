@@ -8,6 +8,8 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${POSTGRES_DB:amadya}
     username: ${POSTGRES_USER:amadya}
     password: ${POSTGRES_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
   jpa:
     open-in-view: false
     hibernate:
@@ -51,6 +53,8 @@ management:
 
 amadya:
   timezone: Europe/Bucharest
+  # Workers for asynchronous event listeners; keep below DB_POOL_SIZE so requests always find a connection.
+  event-workers: ${EVENT_WORKERS:4}
   public-base-url: ${AMADYA_PUBLIC_URL:http://localhost}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}

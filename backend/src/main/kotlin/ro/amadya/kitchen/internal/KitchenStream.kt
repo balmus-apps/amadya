@@ -7,9 +7,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.transaction.event.TransactionalEventListener
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -25,6 +25,7 @@ import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.Executors
 import ro.amadya.contract.model.KitchenTicketStatus as KitchenTicketStatusDto
 import ro.amadya.contract.model.OrderChannel as OrderChannelDto
 
@@ -54,11 +55,21 @@ class KitchenTicketMapper {
 /**
  * Live feed for kitchen and bar displays: one channel per station and language.
  * A single API instance per install (ADR 0004), so subscribers are kept in memory.
+ *
+ * Tickets are reloaded on one dedicated thread, not on the committing one: during AFTER_COMMIT the committing
+ * thread still holds its connection, and asking the pool for a second one there deadlocks once every connection
+ * is held that way. One thread also keeps each station's events in commit order.
  */
 @Component
-class KitchenStream(private val kitchen: KitchenService, private val mapper: KitchenTicketMapper) {
+class KitchenStream(
+    private val kitchen: KitchenService,
+    private val mapper: KitchenTicketMapper,
+    transactionManager: PlatformTransactionManager,
+) : AutoCloseable {
     private val log = LoggerFactory.getLogger(javaClass)
     private val subscribers = ConcurrentHashMap<Pair<UUID, String>, MutableSet<SseEmitter>>()
+    private val readOnly = TransactionTemplate(transactionManager).apply { isReadOnly = true }
+    private val publisher = Executors.newSingleThreadExecutor(Thread.ofPlatform().name("kitchen-stream").daemon().factory())
 
     fun subscribe(stationId: UUID, locale: Locale): SseEmitter {
         val key = stationId to language(locale)
@@ -71,9 +82,19 @@ class KitchenStream(private val kitchen: KitchenService, private val mapper: Kit
         return emitter
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     fun on(event: KitchenTicketChanged) {
+        if (subscribers.keys.none { it.first == event.stationId }) return
+        publisher.execute {
+            try {
+                readOnly.executeWithoutResult { publish(event) }
+            } catch (e: Exception) {
+                log.warn("Kitchen event for ticket {} not delivered: {}", event.ticketId, e.message)
+            }
+        }
+    }
+
+    private fun publish(event: KitchenTicketChanged) {
         val ticket = if (event.removed) null else kitchen.find(event.ticketId)
         subscribers.filterKeys { it.first == event.stationId }.forEach { (key, emitters) ->
             val payload = KitchenTicketEvent(
@@ -85,6 +106,8 @@ class KitchenStream(private val kitchen: KitchenService, private val mapper: Kit
             emitters.forEach { send(it, payload) }
         }
     }
+
+    override fun close() = publisher.shutdown()
 
     /** Keeps proxies and tablets' Wi-Fi from closing idle streams. */
     @Scheduled(fixedRate = 20_000)
