@@ -1,0 +1,23 @@
+{
+  "name": "@amadya/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./query": "./src/query.ts"
+  },
+  "scripts": {
+    "generate": "openapi-ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.104.1"
+  },
+  "devDependencies": {
+    "@amadya/config": "workspace:*",
+    "@hey-api/openapi-ts": "0.99.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3"
+  }
+}

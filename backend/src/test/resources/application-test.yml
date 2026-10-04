@@ -1,6 +1,7 @@
 spring:
   flyway:
     locations: classpath:db/migration,classpath:db/seed-dev
+    out-of-order: true
 
 amadya:
   security:
@@ -10,6 +11,9 @@ amadya:
     admin-password: Admin12345!
   payments:
     provider: fake
+  notifications:
+    expo:
+      enabled: false
   printing:
     mode: log
 

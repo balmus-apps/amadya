@@ -14,3 +14,14 @@
 
 ## Consequences
 - One shared design system and one API client across all apps, with no copy-paste drift.
+
+## Amendment — 2026-10-04 (Phase 2)
+- Versions: Next.js 16, React 19, TypeScript 6.0 (TS 7, the native compiler, is not supported by Next yet), Tailwind CSS 4,
+  Expo SDK 57 (React Native 0.86, React 19.2).
+- **`@amadya/customer-core`** holds the logic shared by menu-web and menu-mobile: cart, modifier rules, opening hours,
+  recent orders, saved contact. Its stores use `zustand/vanilla` with injected storage (localStorage or AsyncStorage). Each app binds
+  them to its own React with `useStore`, so web (React 19.3) and mobile (React 19.2) never share a React copy.
+- **i18n on mobile** uses `use-intl` (the framework-agnostic core of next-intl) with the same `@amadya/i18n` messages.
+- **Mobile styling** uses React Native `StyleSheet` with `@amadya/theme` tokens, *not* NativeWind: NativeWind 4 requires Tailwind 3,
+  which would clash with the Tailwind 4 used by the web packages in the same workspace. To revisit when NativeWind supports Tailwind 4.
+- The mobile app is **white-label**: name, bundle id, colours and API URL come from environment variables (`app.config.ts`), one build per restaurant.

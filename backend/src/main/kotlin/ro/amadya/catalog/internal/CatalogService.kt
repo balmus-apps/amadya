@@ -16,6 +16,7 @@ import ro.amadya.contract.model.MenuCategory
 import ro.amadya.contract.model.MenuModifierGroup
 import ro.amadya.contract.model.MenuModifierOption
 import ro.amadya.contract.model.MenuProduct
+import ro.amadya.contract.model.MenuPromotion
 import ro.amadya.contract.model.ModifierGroupRequest
 import ro.amadya.contract.model.Product
 import ro.amadya.contract.model.ProductRequest
@@ -38,14 +39,27 @@ class CatalogService(
     private val categories: CategoryRepository,
     private val products: ProductRepository,
     private val groups: ModifierGroupRepository,
+    private val promotions: PromotionRepository,
     private val settings: RestaurantSettingsApi,
+    private val clock: java.time.Clock,
 ) : ProductCatalog {
 
     // ---------------------------------------------------------------- public menu
     fun menu(locale: Locale): Menu {
         val currency = settings.currency()
         val byCategory = products.findMenuProducts().groupBy { it.category }
+        val promos = promotions.findActive(clock.instant()).map {
+            MenuPromotion(
+                id = it.id,
+                title = it.title.localized(locale),
+                subtitle = it.subtitle?.localized(locale),
+                badge = it.badge,
+                imageUrl = it.imageUrl,
+                productId = it.productId,
+            )
+        }
         return Menu(
+            promotions = promos,
             categories = byCategory.map { (category, items) ->
                 MenuCategory(
                     id = category.id,

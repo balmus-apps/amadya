@@ -21,3 +21,12 @@ interface ProductRepository : JpaRepository<ProductEntity, UUID> {
 }
 
 interface ModifierGroupRepository : JpaRepository<ModifierGroupEntity, UUID>
+
+interface PromotionRepository : JpaRepository<PromotionEntity, UUID> {
+    @Query(
+        """SELECT p FROM PromotionEntity p WHERE p.active = true
+           AND (p.startsAt IS NULL OR p.startsAt <= :now) AND (p.endsAt IS NULL OR p.endsAt > :now)
+           ORDER BY p.sortOrder, p.id""",
+    )
+    fun findActive(now: java.time.Instant): List<PromotionEntity>
+}

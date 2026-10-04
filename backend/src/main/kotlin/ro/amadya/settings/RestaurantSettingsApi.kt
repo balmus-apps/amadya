@@ -6,6 +6,7 @@ import java.util.UUID
 
 /** Read-only view of the restaurant configuration for other modules. */
 interface RestaurantSettingsApi {
+    fun name(): String
     fun currency(): String
     fun features(): FeatureFlags
     fun orderNumberPrefix(): String

@@ -79,3 +79,17 @@ class ModifierOptionEntity(
     var available: Boolean = true,
     @Column(name = "sort_order") var sortOrder: Int = 0,
 )
+
+@Entity
+@Table(name = "promotion")
+class PromotionEntity(
+    @JdbcTypeCode(SqlTypes.JSON) var title: MutableMap<String, String>,
+    @JdbcTypeCode(SqlTypes.JSON) var subtitle: MutableMap<String, String>? = null,
+    var badge: String? = null,
+    @Column(name = "image_url") var imageUrl: String? = null,
+    @Column(name = "product_id") var productId: UUID? = null,
+    @Column(name = "starts_at") var startsAt: java.time.Instant? = null,
+    @Column(name = "ends_at") var endsAt: java.time.Instant? = null,
+    @Column(name = "sort_order") var sortOrder: Int = 0,
+    var active: Boolean = true,
+) : BaseEntity()

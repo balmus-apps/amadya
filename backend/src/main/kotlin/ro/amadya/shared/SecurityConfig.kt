@@ -82,7 +82,7 @@ class SecurityConfig(private val props: AmadyaProperties) {
                 it.requestMatchers(
                     HttpMethod.POST,
                     "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout",
-                    "/api/v1/orders", "/api/v1/orders/*/payment-intent",
+                    "/api/v1/orders", "/api/v1/orders/*/payment-intent", "/api/v1/orders/*/push-subscriptions",
                     "/api/v1/payments/webhooks/**", "/api/v1/payments/*/simulate-capture",
                 ).permitAll()
                 it.requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
@@ -102,7 +102,7 @@ class SecurityConfig(private val props: AmadyaProperties) {
         val config = CorsConfiguration().apply {
             allowedOrigins = props.cors.allowedOrigins.filter { it.isNotBlank() }
             allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-            allowedHeaders = listOf("Authorization", "Content-Type", "Accept-Language", "Idempotency-Key")
+            allowedHeaders = listOf("Authorization", "Content-Type", "Accept", "Accept-Language", "Idempotency-Key", "Cache-Control", "Last-Event-ID", "X-Requested-With")
             maxAge = 3600
         }
         return UrlBasedCorsConfigurationSource().apply { registerCorsConfiguration("/api/**", config) }

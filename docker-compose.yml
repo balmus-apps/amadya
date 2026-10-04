@@ -90,8 +90,17 @@ services:
     ports:
       - "${API_PORT:-8080}:8080"
 
+  menu-web:
+    build:
+      context: ./frontend
+      dockerfile: apps/menu-web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_INTERNAL_URL: http://api:8080
+
   # --- Added per phase ---
-  # menu-web:       (Phase 2)  build: ./frontend  target menu-web
   # admin:          (Phase 3)
   # waiter:         (Phase 4)
   # kitchen:        (Phase 5)

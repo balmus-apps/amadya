@@ -1,0 +1,7 @@
+@import "@amadya/ui/styles.css";
+
+@source "../";
+
+html {
+  scroll-padding-top: 8rem;
+}

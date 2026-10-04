@@ -31,6 +31,8 @@ tags:
     description: Kitchen tickets per station
   - name: payments
     description: Online payments
+  - name: notifications
+    description: Push notification subscriptions
   - name: streams
     description: Server-Sent Events (hand-implemented)
   - name: webhooks
@@ -701,6 +703,25 @@ paths:
         "204": { description: Captured }
         "404": { $ref: "#/components/responses/Problem" }
 
+  # ---------------------------------------------------------------- notifications
+  /orders/{orderId}/push-subscriptions:
+    post:
+      tags: [notifications]
+      operationId: registerPushSubscription
+      summary: Register an Expo push token to be notified when the order is ready (customer app)
+      security: [{}, { bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+        - $ref: "#/components/parameters/TrackingToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushSubscriptionRequest" }
+      responses:
+        "204": { description: Registered }
+        "404": { $ref: "#/components/responses/Problem" }
+
   # ---------------------------------------------------------------- streams (hand-implemented)
   /orders/{orderId}/events:
     get:
@@ -994,11 +1015,26 @@ components:
     # ---------------------------------------------------------- catalog (public)
     Menu:
       type: object
-      required: [categories]
+      required: [categories, promotions]
       properties:
+        promotions:
+          type: array
+          description: Active promotional banners, in display order
+          items: { $ref: "#/components/schemas/MenuPromotion" }
         categories:
           type: array
           items: { $ref: "#/components/schemas/MenuCategory" }
+
+    MenuPromotion:
+      type: object
+      required: [id, title]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        subtitle: { type: string }
+        badge: { type: string, examples: ["20 LEI"] }
+        imageUrl: { type: string }
+        productId: { type: string, format: uuid, description: Product opened when the banner is tapped }
 
     MenuCategory:
       type: object
@@ -1289,6 +1325,14 @@ components:
         quantity: { type: integer }
         modifiers: { type: array, items: { type: string } }
         notes: { type: string }
+
+    # ---------------------------------------------------------- notifications
+    PushSubscriptionRequest:
+      type: object
+      required: [expoPushToken]
+      properties:
+        expoPushToken: { type: string, pattern: '^Expo(nent)?PushToken\[.+\]$', maxLength: 200, examples: ["ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"] }
+        locale: { $ref: "#/components/schemas/Locale" }
 
     # ---------------------------------------------------------- payments
     PaymentIntent:
