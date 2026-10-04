@@ -12,10 +12,8 @@
 	# handle_path /kitchen/* { reverse_proxy kitchen:80 }
 	# handle_path /queue/*   { reverse_proxy queue-display:80 }
 
-	# Customer menu (Phase 2) is the default site
-	# handle { reverse_proxy menu-web:3000 }
-
+	# Customer menu is the default site
 	handle {
-		respond "Amadya — foundations up. Apps arrive per phase." 200
+		reverse_proxy menu-web:3000
 	}
 }

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "menu-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "pnpm@10.34.6", "--dir", "frontend", "--filter", "@amadya/menu-web", "dev"],
+      "port": 3000
+    }
+  ]
+}

@@ -994,11 +994,26 @@ components:
     # ---------------------------------------------------------- catalog (public)
     Menu:
       type: object
-      required: [categories]
+      required: [categories, promotions]
       properties:
+        promotions:
+          type: array
+          description: Active promotional banners, in display order
+          items: { $ref: "#/components/schemas/MenuPromotion" }
         categories:
           type: array
           items: { $ref: "#/components/schemas/MenuCategory" }
+
+    MenuPromotion:
+      type: object
+      required: [id, title]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        subtitle: { type: string }
+        badge: { type: string, examples: ["20 LEI"] }
+        imageUrl: { type: string }
+        productId: { type: string, format: uuid, description: Product opened when the banner is tapped }
 
     MenuCategory:
       type: object

@@ -1,0 +1,4 @@
+{
+  "extends": "@amadya/config/tsconfig.base.json",
+  "include": ["src"]
+}

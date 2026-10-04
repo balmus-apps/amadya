@@ -1,0 +1,10 @@
+{
+  "extends": "@amadya/config/tsconfig.react.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts", "next.config.ts"],
+  "exclude": ["node_modules"]
+}

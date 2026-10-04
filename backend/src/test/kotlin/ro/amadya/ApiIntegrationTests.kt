@@ -73,6 +73,10 @@ class ApiIntegrationTests {
         assertEquals("20.00", pita.path("price").path("amount").asString())
         assertEquals("Choose your sauce", pita.path("modifierGroups")[0].path("name").asString())
 
+        assertEquals("More flavour!", menu["promotions"][0].path("title").asString())
+        assertEquals("20 LEI", menu["promotions"][0].path("badge").asString())
+        assertEquals(chickenPita, menu["promotions"][0].path("productId").asString())
+
         val ro = api.get("/api/v1/menu", lang = "ro")
         assertEquals("Burgeri", ro["categories"][0].path("name").asString())
     }

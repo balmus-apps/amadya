@@ -2,10 +2,13 @@
 spring:
   flyway:
     locations: classpath:db/migration,classpath:db/seed-dev
+    # Seeds are numbered V1000+, so later schema versions (V8, V9, ...) arrive "out of order" on dev databases.
+    out-of-order: true
 
 amadya:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:8081}
+    # local dev servers are always allowed; CORS_ALLOWED_ORIGINS adds more (an empty value from compose must not wipe them)
+    allowed-origins: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:8081,${CORS_ALLOWED_ORIGINS:}
   security:
     allow-generated-secret: true
   bootstrap:
