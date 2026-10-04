@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: amadya
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${POSTGRES_DB:amadya}
+    username: ${POSTGRES_USER:amadya}
+    password: ${POSTGRES_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.default_batch_fetch_size: 50
+  flyway:
+    locations: classpath:db/migration
+  messages:
+    basename: i18n/messages
+    fallback-to-system-locale: false
+  mvc:
+    problemdetails:
+      enabled: true
+  modulith:
+    events:
+      republish-outstanding-events-on-restart: true
+      jdbc:
+        schema-initialization:
+          enabled: false
+
+server:
+  port: 8080
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+amadya:
+  timezone: Europe/Bucharest
+  public-base-url: ${AMADYA_PUBLIC_URL:http://localhost}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  security:
+    jwt-secret: ${JWT_SECRET:}
+    access-token-ttl: 15m
+    refresh-token-ttl: 30d
+  bootstrap:
+    admin-email: ${AMADYA_ADMIN_EMAIL:}
+    admin-password: ${AMADYA_ADMIN_PASSWORD:}
+  ordering:
+    payment-timeout: 15m
+  payments:
+    provider: ${PAYMENT_PROVIDER:fake}
+    stripe:
+      secret-key: ${STRIPE_SECRET_KEY:}
+      publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
+      webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  printing:
+    mode: ${PRINTING_MODE:log}
+    out-dir: ${PRINTING_OUT_DIR:}
+
+logging:
+  level:
+    ro.amadya: INFO
+    # generated OpenAPI models put @Valid on lists; harmless deprecation notice
+    org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder: ERROR

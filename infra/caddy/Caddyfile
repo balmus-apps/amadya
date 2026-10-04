@@ -2,9 +2,9 @@
 	encode zstd gzip
 
 	# Core API (Phase 1): REST, WebSocket (/api/ws), SSE
-	# handle /api/* {
-	# 	reverse_proxy api:8080
-	# }
+	handle /api/* {
+		reverse_proxy api:8080
+	}
 
 	# Staff apps (Phases 3–5)
 	# handle_path /admin/*   { reverse_proxy admin:80 }

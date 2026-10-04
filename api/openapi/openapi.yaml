@@ -1,25 +1,46 @@
 openapi: 3.1.0
 info:
   title: Amadya Core API
-  version: 0.1.0
+  version: 0.2.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
   description: |
     Contract-first API for the Amadya HoReCa platform (see docs/adr/0002-contract-first-openapi.md).
     Localized content is resolved using the `Accept-Language` header (`ro`, `en`; default from settings).
-    Errors use RFC 9457 problem+json.
+    Errors use RFC 9457 problem+json with a stable `code`.
+
+    Tags `streams` (Server-Sent Events) and `webhooks` (raw payloads) are implemented by hand on the server;
+    every other tag is implemented through the generated interfaces.
 servers:
   - url: /api/v1
 tags:
   - name: settings
-    description: Restaurant profile, branding, feature flags
+    description: Restaurant profile, branding, feature flags, VAT rates, stations
   - name: identity
-    description: Authentication and users
+    description: Authentication
+  - name: users
+    description: Staff user management
   - name: catalog
-    description: Menu, products, modifiers, promotions
+    description: Public menu
+  - name: catalog-admin
+    description: Categories, products and modifier management
   - name: ordering
     description: Orders and order tracking
-  # Added per phase: tables, kitchen, payments, inventory, procurement, fiscal, printing, reporting
+  - name: kitchen
+    description: Kitchen tickets per station
+  - name: payments
+    description: Online payments
+  - name: streams
+    description: Server-Sent Events (hand-implemented)
+  - name: webhooks
+    description: Payment provider webhooks (hand-implemented)
+
+security:
+  - bearerAuth: []
 
 paths:
+  # ---------------------------------------------------------------- settings
   /settings/public:
     get:
       tags: [settings]
@@ -33,11 +54,137 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/PublicSettings" }
 
+  /admin/settings:
+    get:
+      tags: [settings]
+      operationId: getRestaurantSettings
+      summary: Full restaurant settings (ADMIN, MANAGER)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestaurantSettings" }
+        "403": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [settings]
+      operationId: updateRestaurantSettings
+      summary: Replace restaurant settings (ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RestaurantSettings" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RestaurantSettings" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/vat-rates:
+    get:
+      tags: [settings]
+      operationId: listVatRates
+      summary: List VAT rates
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/VatRate" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [settings]
+      operationId: createVatRate
+      summary: Create a VAT rate (ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VatRateRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VatRate" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/vat-rates/{id}:
+    put:
+      tags: [settings]
+      operationId: updateVatRate
+      summary: Update a VAT rate (ADMIN)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VatRateRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VatRate" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/stations:
+    get:
+      tags: [settings]
+      operationId: listStations
+      summary: List preparation stations
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Station" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [settings]
+      operationId: createStation
+      summary: Create a station (ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StationRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Station" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/stations/{id}:
+    put:
+      tags: [settings]
+      operationId: updateStation
+      summary: Update a station (ADMIN)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StationRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Station" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- identity
   /auth/login:
     post:
       tags: [identity]
       operationId: login
-      summary: Staff/customer login with email and password
+      summary: Login with email and password
       security: []
       requestBody:
         required: true
@@ -52,11 +199,108 @@ paths:
               schema: { $ref: "#/components/schemas/TokenResponse" }
         "401": { $ref: "#/components/responses/Problem" }
 
+  /auth/refresh:
+    post:
+      tags: [identity]
+      operationId: refreshToken
+      summary: Exchange a refresh token for new tokens (rotation; the old refresh token is revoked)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshRequest" }
+      responses:
+        "200":
+          description: Tokens
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401": { $ref: "#/components/responses/Problem" }
+
+  /auth/logout:
+    post:
+      tags: [identity]
+      operationId: logout
+      summary: Revoke a refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshRequest" }
+      responses:
+        "204": { description: Revoked }
+        "400": { $ref: "#/components/responses/Problem" }
+
+  /me:
+    get:
+      tags: [identity]
+      operationId: getCurrentUser
+      summary: The authenticated user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- users
+  /admin/users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      summary: List staff users (ADMIN)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/User" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [users]
+      operationId: createUser
+      summary: Create a staff user (ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateUserRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/users/{id}:
+    patch:
+      tags: [users]
+      operationId: updateUser
+      summary: Update roles, name, locale, active flag or password (ADMIN)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateUserRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- catalog
   /menu:
     get:
       tags: [catalog]
       operationId: getMenu
-      summary: Public menu (active categories with available products), localized
+      summary: Public menu (active categories with active products), localized
       security: []
       parameters:
         - $ref: "#/components/parameters/AcceptLanguage"
@@ -67,14 +311,201 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Menu" }
 
+  /admin/categories:
+    get:
+      tags: [catalog-admin]
+      operationId: listCategories
+      summary: List all categories
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Category" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [catalog-admin]
+      operationId: createCategory
+      summary: Create a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/categories/{id}:
+    put:
+      tags: [catalog-admin]
+      operationId: updateCategory
+      summary: Update a category
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "404": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [catalog-admin]
+      operationId: deleteCategory
+      summary: Delete an empty category
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "204": { description: Deleted }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/products:
+    get:
+      tags: [catalog-admin]
+      operationId: listProducts
+      summary: List products
+      parameters:
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Product" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [catalog-admin]
+      operationId: createProduct
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/products/{id}:
+    get:
+      tags: [catalog-admin]
+      operationId: getProduct
+      summary: Get a product
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "404": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [catalog-admin]
+      operationId: updateProduct
+      summary: Update a product
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "404": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [catalog-admin]
+      operationId: deleteProduct
+      summary: Archive a product (kept for order history)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "204": { description: Archived }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/modifier-groups:
+    get:
+      tags: [catalog-admin]
+      operationId: listModifierGroups
+      summary: List modifier groups
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/AdminModifierGroup" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [catalog-admin]
+      operationId: createModifierGroup
+      summary: Create a modifier group with its options
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ModifierGroupRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminModifierGroup" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/modifier-groups/{id}:
+    put:
+      tags: [catalog-admin]
+      operationId: updateModifierGroup
+      summary: Replace a modifier group and its options
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ModifierGroupRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminModifierGroup" }
+        "404": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [catalog-admin]
+      operationId: deleteModifierGroup
+      summary: Delete a modifier group not used by any product
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "204": { description: Deleted }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- ordering
   /orders:
     post:
       tags: [ordering]
       operationId: createOrder
-      summary: Create an order (takeaway → PENDING_PAYMENT; dine-in/counter → PLACED)
+      summary: |
+        Create an order. TAKEAWAY is public (guest checkout: name + phone required) and starts in PENDING_PAYMENT
+        when online payments are enabled, otherwise PLACED. COUNTER and DINE_IN require a staff role and start PLACED.
+      security: [{}, { bearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/AcceptLanguage"
-        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
         content:
@@ -87,14 +518,41 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Order" }
         "422": { $ref: "#/components/responses/Problem" }
+    get:
+      tags: [ordering]
+      operationId: listOrders
+      summary: List recent orders (staff)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: array
+            items: { $ref: "#/components/schemas/OrderStatus" }
+          style: form
+          explode: true
+        - name: channel
+          in: query
+          schema: { $ref: "#/components/schemas/OrderChannel" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Order" } }
+        "403": { $ref: "#/components/responses/Problem" }
 
   /orders/{orderId}:
     get:
       tags: [ordering]
       operationId: getOrder
-      summary: Get an order by id
+      summary: Get an order (staff, or anyone holding the tracking token)
+      security: [{}, { bearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/OrderId"
+        - $ref: "#/components/parameters/TrackingToken"
         - $ref: "#/components/parameters/AcceptLanguage"
       responses:
         "200":
@@ -104,25 +562,196 @@ paths:
               schema: { $ref: "#/components/schemas/Order" }
         "404": { $ref: "#/components/responses/Problem" }
 
-  /orders/{orderId}/events:
+  /orders/{orderId}/complete:
+    post:
+      tags: [ordering]
+      operationId: completeOrder
+      summary: Mark a READY order as picked up / served (staff)
+      parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /orders/{orderId}/cancel:
+    post:
+      tags: [ordering]
+      operationId: cancelOrder
+      summary: Cancel an order with a reason (staff; PREPARING requires MANAGER)
+      parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelOrderRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /queue:
     get:
       tags: [ordering]
-      operationId: streamOrderEvents
-      summary: Server-Sent Events with order status changes (customer tracking)
-      parameters:
-        - $ref: "#/components/parameters/OrderId"
-        - name: token
-          in: query
-          required: true
-          description: Per-order tracking token returned when the order is created
-          schema: { type: string }
+      operationId: getQueueBoard
+      summary: Order numbers currently preparing and ready (queue display)
       security: []
       responses:
         "200":
-          description: Event stream of OrderStatusChanged
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueueBoard" }
+
+  # ---------------------------------------------------------------- kitchen
+  /kitchen/tickets:
+    get:
+      tags: [kitchen]
+      operationId: listKitchenTickets
+      summary: Open tickets (QUEUED, IN_PROGRESS, recently READY), oldest first (KITCHEN, MANAGER, ADMIN)
+      parameters:
+        - name: stationId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/KitchenTicket" } }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /kitchen/tickets/{ticketId}/start:
+    post:
+      tags: [kitchen]
+      operationId: startKitchenTicket
+      summary: Start preparing a ticket
+      parameters: [{ $ref: "#/components/parameters/TicketId" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KitchenTicket" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /kitchen/tickets/{ticketId}/ready:
+    post:
+      tags: [kitchen]
+      operationId: bumpKitchenTicket
+      summary: Mark a ticket ready (bump)
+      parameters: [{ $ref: "#/components/parameters/TicketId" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KitchenTicket" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /kitchen/tickets/{ticketId}/recall:
+    post:
+      tags: [kitchen]
+      operationId: recallKitchenTicket
+      summary: Move a READY ticket back to IN_PROGRESS
+      parameters: [{ $ref: "#/components/parameters/TicketId" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KitchenTicket" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- payments
+  /orders/{orderId}/payment-intent:
+    post:
+      tags: [payments]
+      operationId: createPaymentIntent
+      summary: Start (or resume) online payment for a PENDING_PAYMENT order
+      security: [{}, { bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+        - $ref: "#/components/parameters/TrackingToken"
+      responses:
+        "200":
+          description: Client parameters for the provider SDK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentIntent" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /payments/{paymentId}/simulate-capture:
+    post:
+      tags: [payments]
+      operationId: simulatePaymentCapture
+      summary: Dev only (PAYMENT_PROVIDER=fake) — simulate a successful provider capture
+      security: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Captured }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- streams (hand-implemented)
+  /orders/{orderId}/events:
+    get:
+      tags: [streams]
+      operationId: streamOrderEvents
+      summary: Server-Sent Events with status changes of one order (customer tracking)
+      security: [{}, { bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+        - $ref: "#/components/parameters/TrackingToken"
+      responses:
+        "200":
+          description: "Event stream; event name `order-status`, data OrderStatusChanged"
           content:
             text/event-stream:
               schema: { $ref: "#/components/schemas/OrderStatusChanged" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /queue/events:
+    get:
+      tags: [streams]
+      operationId: streamQueueEvents
+      summary: Server-Sent Events for the queue display
+      security: []
+      responses:
+        "200":
+          description: "Event stream; event name `queue`, data QueueBoard"
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/QueueBoard" }
+
+  # ---------------------------------------------------------------- webhooks (hand-implemented)
+  /payments/webhooks/stripe:
+    post:
+      tags: [webhooks]
+      operationId: stripeWebhook
+      summary: Stripe webhook (signature verified with STRIPE_WEBHOOK_SECRET)
+      security: []
+      parameters:
+        - name: Stripe-Signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Accepted }
+        "400": { $ref: "#/components/responses/Problem" }
 
 components:
   securitySchemes:
@@ -135,16 +764,27 @@ components:
     AcceptLanguage:
       name: Accept-Language
       in: header
-      schema: { type: string, enum: [ro, en] }
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
+      schema: { type: string, examples: [ro, en] }
+    Id:
+      name: id
+      in: path
+      required: true
       schema: { type: string, format: uuid }
     OrderId:
       name: orderId
       in: path
       required: true
       schema: { type: string, format: uuid }
+    TicketId:
+      name: ticketId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TrackingToken:
+      name: token
+      in: query
+      description: Per-order tracking token returned when the order is created (not needed for staff)
+      schema: { type: string }
 
   responses:
     Problem:
@@ -154,10 +794,11 @@ components:
           schema: { $ref: "#/components/schemas/Problem" }
 
   schemas:
+    # ---------------------------------------------------------- common
     Problem:
       type: object
       properties:
-        type: { type: string, format: uri }
+        type: { type: string }
         title: { type: string }
         status: { type: integer }
         detail: { type: string }
@@ -180,57 +821,177 @@ components:
 
     LocalizedText:
       type: object
-      description: Used by admin endpoints; public endpoints return resolved strings
+      description: Text in each supported locale; `ro` is required
+      required: [ro]
       properties:
-        ro: { type: string }
+        ro: { type: string, minLength: 1 }
         en: { type: string }
+
+    Locale:
+      type: string
+      enum: [ro, en]
+
+    # ---------------------------------------------------------- settings
+    Features:
+      type: object
+      required: [takeaway, tables, onlinePayments, kitchenDisplay, queueDisplay, invoiceOcr]
+      properties:
+        takeaway: { type: boolean }
+        tables: { type: boolean }
+        onlinePayments: { type: boolean }
+        kitchenDisplay: { type: boolean }
+        queueDisplay: { type: boolean }
+        invoiceOcr: { type: boolean }
+
+    OpeningHours:
+      type: object
+      required: [dayOfWeek, opens, closes]
+      properties:
+        dayOfWeek: { type: integer, minimum: 1, maximum: 7, description: "1 = Monday" }
+        opens: { type: string, pattern: '^\d{2}:\d{2}$', examples: ["10:00"] }
+        closes: { type: string, pattern: '^\d{2}:\d{2}$', examples: ["22:00"] }
 
     PublicSettings:
       type: object
-      required: [name, defaultLocale, locales, currency, theme, features]
+      required: [name, defaultLocale, locales, currency, theme, features, openingHours]
       properties:
         name: { type: string }
-        logoUrl: { type: string, format: uri }
-        defaultLocale: { type: string, enum: [ro, en] }
-        locales: { type: array, items: { type: string, enum: [ro, en] } }
+        logoUrl: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        defaultLocale: { $ref: "#/components/schemas/Locale" }
+        locales: { type: array, items: { $ref: "#/components/schemas/Locale" } }
         currency: { type: string }
         theme:
           type: object
           additionalProperties: { type: string }
-          description: Design tokens, e.g. {"primary":"#C0392B","radius":"12px"}
-        features:
+          description: Design tokens, e.g. {"primary":"#FFC800","radius":"12px"}
+        features: { $ref: "#/components/schemas/Features" }
+        openingHours: { type: array, items: { $ref: "#/components/schemas/OpeningHours" } }
+
+    RestaurantSettings:
+      type: object
+      required: [name, defaultLocale, locales, currency, theme, features, openingHours]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        legalName: { type: string, maxLength: 200 }
+        cui: { type: string, maxLength: 20, description: Romanian fiscal code }
+        regCom: { type: string, maxLength: 40 }
+        address: { type: string, maxLength: 300 }
+        phone: { type: string, maxLength: 30 }
+        email: { type: string, format: email }
+        logoUrl: { type: string, maxLength: 500 }
+        defaultLocale: { $ref: "#/components/schemas/Locale" }
+        locales: { type: array, minItems: 1, items: { $ref: "#/components/schemas/Locale" } }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        theme:
           type: object
-          properties:
-            takeaway: { type: boolean }
-            tables: { type: boolean }
-            onlinePayments: { type: boolean }
-            kitchenDisplay: { type: boolean }
-            queueDisplay: { type: boolean }
-            invoiceOcr: { type: boolean }
-        openingHours:
-          type: array
-          items:
-            type: object
-            properties:
-              dayOfWeek: { type: integer, minimum: 1, maximum: 7 }
-              opens: { type: string, examples: ["10:00"] }
-              closes: { type: string, examples: ["22:00"] }
+          additionalProperties: { type: string }
+        features: { $ref: "#/components/schemas/Features" }
+        openingHours: { type: array, items: { $ref: "#/components/schemas/OpeningHours" } }
+        orderNumberPrefix: { type: string, maxLength: 3, examples: [A] }
+
+    VatRate:
+      type: object
+      required: [id, code, name, percent, fiscalGroup, active]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, examples: [STD] }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        percent: { type: string, pattern: '^\d{1,2}(\.\d{1,2})?$', examples: ["21.00"] }
+        fiscalGroup: { type: string, description: Fiscal printer VAT group letter, examples: [A] }
+        active: { type: boolean }
+
+    VatRateRequest:
+      type: object
+      required: [code, name, percent, fiscalGroup]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 10 }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        percent: { type: string, pattern: '^\d{1,2}(\.\d{1,2})?$' }
+        fiscalGroup: { type: string, minLength: 1, maxLength: 2 }
+        active: { type: boolean, default: true }
+
+    Station:
+      type: object
+      required: [id, code, name, parallelSlots, active]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, examples: [GRILL] }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        parallelSlots: { type: integer, description: How many tickets the station prepares at the same time }
+        active: { type: boolean }
+
+    StationRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 20, pattern: '^[A-Z0-9_]+$' }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        parallelSlots: { type: integer, minimum: 1, maximum: 50, default: 2 }
+        active: { type: boolean, default: true }
+
+    # ---------------------------------------------------------- identity
+    Role:
+      type: string
+      enum: [ADMIN, MANAGER, WAITER, KITCHEN, CASHIER, CUSTOMER]
 
     LoginRequest:
       type: object
       required: [email, password]
       properties:
         email: { type: string, format: email }
-        password: { type: string, format: password }
+        password: { type: string, format: password, minLength: 1 }
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, minLength: 1 }
 
     TokenResponse:
       type: object
-      required: [accessToken, refreshToken, expiresIn]
+      required: [accessToken, refreshToken, expiresIn, tokenType]
       properties:
         accessToken: { type: string }
         refreshToken: { type: string }
-        expiresIn: { type: integer, description: Seconds }
+        tokenType: { type: string, examples: [Bearer] }
+        expiresIn: { type: integer, description: Access token lifetime in seconds }
 
+    User:
+      type: object
+      required: [id, email, name, roles, locale, active]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        phone: { type: string }
+        roles: { type: array, items: { $ref: "#/components/schemas/Role" } }
+        locale: { $ref: "#/components/schemas/Locale" }
+        active: { type: boolean }
+
+    CreateUserRequest:
+      type: object
+      required: [email, name, password, roles]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        phone: { type: string, maxLength: 30 }
+        password: { type: string, format: password, minLength: 10, maxLength: 128 }
+        roles: { type: array, minItems: 1, items: { $ref: "#/components/schemas/Role" } }
+        locale: { $ref: "#/components/schemas/Locale" }
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        phone: { type: string, maxLength: 30 }
+        password: { type: string, format: password, minLength: 10, maxLength: 128 }
+        roles: { type: array, minItems: 1, items: { $ref: "#/components/schemas/Role" } }
+        locale: { $ref: "#/components/schemas/Locale" }
+        active: { type: boolean }
+
+    # ---------------------------------------------------------- catalog (public)
     Menu:
       type: object
       required: [categories]
@@ -251,21 +1012,21 @@ components:
 
     MenuProduct:
       type: object
-      required: [id, name, price, available]
+      required: [id, name, price, available, modifierGroups, allergens]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         description: { type: string }
-        imageUrl: { type: string, format: uri }
+        imageUrl: { type: string }
         price: { $ref: "#/components/schemas/Money" }
         available: { type: boolean }
         prepTimeSec: { type: integer }
         allergens: { type: array, items: { type: string } }
         modifierGroups:
           type: array
-          items: { $ref: "#/components/schemas/ModifierGroup" }
+          items: { $ref: "#/components/schemas/MenuModifierGroup" }
 
-    ModifierGroup:
+    MenuModifierGroup:
       type: object
       required: [id, name, minSelect, maxSelect, options]
       properties:
@@ -275,14 +1036,121 @@ components:
         maxSelect: { type: integer, minimum: 1 }
         options:
           type: array
-          items:
-            type: object
-            required: [id, name, priceDelta]
-            properties:
-              id: { type: string, format: uuid }
-              name: { type: string, examples: ["Sos cheese", "Sos usturoi"] }
-              priceDelta: { $ref: "#/components/schemas/Money" }
+          items: { $ref: "#/components/schemas/MenuModifierOption" }
 
+    MenuModifierOption:
+      type: object
+      required: [id, name, priceDelta]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: ["Sos cheese", "Sos usturoi"] }
+        priceDelta: { $ref: "#/components/schemas/Money" }
+
+    # ---------------------------------------------------------- catalog (admin)
+    Category:
+      type: object
+      required: [id, name, sortOrder, active]
+      properties:
+        id: { type: string, format: uuid }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+
+    CategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        sortOrder: { type: integer, default: 0 }
+        active: { type: boolean, default: true }
+
+    ProductKind:
+      type: string
+      enum: [RECIPE, RESALE, SERVICE]
+
+    Product:
+      type: object
+      required: [id, categoryId, name, price, vatRateId, kind, prepTimeSec, available, archived, sortOrder, allergens, modifierGroupIds]
+      properties:
+        id: { type: string, format: uuid }
+        categoryId: { type: string, format: uuid }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        description: { $ref: "#/components/schemas/LocalizedText" }
+        imageUrl: { type: string }
+        price: { $ref: "#/components/schemas/Money" }
+        vatRateId: { type: string, format: uuid }
+        stationId: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/ProductKind" }
+        prepTimeSec: { type: integer }
+        available: { type: boolean, description: Temporarily sold out when false }
+        archived: { type: boolean }
+        sortOrder: { type: integer }
+        allergens: { type: array, items: { type: string } }
+        modifierGroupIds: { type: array, items: { type: string, format: uuid } }
+
+    ProductRequest:
+      type: object
+      required: [categoryId, name, price, vatRateId]
+      properties:
+        categoryId: { type: string, format: uuid }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        description: { $ref: "#/components/schemas/LocalizedText" }
+        imageUrl: { type: string, maxLength: 500 }
+        price: { type: string, pattern: '^\d{1,8}(\.\d{1,2})?$', description: Gross price (VAT included) }
+        vatRateId: { type: string, format: uuid }
+        stationId: { type: string, format: uuid, description: Required when the product needs preparation }
+        kind: { $ref: "#/components/schemas/ProductKind" }
+        prepTimeSec: { type: integer, minimum: 0, maximum: 7200, default: 300 }
+        available: { type: boolean, default: true }
+        sortOrder: { type: integer, default: 0 }
+        allergens: { type: array, items: { type: string, maxLength: 40 } }
+        modifierGroupIds: { type: array, items: { type: string, format: uuid } }
+
+    AdminModifierGroup:
+      type: object
+      required: [id, name, minSelect, maxSelect, options]
+      properties:
+        id: { type: string, format: uuid }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        minSelect: { type: integer }
+        maxSelect: { type: integer }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/AdminModifierOption" }
+
+    AdminModifierOption:
+      type: object
+      required: [id, name, priceDelta, available, sortOrder]
+      properties:
+        id: { type: string, format: uuid }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        priceDelta: { $ref: "#/components/schemas/Money" }
+        available: { type: boolean }
+        sortOrder: { type: integer }
+
+    ModifierGroupRequest:
+      type: object
+      required: [name, minSelect, maxSelect, options]
+      properties:
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        minSelect: { type: integer, minimum: 0, maximum: 20 }
+        maxSelect: { type: integer, minimum: 1, maximum: 20 }
+        options:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/ModifierOptionRequest" }
+
+    ModifierOptionRequest:
+      type: object
+      required: [name]
+      properties:
+        id: { type: string, format: uuid, description: Existing option id to keep it stable; omitted for new options }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        priceDelta: { type: string, pattern: '^-?\d{1,6}(\.\d{1,2})?$', default: "0" }
+        available: { type: boolean, default: true }
+        sortOrder: { type: integer, default: 0 }
+
+    # ---------------------------------------------------------- ordering
     OrderChannel:
       type: string
       enum: [TAKEAWAY, DINE_IN, COUNTER]
@@ -291,63 +1159,90 @@ components:
       type: string
       enum: [PENDING_PAYMENT, PLACED, PREPARING, READY, COMPLETED, CANCELLED]
 
+    PaymentStatus:
+      type: string
+      enum: [UNPAID, PAID, REFUNDED]
+
+    CustomerContact:
+      type: object
+      required: [name, phone]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80 }
+        phone: { type: string, pattern: '^\+[1-9]\d{7,14}$', description: "E.164, e.g. +40722123456" }
+        email: { type: string, format: email }
+
     CreateOrderRequest:
       type: object
       required: [channel, lines]
       properties:
         channel: { $ref: "#/components/schemas/OrderChannel" }
         tableSessionId: { type: string, format: uuid }
-        pickupAt: { type: string, format: date-time }
-        customer:
-          type: object
-          description: Required for TAKEAWAY (guest checkout); ignored for DINE_IN
-          required: [name, phone]
-          properties:
-            name: { type: string, minLength: 2, maxLength: 80 }
-            phone: { type: string, pattern: '^\+[1-9]\d{7,14}$', description: "E.164, e.g. +40722123456" }
-            email: { type: string, format: email }
+        pickupAt: { type: string, format: date-time, description: Requested pickup time (TAKEAWAY); omitted = as soon as possible }
+        customer: { $ref: "#/components/schemas/CustomerContact" }
         notes: { type: string, maxLength: 500 }
         lines:
           type: array
           minItems: 1
-          items:
-            type: object
-            required: [productId, quantity]
-            properties:
-              productId: { type: string, format: uuid }
-              quantity: { type: integer, minimum: 1 }
-              notes: { type: string, maxLength: 200 }
-              modifierOptionIds:
-                type: array
-                items: { type: string, format: uuid }
+          maxItems: 100
+          items: { $ref: "#/components/schemas/CreateOrderLine" }
+
+    CreateOrderLine:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1, maximum: 99 }
+        notes: { type: string, maxLength: 200 }
+        modifierOptionIds:
+          type: array
+          maxItems: 50
+          items: { type: string, format: uuid }
+
+    OrderLine:
+      type: object
+      required: [id, productId, productName, quantity, unitPrice, modifiers, total]
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        productName: { type: string }
+        quantity: { type: integer }
+        unitPrice: { $ref: "#/components/schemas/Money" }
+        modifiers: { type: array, items: { type: string } }
+        notes: { type: string }
+        total: { $ref: "#/components/schemas/Money" }
 
     Order:
       type: object
-      required: [id, number, channel, status, lines, total, createdAt]
+      required: [id, number, channel, status, paymentStatus, lines, total, vatTotal, createdAt]
       properties:
         id: { type: string, format: uuid }
         number: { type: string, examples: ["A-042"] }
         channel: { $ref: "#/components/schemas/OrderChannel" }
         status: { $ref: "#/components/schemas/OrderStatus" }
+        paymentStatus: { $ref: "#/components/schemas/PaymentStatus" }
+        customer: { $ref: "#/components/schemas/CustomerContact" }
+        tableSessionId: { type: string, format: uuid }
+        pickupAt: { type: string, format: date-time }
         estimatedReadyAt: { type: string, format: date-time }
+        notes: { type: string }
+        cancelReason: { type: string }
         trackingToken: { type: string, description: Returned only on create }
         lines:
           type: array
-          items:
-            type: object
-            properties:
-              id: { type: string, format: uuid }
-              productName: { type: string }
-              quantity: { type: integer }
-              unitPrice: { $ref: "#/components/schemas/Money" }
-              modifiers: { type: array, items: { type: string } }
-              total: { $ref: "#/components/schemas/Money" }
+          items: { $ref: "#/components/schemas/OrderLine" }
         total: { $ref: "#/components/schemas/Money" }
+        vatTotal: { $ref: "#/components/schemas/Money" }
         createdAt: { type: string, format: date-time }
+
+    CancelOrderRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 300 }
 
     OrderStatusChanged:
       type: object
-      required: [orderId, status, at]
+      required: [orderId, number, status, at]
       properties:
         orderId: { type: string, format: uuid }
         number: { type: string }
@@ -355,5 +1250,53 @@ components:
         estimatedReadyAt: { type: string, format: date-time }
         at: { type: string, format: date-time }
 
-security:
-  - bearerAuth: []
+    QueueBoard:
+      type: object
+      required: [preparing, ready]
+      properties:
+        preparing: { type: array, items: { type: string }, description: Order numbers (PLACED or PREPARING) }
+        ready: { type: array, items: { type: string }, description: Order numbers that are READY }
+
+    # ---------------------------------------------------------- kitchen
+    KitchenTicketStatus:
+      type: string
+      enum: [QUEUED, IN_PROGRESS, READY]
+
+    KitchenTicket:
+      type: object
+      required: [id, orderId, orderNumber, channel, stationId, status, queuedAt, estimatedReadyAt, lines]
+      properties:
+        id: { type: string, format: uuid }
+        orderId: { type: string, format: uuid }
+        orderNumber: { type: string }
+        channel: { $ref: "#/components/schemas/OrderChannel" }
+        stationId: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/KitchenTicketStatus" }
+        queuedAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time }
+        readyAt: { type: string, format: date-time }
+        estimatedReadyAt: { type: string, format: date-time }
+        notes: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/KitchenTicketLine" }
+
+    KitchenTicketLine:
+      type: object
+      required: [productName, quantity, modifiers]
+      properties:
+        productName: { type: string }
+        quantity: { type: integer }
+        modifiers: { type: array, items: { type: string } }
+        notes: { type: string }
+
+    # ---------------------------------------------------------- payments
+    PaymentIntent:
+      type: object
+      required: [paymentId, provider, amount]
+      properties:
+        paymentId: { type: string, format: uuid }
+        provider: { type: string, enum: [stripe, fake] }
+        clientSecret: { type: string, description: Stripe PaymentIntent client secret }
+        publishableKey: { type: string }
+        amount: { $ref: "#/components/schemas/Money" }

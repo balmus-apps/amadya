@@ -62,8 +62,35 @@ services:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddydata:/data
 
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      AMADYA_PUBLIC_URL: https://${AMADYA_DOMAIN}
+      AMADYA_ADMIN_EMAIL: ${AMADYA_ADMIN_EMAIL}
+      AMADYA_ADMIN_PASSWORD: ${AMADYA_ADMIN_PASSWORD}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-fake}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      PRINTING_MODE: ${PRINTING_MODE:-log}
+    ports:
+      - "${API_PORT:-8080}:8080"
+
   # --- Added per phase ---
-  # api:            (Phase 1)  build: ./backend
   # menu-web:       (Phase 2)  build: ./frontend  target menu-web
   # admin:          (Phase 3)
   # waiter:         (Phase 4)
