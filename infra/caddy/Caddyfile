@@ -1,9 +1,31 @@
+{
+	# Config is never reloaded over the API; the container is restarted instead.
+	admin off
+
+	# In production this Caddy sits behind the shared proxy in repo/proxy
+	# (docker-compose.prod.yml sets TRUSTED_PROXY_CIDR), so X-Forwarded-For and
+	# X-Forwarded-Proto from it are kept: the api sees the real visitor and https.
+	# Run on its own (local), the default trusts nothing.
+	servers {
+		trusted_proxies static {$TRUSTED_PROXY_CIDR:127.0.0.1/32}
+	}
+}
+
 {$AMADYA_DOMAIN} {
 	encode zstd gzip
 
+	# Largest legitimate body is an image or an e-Factura upload (api limit 7 MB).
+	request_body {
+		max_size 8MB
+	}
+
 	# Core API (Phase 1): REST, WebSocket (/api/ws), SSE
 	handle /api/* {
-		reverse_proxy api:8080
+		reverse_proxy api:8080 {
+			# Replace the chain rather than append: {client_ip} is the peer locally
+			# and the real visitor behind the shared proxy.
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 
 	# Staff apps (Phases 3–5)
@@ -21,5 +43,11 @@
 	# Customer menu is the default site
 	handle {
 		reverse_proxy menu-web:3000
+	}
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
 	}
 }
