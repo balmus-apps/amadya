@@ -78,8 +78,13 @@ services:
     environment:
       API_INTERNAL_URL: http://api:8080
 
+  admin:
+    build:
+      context: ./frontend
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+
   # --- Added per phase ---
-  # admin:          (Phase 3)
   # waiter:         (Phase 4)
   # kitchen:        (Phase 5)
   # queue-display:  (Phase 5)

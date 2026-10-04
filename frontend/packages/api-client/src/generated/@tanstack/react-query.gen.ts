@@ -12,47 +12,88 @@ import {
   cancelOrder,
   completeOrder,
   createCategory,
+  createMeasureUnit,
   createModifierGroup,
+  createNir,
   createOrder,
   createPaymentIntent,
   createProduct,
+  createPromotion,
+  createPurchaseInvoice,
   createStation,
+  createStockDocument,
+  createStockItem,
+  createSupplier,
   createUser,
   createVatRate,
+  createWarehouse,
   deleteCategory,
   deleteModifierGroup,
   deleteProduct,
+  deletePromotion,
   getCurrentUser,
+  getDashboard,
+  getFile,
   getMenu,
+  getNir,
+  getOptionRecipe,
   getOrder,
   getProduct,
+  getProductRecipe,
   getPublicSettings,
+  getPurchaseInvoice,
   getQueueBoard,
   getRestaurantSettings,
+  getStockDocument,
+  getStockItem,
+  importEFactura,
   listCategories,
   listKitchenTickets,
+  listMeasureUnits,
   listModifierGroups,
+  listNirs,
   listOrders,
   listProducts,
+  listPromotions,
+  listPurchaseInvoices,
   listStations,
+  listStockBalances,
+  listStockDocuments,
+  listStockItems,
+  listStockLots,
+  listStockMovements,
+  listSuppliers,
   listUsers,
   listVatRates,
+  listWarehouses,
   login,
   logout,
+  matchInvoiceLine,
   type Options,
+  postNir,
   recallKitchenTicket,
   refreshToken,
   registerPushSubscription,
+  replaceOptionRecipe,
+  replaceProductRecipe,
+  reverseNir,
   simulatePaymentCapture,
   startKitchenTicket,
   stripeWebhook,
   updateCategory,
+  updateMeasureUnit,
   updateModifierGroup,
+  updateNir,
   updateProduct,
+  updatePromotion,
   updateRestaurantSettings,
   updateStation,
+  updateStockItem,
+  updateSupplier,
   updateUser,
   updateVatRate,
+  updateWarehouse,
+  uploadFile,
 } from "../sdk.gen";
 import type {
   BumpKitchenTicketData,
@@ -67,9 +108,15 @@ import type {
   CreateCategoryData,
   CreateCategoryError,
   CreateCategoryResponse,
+  CreateMeasureUnitData,
+  CreateMeasureUnitError,
+  CreateMeasureUnitResponse,
   CreateModifierGroupData,
   CreateModifierGroupError,
   CreateModifierGroupResponse,
+  CreateNirData,
+  CreateNirError,
+  CreateNirResponse,
   CreateOrderData,
   CreateOrderError,
   CreateOrderResponse,
@@ -79,15 +126,33 @@ import type {
   CreateProductData,
   CreateProductError,
   CreateProductResponse,
+  CreatePromotionData,
+  CreatePromotionError,
+  CreatePromotionResponse,
+  CreatePurchaseInvoiceData,
+  CreatePurchaseInvoiceError,
+  CreatePurchaseInvoiceResponse,
   CreateStationData,
   CreateStationError,
   CreateStationResponse,
+  CreateStockDocumentData,
+  CreateStockDocumentError,
+  CreateStockDocumentResponse,
+  CreateStockItemData,
+  CreateStockItemError,
+  CreateStockItemResponse,
+  CreateSupplierData,
+  CreateSupplierError,
+  CreateSupplierResponse,
   CreateUserData,
   CreateUserError,
   CreateUserResponse,
   CreateVatRateData,
   CreateVatRateError,
   CreateVatRateResponse,
+  CreateWarehouseData,
+  CreateWarehouseError,
+  CreateWarehouseResponse,
   DeleteCategoryData,
   DeleteCategoryError,
   DeleteCategoryResponse,
@@ -97,54 +162,123 @@ import type {
   DeleteProductData,
   DeleteProductError,
   DeleteProductResponse,
+  DeletePromotionData,
+  DeletePromotionError,
+  DeletePromotionResponse,
   GetCurrentUserData,
   GetCurrentUserError,
   GetCurrentUserResponse,
+  GetDashboardData,
+  GetDashboardError,
+  GetDashboardResponse,
+  GetFileData,
+  GetFileError,
+  GetFileResponse,
   GetMenuData,
   GetMenuResponse,
+  GetNirData,
+  GetNirError,
+  GetNirResponse,
+  GetOptionRecipeData,
+  GetOptionRecipeError,
+  GetOptionRecipeResponse,
   GetOrderData,
   GetOrderError,
   GetOrderResponse,
   GetProductData,
   GetProductError,
+  GetProductRecipeData,
+  GetProductRecipeError,
+  GetProductRecipeResponse,
   GetProductResponse,
   GetPublicSettingsData,
   GetPublicSettingsResponse,
+  GetPurchaseInvoiceData,
+  GetPurchaseInvoiceError,
+  GetPurchaseInvoiceResponse,
   GetQueueBoardData,
   GetQueueBoardResponse,
   GetRestaurantSettingsData,
   GetRestaurantSettingsError,
   GetRestaurantSettingsResponse,
+  GetStockDocumentData,
+  GetStockDocumentError,
+  GetStockDocumentResponse,
+  GetStockItemData,
+  GetStockItemError,
+  GetStockItemResponse,
+  ImportEFacturaData,
+  ImportEFacturaError,
+  ImportEFacturaResponse,
   ListCategoriesData,
   ListCategoriesError,
   ListCategoriesResponse,
   ListKitchenTicketsData,
   ListKitchenTicketsError,
   ListKitchenTicketsResponse,
+  ListMeasureUnitsData,
+  ListMeasureUnitsError,
+  ListMeasureUnitsResponse,
   ListModifierGroupsData,
   ListModifierGroupsError,
   ListModifierGroupsResponse,
+  ListNirsData,
+  ListNirsError,
+  ListNirsResponse,
   ListOrdersData,
   ListOrdersError,
   ListOrdersResponse,
   ListProductsData,
   ListProductsError,
   ListProductsResponse,
+  ListPromotionsData,
+  ListPromotionsError,
+  ListPromotionsResponse,
+  ListPurchaseInvoicesData,
+  ListPurchaseInvoicesError,
+  ListPurchaseInvoicesResponse,
   ListStationsData,
   ListStationsError,
   ListStationsResponse,
+  ListStockBalancesData,
+  ListStockBalancesError,
+  ListStockBalancesResponse,
+  ListStockDocumentsData,
+  ListStockDocumentsError,
+  ListStockDocumentsResponse,
+  ListStockItemsData,
+  ListStockItemsError,
+  ListStockItemsResponse,
+  ListStockLotsData,
+  ListStockLotsError,
+  ListStockLotsResponse,
+  ListStockMovementsData,
+  ListStockMovementsError,
+  ListStockMovementsResponse,
+  ListSuppliersData,
+  ListSuppliersError,
+  ListSuppliersResponse,
   ListUsersData,
   ListUsersError,
   ListUsersResponse,
   ListVatRatesData,
   ListVatRatesError,
   ListVatRatesResponse,
+  ListWarehousesData,
+  ListWarehousesError,
+  ListWarehousesResponse,
   LoginData,
   LoginError,
   LoginResponse,
   LogoutData,
   LogoutError,
   LogoutResponse,
+  MatchInvoiceLineData,
+  MatchInvoiceLineError,
+  MatchInvoiceLineResponse,
+  PostNirData,
+  PostNirError,
+  PostNirResponse,
   RecallKitchenTicketData,
   RecallKitchenTicketError,
   RecallKitchenTicketResponse,
@@ -154,6 +288,15 @@ import type {
   RegisterPushSubscriptionData,
   RegisterPushSubscriptionError,
   RegisterPushSubscriptionResponse,
+  ReplaceOptionRecipeData,
+  ReplaceOptionRecipeError,
+  ReplaceOptionRecipeResponse,
+  ReplaceProductRecipeData,
+  ReplaceProductRecipeError,
+  ReplaceProductRecipeResponse,
+  ReverseNirData,
+  ReverseNirError,
+  ReverseNirResponse,
   SimulatePaymentCaptureData,
   SimulatePaymentCaptureError,
   SimulatePaymentCaptureResponse,
@@ -165,24 +308,45 @@ import type {
   UpdateCategoryData,
   UpdateCategoryError,
   UpdateCategoryResponse,
+  UpdateMeasureUnitData,
+  UpdateMeasureUnitError,
+  UpdateMeasureUnitResponse,
   UpdateModifierGroupData,
   UpdateModifierGroupError,
   UpdateModifierGroupResponse,
+  UpdateNirData,
+  UpdateNirError,
+  UpdateNirResponse,
   UpdateProductData,
   UpdateProductError,
   UpdateProductResponse,
+  UpdatePromotionData,
+  UpdatePromotionError,
+  UpdatePromotionResponse,
   UpdateRestaurantSettingsData,
   UpdateRestaurantSettingsError,
   UpdateRestaurantSettingsResponse,
   UpdateStationData,
   UpdateStationError,
   UpdateStationResponse,
+  UpdateStockItemData,
+  UpdateStockItemError,
+  UpdateStockItemResponse,
+  UpdateSupplierData,
+  UpdateSupplierError,
+  UpdateSupplierResponse,
   UpdateUserData,
   UpdateUserError,
   UpdateUserResponse,
   UpdateVatRateData,
   UpdateVatRateError,
   UpdateVatRateResponse,
+  UpdateWarehouseData,
+  UpdateWarehouseError,
+  UpdateWarehouseResponse,
+  UploadFileData,
+  UploadFileError,
+  UploadFileResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -1388,3 +1552,1093 @@ export const stripeWebhookMutation = (
   };
   return mutationOptions;
 };
+
+export const listMeasureUnitsQueryKey = (
+  options?: Options<ListMeasureUnitsData>,
+) => createQueryKey("listMeasureUnits", options);
+
+/**
+ * Units of measure (reference unit per dimension + conversion factors)
+ */
+export const listMeasureUnitsOptions = (
+  options?: Options<ListMeasureUnitsData>,
+) =>
+  queryOptions<
+    ListMeasureUnitsResponse,
+    ListMeasureUnitsError,
+    ListMeasureUnitsResponse,
+    ReturnType<typeof listMeasureUnitsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listMeasureUnits({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listMeasureUnitsQueryKey(options),
+  });
+
+/**
+ * Create a unit (factor relative to the dimension's reference unit)
+ */
+export const createMeasureUnitMutation = (
+  options?: Partial<Options<CreateMeasureUnitData>>,
+): UseMutationOptions<
+  CreateMeasureUnitResponse,
+  CreateMeasureUnitError,
+  Options<CreateMeasureUnitData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateMeasureUnitResponse,
+    CreateMeasureUnitError,
+    Options<CreateMeasureUnitData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createMeasureUnit({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update a unit; mapping an UNMAPPED unit (from an invoice) sets its dimension and factor
+ */
+export const updateMeasureUnitMutation = (
+  options?: Partial<Options<UpdateMeasureUnitData>>,
+): UseMutationOptions<
+  UpdateMeasureUnitResponse,
+  UpdateMeasureUnitError,
+  Options<UpdateMeasureUnitData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateMeasureUnitResponse,
+    UpdateMeasureUnitError,
+    Options<UpdateMeasureUnitData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateMeasureUnit({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listWarehousesQueryKey = (options?: Options<ListWarehousesData>) =>
+  createQueryKey("listWarehouses", options);
+
+/**
+ * List warehouses (gestiuni)
+ */
+export const listWarehousesOptions = (options?: Options<ListWarehousesData>) =>
+  queryOptions<
+    ListWarehousesResponse,
+    ListWarehousesError,
+    ListWarehousesResponse,
+    ReturnType<typeof listWarehousesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listWarehouses({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listWarehousesQueryKey(options),
+  });
+
+/**
+ * Create a warehouse
+ */
+export const createWarehouseMutation = (
+  options?: Partial<Options<CreateWarehouseData>>,
+): UseMutationOptions<
+  CreateWarehouseResponse,
+  CreateWarehouseError,
+  Options<CreateWarehouseData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateWarehouseResponse,
+    CreateWarehouseError,
+    Options<CreateWarehouseData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createWarehouse({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update a warehouse
+ */
+export const updateWarehouseMutation = (
+  options?: Partial<Options<UpdateWarehouseData>>,
+): UseMutationOptions<
+  UpdateWarehouseResponse,
+  UpdateWarehouseError,
+  Options<UpdateWarehouseData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateWarehouseResponse,
+    UpdateWarehouseError,
+    Options<UpdateWarehouseData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateWarehouse({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listStockItemsQueryKey = (options?: Options<ListStockItemsData>) =>
+  createQueryKey("listStockItems", options);
+
+/**
+ * List stock items with their total quantity on hand
+ */
+export const listStockItemsOptions = (options?: Options<ListStockItemsData>) =>
+  queryOptions<
+    ListStockItemsResponse,
+    ListStockItemsError,
+    ListStockItemsResponse,
+    ReturnType<typeof listStockItemsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listStockItems({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listStockItemsQueryKey(options),
+  });
+
+/**
+ * Create a stock item
+ */
+export const createStockItemMutation = (
+  options?: Partial<Options<CreateStockItemData>>,
+): UseMutationOptions<
+  CreateStockItemResponse,
+  CreateStockItemError,
+  Options<CreateStockItemData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateStockItemResponse,
+    CreateStockItemError,
+    Options<CreateStockItemData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createStockItem({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getStockItemQueryKey = (options: Options<GetStockItemData>) =>
+  createQueryKey("getStockItem", options);
+
+/**
+ * Get a stock item
+ */
+export const getStockItemOptions = (options: Options<GetStockItemData>) =>
+  queryOptions<
+    GetStockItemResponse,
+    GetStockItemError,
+    GetStockItemResponse,
+    ReturnType<typeof getStockItemQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getStockItem({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getStockItemQueryKey(options),
+  });
+
+/**
+ * Update a stock item and replace its packagings
+ */
+export const updateStockItemMutation = (
+  options?: Partial<Options<UpdateStockItemData>>,
+): UseMutationOptions<
+  UpdateStockItemResponse,
+  UpdateStockItemError,
+  Options<UpdateStockItemData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateStockItemResponse,
+    UpdateStockItemError,
+    Options<UpdateStockItemData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateStockItem({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listStockBalancesQueryKey = (
+  options?: Options<ListStockBalancesData>,
+) => createQueryKey("listStockBalances", options);
+
+/**
+ * Quantity and FIFO value per warehouse and item
+ */
+export const listStockBalancesOptions = (
+  options?: Options<ListStockBalancesData>,
+) =>
+  queryOptions<
+    ListStockBalancesResponse,
+    ListStockBalancesError,
+    ListStockBalancesResponse,
+    ReturnType<typeof listStockBalancesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listStockBalances({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listStockBalancesQueryKey(options),
+  });
+
+export const listStockMovementsQueryKey = (
+  options?: Options<ListStockMovementsData>,
+) => createQueryKey("listStockMovements", options);
+
+/**
+ * Stock ledger, newest first
+ */
+export const listStockMovementsOptions = (
+  options?: Options<ListStockMovementsData>,
+) =>
+  queryOptions<
+    ListStockMovementsResponse,
+    ListStockMovementsError,
+    ListStockMovementsResponse,
+    ReturnType<typeof listStockMovementsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listStockMovements({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listStockMovementsQueryKey(options),
+  });
+
+export const listStockLotsQueryKey = (options?: Options<ListStockLotsData>) =>
+  createQueryKey("listStockLots", options);
+
+/**
+ * Open FIFO lots (oldest first)
+ */
+export const listStockLotsOptions = (options?: Options<ListStockLotsData>) =>
+  queryOptions<
+    ListStockLotsResponse,
+    ListStockLotsError,
+    ListStockLotsResponse,
+    ReturnType<typeof listStockLotsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listStockLots({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listStockLotsQueryKey(options),
+  });
+
+export const listStockDocumentsQueryKey = (
+  options?: Options<ListStockDocumentsData>,
+) => createQueryKey("listStockDocuments", options);
+
+/**
+ * Transfers, consumption notes, waste and inventory counts
+ */
+export const listStockDocumentsOptions = (
+  options?: Options<ListStockDocumentsData>,
+) =>
+  queryOptions<
+    ListStockDocumentsResponse,
+    ListStockDocumentsError,
+    ListStockDocumentsResponse,
+    ReturnType<typeof listStockDocumentsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listStockDocuments({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listStockDocumentsQueryKey(options),
+  });
+
+/**
+ * Create and post a stock document (moves stock immediately)
+ */
+export const createStockDocumentMutation = (
+  options?: Partial<Options<CreateStockDocumentData>>,
+): UseMutationOptions<
+  CreateStockDocumentResponse,
+  CreateStockDocumentError,
+  Options<CreateStockDocumentData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateStockDocumentResponse,
+    CreateStockDocumentError,
+    Options<CreateStockDocumentData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createStockDocument({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getStockDocumentQueryKey = (
+  options: Options<GetStockDocumentData>,
+) => createQueryKey("getStockDocument", options);
+
+/**
+ * Get a stock document
+ */
+export const getStockDocumentOptions = (
+  options: Options<GetStockDocumentData>,
+) =>
+  queryOptions<
+    GetStockDocumentResponse,
+    GetStockDocumentError,
+    GetStockDocumentResponse,
+    ReturnType<typeof getStockDocumentQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getStockDocument({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getStockDocumentQueryKey(options),
+  });
+
+export const getProductRecipeQueryKey = (
+  options: Options<GetProductRecipeData>,
+) => createQueryKey("getProductRecipe", options);
+
+/**
+ * Ingredients consumed when one unit of the product is sold
+ */
+export const getProductRecipeOptions = (
+  options: Options<GetProductRecipeData>,
+) =>
+  queryOptions<
+    GetProductRecipeResponse,
+    GetProductRecipeError,
+    GetProductRecipeResponse,
+    ReturnType<typeof getProductRecipeQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getProductRecipe({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getProductRecipeQueryKey(options),
+  });
+
+/**
+ * Replace the product's recipe
+ */
+export const replaceProductRecipeMutation = (
+  options?: Partial<Options<ReplaceProductRecipeData>>,
+): UseMutationOptions<
+  ReplaceProductRecipeResponse,
+  ReplaceProductRecipeError,
+  Options<ReplaceProductRecipeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ReplaceProductRecipeResponse,
+    ReplaceProductRecipeError,
+    Options<ReplaceProductRecipeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await replaceProductRecipe({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getOptionRecipeQueryKey = (
+  options: Options<GetOptionRecipeData>,
+) => createQueryKey("getOptionRecipe", options);
+
+/**
+ * Ingredients consumed by a modifier option (e.g. 30 g cheese sauce)
+ */
+export const getOptionRecipeOptions = (options: Options<GetOptionRecipeData>) =>
+  queryOptions<
+    GetOptionRecipeResponse,
+    GetOptionRecipeError,
+    GetOptionRecipeResponse,
+    ReturnType<typeof getOptionRecipeQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getOptionRecipe({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getOptionRecipeQueryKey(options),
+  });
+
+/**
+ * Replace the modifier option's recipe
+ */
+export const replaceOptionRecipeMutation = (
+  options?: Partial<Options<ReplaceOptionRecipeData>>,
+): UseMutationOptions<
+  ReplaceOptionRecipeResponse,
+  ReplaceOptionRecipeError,
+  Options<ReplaceOptionRecipeData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ReplaceOptionRecipeResponse,
+    ReplaceOptionRecipeError,
+    Options<ReplaceOptionRecipeData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await replaceOptionRecipe({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listSuppliersQueryKey = (options?: Options<ListSuppliersData>) =>
+  createQueryKey("listSuppliers", options);
+
+/**
+ * List suppliers
+ */
+export const listSuppliersOptions = (options?: Options<ListSuppliersData>) =>
+  queryOptions<
+    ListSuppliersResponse,
+    ListSuppliersError,
+    ListSuppliersResponse,
+    ReturnType<typeof listSuppliersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listSuppliers({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listSuppliersQueryKey(options),
+  });
+
+/**
+ * Create a supplier
+ */
+export const createSupplierMutation = (
+  options?: Partial<Options<CreateSupplierData>>,
+): UseMutationOptions<
+  CreateSupplierResponse,
+  CreateSupplierError,
+  Options<CreateSupplierData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateSupplierResponse,
+    CreateSupplierError,
+    Options<CreateSupplierData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createSupplier({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update a supplier
+ */
+export const updateSupplierMutation = (
+  options?: Partial<Options<UpdateSupplierData>>,
+): UseMutationOptions<
+  UpdateSupplierResponse,
+  UpdateSupplierError,
+  Options<UpdateSupplierData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateSupplierResponse,
+    UpdateSupplierError,
+    Options<UpdateSupplierData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateSupplier({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listPurchaseInvoicesQueryKey = (
+  options?: Options<ListPurchaseInvoicesData>,
+) => createQueryKey("listPurchaseInvoices", options);
+
+/**
+ * Purchase invoices, newest first
+ */
+export const listPurchaseInvoicesOptions = (
+  options?: Options<ListPurchaseInvoicesData>,
+) =>
+  queryOptions<
+    ListPurchaseInvoicesResponse,
+    ListPurchaseInvoicesError,
+    ListPurchaseInvoicesResponse,
+    ReturnType<typeof listPurchaseInvoicesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listPurchaseInvoices({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listPurchaseInvoicesQueryKey(options),
+  });
+
+/**
+ * Enter a purchase invoice manually
+ */
+export const createPurchaseInvoiceMutation = (
+  options?: Partial<Options<CreatePurchaseInvoiceData>>,
+): UseMutationOptions<
+  CreatePurchaseInvoiceResponse,
+  CreatePurchaseInvoiceError,
+  Options<CreatePurchaseInvoiceData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreatePurchaseInvoiceResponse,
+    CreatePurchaseInvoiceError,
+    Options<CreatePurchaseInvoiceData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createPurchaseInvoice({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Import an ANAF e-Factura (UBL 2.1 / RO_CIUS XML); creates the supplier when unknown and matches lines to stock items
+ */
+export const importEFacturaMutation = (
+  options?: Partial<Options<ImportEFacturaData>>,
+): UseMutationOptions<
+  ImportEFacturaResponse,
+  ImportEFacturaError,
+  Options<ImportEFacturaData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ImportEFacturaResponse,
+    ImportEFacturaError,
+    Options<ImportEFacturaData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await importEFactura({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getPurchaseInvoiceQueryKey = (
+  options: Options<GetPurchaseInvoiceData>,
+) => createQueryKey("getPurchaseInvoice", options);
+
+/**
+ * Get a purchase invoice
+ */
+export const getPurchaseInvoiceOptions = (
+  options: Options<GetPurchaseInvoiceData>,
+) =>
+  queryOptions<
+    GetPurchaseInvoiceResponse,
+    GetPurchaseInvoiceError,
+    GetPurchaseInvoiceResponse,
+    ReturnType<typeof getPurchaseInvoiceQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getPurchaseInvoice({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getPurchaseInvoiceQueryKey(options),
+  });
+
+/**
+ * Link an invoice line to a stock item (optionally remembered for this supplier)
+ */
+export const matchInvoiceLineMutation = (
+  options?: Partial<Options<MatchInvoiceLineData>>,
+): UseMutationOptions<
+  MatchInvoiceLineResponse,
+  MatchInvoiceLineError,
+  Options<MatchInvoiceLineData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    MatchInvoiceLineResponse,
+    MatchInvoiceLineError,
+    Options<MatchInvoiceLineData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await matchInvoiceLine({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listNirsQueryKey = (options?: Options<ListNirsData>) =>
+  createQueryKey("listNirs", options);
+
+/**
+ * Goods receipt notes (NIR), newest first
+ */
+export const listNirsOptions = (options?: Options<ListNirsData>) =>
+  queryOptions<
+    ListNirsResponse,
+    ListNirsError,
+    ListNirsResponse,
+    ReturnType<typeof listNirsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listNirs({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listNirsQueryKey(options),
+  });
+
+/**
+ * Create a draft NIR, empty or prefilled from a purchase invoice
+ */
+export const createNirMutation = (
+  options?: Partial<Options<CreateNirData>>,
+): UseMutationOptions<
+  CreateNirResponse,
+  CreateNirError,
+  Options<CreateNirData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateNirResponse,
+    CreateNirError,
+    Options<CreateNirData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createNir({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getNirQueryKey = (options: Options<GetNirData>) =>
+  createQueryKey("getNir", options);
+
+/**
+ * Get a NIR
+ */
+export const getNirOptions = (options: Options<GetNirData>) =>
+  queryOptions<
+    GetNirResponse,
+    GetNirError,
+    GetNirResponse,
+    ReturnType<typeof getNirQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getNir({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getNirQueryKey(options),
+  });
+
+/**
+ * Replace a draft NIR (header and lines)
+ */
+export const updateNirMutation = (
+  options?: Partial<Options<UpdateNirData>>,
+): UseMutationOptions<
+  UpdateNirResponse,
+  UpdateNirError,
+  Options<UpdateNirData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateNirResponse,
+    UpdateNirError,
+    Options<UpdateNirData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateNir({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Post the NIR — stock is received as FIFO lots; the NIR becomes immutable
+ */
+export const postNirMutation = (
+  options?: Partial<Options<PostNirData>>,
+): UseMutationOptions<PostNirResponse, PostNirError, Options<PostNirData>> => {
+  const mutationOptions: UseMutationOptions<
+    PostNirResponse,
+    PostNirError,
+    Options<PostNirData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await postNir({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Post a reversing NIR (only while the received lots are unconsumed)
+ */
+export const reverseNirMutation = (
+  options?: Partial<Options<ReverseNirData>>,
+): UseMutationOptions<
+  ReverseNirResponse,
+  ReverseNirError,
+  Options<ReverseNirData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ReverseNirResponse,
+    ReverseNirError,
+    Options<ReverseNirData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await reverseNir({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listPromotionsQueryKey = (options?: Options<ListPromotionsData>) =>
+  createQueryKey("listPromotions", options);
+
+/**
+ * All promotions (active or not)
+ */
+export const listPromotionsOptions = (options?: Options<ListPromotionsData>) =>
+  queryOptions<
+    ListPromotionsResponse,
+    ListPromotionsError,
+    ListPromotionsResponse,
+    ReturnType<typeof listPromotionsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listPromotions({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listPromotionsQueryKey(options),
+  });
+
+/**
+ * Create a promotional banner
+ */
+export const createPromotionMutation = (
+  options?: Partial<Options<CreatePromotionData>>,
+): UseMutationOptions<
+  CreatePromotionResponse,
+  CreatePromotionError,
+  Options<CreatePromotionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreatePromotionResponse,
+    CreatePromotionError,
+    Options<CreatePromotionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createPromotion({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Delete a promotional banner
+ */
+export const deletePromotionMutation = (
+  options?: Partial<Options<DeletePromotionData>>,
+): UseMutationOptions<
+  DeletePromotionResponse,
+  DeletePromotionError,
+  Options<DeletePromotionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DeletePromotionResponse,
+    DeletePromotionError,
+    Options<DeletePromotionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await deletePromotion({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update a promotional banner
+ */
+export const updatePromotionMutation = (
+  options?: Partial<Options<UpdatePromotionData>>,
+): UseMutationOptions<
+  UpdatePromotionResponse,
+  UpdatePromotionError,
+  Options<UpdatePromotionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdatePromotionResponse,
+    UpdatePromotionError,
+    Options<UpdatePromotionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updatePromotion({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Upload an image (JPEG, PNG, WebP; max 5 MB) for products, promotions or the logo
+ */
+export const uploadFileMutation = (
+  options?: Partial<Options<UploadFileData>>,
+): UseMutationOptions<
+  UploadFileResponse,
+  UploadFileError,
+  Options<UploadFileData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UploadFileResponse,
+    UploadFileError,
+    Options<UploadFileData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await uploadFile({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getFileQueryKey = (options: Options<GetFileData>) =>
+  createQueryKey("getFile", options);
+
+/**
+ * Public, immutable file content (served from object storage)
+ */
+export const getFileOptions = (options: Options<GetFileData>) =>
+  queryOptions<
+    GetFileResponse,
+    GetFileError,
+    GetFileResponse,
+    ReturnType<typeof getFileQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getFile({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getFileQueryKey(options),
+  });
+
+export const getDashboardQueryKey = (options: Options<GetDashboardData>) =>
+  createQueryKey("getDashboard", options);
+
+/**
+ * Sales, kitchen and stock KPIs for a date range (business days, restaurant time zone)
+ */
+export const getDashboardOptions = (options: Options<GetDashboardData>) =>
+  queryOptions<
+    GetDashboardResponse,
+    GetDashboardError,
+    GetDashboardResponse,
+    ReturnType<typeof getDashboardQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getDashboard({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getDashboardQueryKey(options),
+  });

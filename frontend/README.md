@@ -43,6 +43,22 @@ pnpm --filter @amadya/menu-mobile dev       # Expo dev server (press i / a), or 
 - **Payments:** Stripe PaymentSheet with Apple Pay / Google Pay. The `@stripe/stripe-react-native` plugin requires a development build.
 - **White-label:** `APP_NAME`, `APP_BUNDLE_ID` and `APP_PRIMARY_COLOR` produce one app per restaurant.
 
+### admin — back office (Vite + React, TanStack Router/Query)
+
+```bash
+pnpm --filter @amadya/admin dev            # http://localhost:5173/admin (proxies /api to :8080)
+```
+
+ADMIN / MANAGER staff only. Sessions use a 15-minute access token kept in memory and a rotating refresh token in localStorage.
+
+| Area | Screens |
+|---|---|
+| Overview | **Dashboard**: revenue, orders, average ticket, food cost from FIFO consumption, prep time, stock value, low stock, sales by day and by hour, best sellers. **Orders**: hand over, or cancel with a reason |
+| Menu | **Products**: image upload, modifier groups, recipe tab with portion cost and margin. **Categories**. **Option groups**: each option can have its own recipe. **Promotions**: with an active period |
+| Stock | **Stock on hand**: with FIFO lots. **Movements**. **Documents**: transfer, consumption note, waste, stock count. **Stock items**: with packagings. **Warehouses**. **Units**: unmapped units from invoices can be defined here |
+| Purchasing | **Suppliers**. **Invoices**: e-Factura XML import, line matching remembered per supplier. **NIR**: draft, discrepancy reasons, post, reverse, printable legal layout |
+| Settings | **Restaurant**: profile, branding with live preview, features, languages, opening hours. **VAT rates**, **kitchen stations**, **users and roles** |
+
 ## Checks
 
 ```bash

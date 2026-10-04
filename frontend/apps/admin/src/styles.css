@@ -1,0 +1,12 @@
+@import "@amadya/ui/styles.css";
+
+@source "./";
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
