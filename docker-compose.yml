@@ -84,9 +84,14 @@ services:
       dockerfile: apps/admin/Dockerfile
     restart: unless-stopped
 
+  kitchen:
+    build:
+      context: ./frontend
+      dockerfile: apps/kitchen/Dockerfile
+    restart: unless-stopped
+
   # --- Added per phase ---
   # waiter:         (Phase 4)
-  # kitchen:        (Phase 5)
   # queue-display:  (Phase 5)
 
 volumes:

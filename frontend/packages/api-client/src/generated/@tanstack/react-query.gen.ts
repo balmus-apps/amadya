@@ -48,6 +48,7 @@ import {
   getStockItem,
   importEFactura,
   listCategories,
+  listKitchenStations,
   listKitchenTickets,
   listMeasureUnits,
   listModifierGroups,
@@ -213,6 +214,9 @@ import type {
   ListCategoriesData,
   ListCategoriesError,
   ListCategoriesResponse,
+  ListKitchenStationsData,
+  ListKitchenStationsError,
+  ListKitchenStationsResponse,
   ListKitchenTicketsData,
   ListKitchenTicketsError,
   ListKitchenTicketsResponse,
@@ -1362,6 +1366,34 @@ export const listKitchenTicketsOptions = (
       return data;
     },
     queryKey: listKitchenTicketsQueryKey(options),
+  });
+
+export const listKitchenStationsQueryKey = (
+  options?: Options<ListKitchenStationsData>,
+) => createQueryKey("listKitchenStations", options);
+
+/**
+ * Active preparation stations (kitchen, grill, bar) for the kitchen display station picker
+ */
+export const listKitchenStationsOptions = (
+  options?: Options<ListKitchenStationsData>,
+) =>
+  queryOptions<
+    ListKitchenStationsResponse,
+    ListKitchenStationsError,
+    ListKitchenStationsResponse,
+    ReturnType<typeof listKitchenStationsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listKitchenStations({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listKitchenStationsQueryKey(options),
   });
 
 /**

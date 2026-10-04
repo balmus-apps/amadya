@@ -1,0 +1,43 @@
+{
+ "title": "Bucătărie & Bar",
+ "login": {
+  "title": "Ecran bucătărie",
+  "email": "Email",
+  "password": "Parolă",
+  "submit": "Intră",
+  "error": "Email sau parolă greșită",
+  "notAllowed": "Contul nu are acces la bucătărie."
+ },
+ "station": {
+  "choose": "Alegeți stația",
+  "change": "Schimbă stația"
+ },
+ "status": {
+  "QUEUED": "În așteptare",
+  "IN_PROGRESS": "În preparare",
+  "READY": "Gata"
+ },
+ "action": {
+  "QUEUED": "Începe",
+  "IN_PROGRESS": "Gata",
+  "undo": "Anulează"
+ },
+ "channel": {
+  "TAKEAWAY": "La pachet",
+  "DINE_IN": "Masă",
+  "COUNTER": "Tejghea"
+ },
+ "card": {
+  "late": "Întârziat",
+  "eta": "Estimat {time}",
+  "table": "Masa {label}",
+  "started": "început {time}"
+ },
+ "empty": "Nicio comandă",
+ "live": "Conectat",
+ "offline": "Se reconectează…",
+ "sound": "Sunet",
+ "fullscreen": "Ecran complet",
+ "logout": "Ieșire",
+ "language": "Limba"
+}

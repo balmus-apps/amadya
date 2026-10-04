@@ -1,0 +1,10 @@
+{
+  "name": "Amadya – Bucătărie & Bar",
+  "short_name": "Bucătărie",
+  "start_url": "/kitchen/",
+  "scope": "/kitchen/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#111111",
+  "theme_color": "#111111"
+}

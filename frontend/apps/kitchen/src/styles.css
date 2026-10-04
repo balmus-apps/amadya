@@ -1,0 +1,31 @@
+@import "@amadya/ui/styles.css";
+
+@source "./";
+
+/*
+ * Ticket status colours (requested by the restaurant): one token each, so switching
+ * "in preparation" from orange to blue is a one-line change (e.g. #BFDBFE / #3B82F6).
+ */
+:root {
+  --status-pending: #fef3c7;
+  --status-pending-strong: #f59e0b;
+  --status-progress: #fdba74;
+  --status-progress-strong: #ea580c;
+  --status-done: #bbf7d0;
+  --status-done-strong: #16a34a;
+  --status-late: #dc2626;
+}
+
+body {
+  background: #18181b;
+  overscroll-behavior: none;
+}
+
+@keyframes kds-flash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.7); }
+}
+
+.kds-new {
+  animation: kds-flash 0.8s ease-in-out 4;
+}
