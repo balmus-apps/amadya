@@ -1,0 +1,21 @@
+{$AMADYA_DOMAIN} {
+	encode zstd gzip
+
+	# Core API (Phase 1): REST, WebSocket (/api/ws), SSE
+	# handle /api/* {
+	# 	reverse_proxy api:8080
+	# }
+
+	# Staff apps (Phases 3–5)
+	# handle_path /admin/*   { reverse_proxy admin:80 }
+	# handle_path /waiter/*  { reverse_proxy waiter:80 }
+	# handle_path /kitchen/* { reverse_proxy kitchen:80 }
+	# handle_path /queue/*   { reverse_proxy queue-display:80 }
+
+	# Customer menu (Phase 2) is the default site
+	# handle { reverse_proxy menu-web:3000 }
+
+	handle {
+		respond "Amadya — foundations up. Apps arrive per phase." 200
+	}
+}

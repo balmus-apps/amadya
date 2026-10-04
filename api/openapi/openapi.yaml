@@ -1,0 +1,359 @@
+openapi: 3.1.0
+info:
+  title: Amadya Core API
+  version: 0.1.0
+  description: |
+    Contract-first API for the Amadya HoReCa platform (see docs/adr/0002-contract-first-openapi.md).
+    Localized content is resolved using the `Accept-Language` header (`ro`, `en`; default from settings).
+    Errors use RFC 9457 problem+json.
+servers:
+  - url: /api/v1
+tags:
+  - name: settings
+    description: Restaurant profile, branding, feature flags
+  - name: identity
+    description: Authentication and users
+  - name: catalog
+    description: Menu, products, modifiers, promotions
+  - name: ordering
+    description: Orders and order tracking
+  # Added per phase: tables, kitchen, payments, inventory, procurement, fiscal, printing, reporting
+
+paths:
+  /settings/public:
+    get:
+      tags: [settings]
+      operationId: getPublicSettings
+      summary: Branding, locales, feature flags and opening hours for client apps
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicSettings" }
+
+  /auth/login:
+    post:
+      tags: [identity]
+      operationId: login
+      summary: Staff/customer login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Tokens
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401": { $ref: "#/components/responses/Problem" }
+
+  /menu:
+    get:
+      tags: [catalog]
+      operationId: getMenu
+      summary: Public menu (active categories with available products), localized
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Menu" }
+
+  /orders:
+    post:
+      tags: [ordering]
+      operationId: createOrder
+      summary: Create an order (takeaway → PENDING_PAYMENT; dine-in/counter → PLACED)
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOrderRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /orders/{orderId}:
+    get:
+      tags: [ordering]
+      operationId: getOrder
+      summary: Get an order by id
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /orders/{orderId}/events:
+    get:
+      tags: [ordering]
+      operationId: streamOrderEvents
+      summary: Server-Sent Events with order status changes (customer tracking)
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+        - name: token
+          in: query
+          required: true
+          description: Per-order tracking token returned when the order is created
+          schema: { type: string }
+      security: []
+      responses:
+        "200":
+          description: Event stream of OrderStatusChanged
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/OrderStatusChanged" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      schema: { type: string, enum: [ro, en] }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema: { type: string, format: uuid }
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Problem:
+      description: Error (RFC 9457)
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        code: { type: string, description: Stable machine-readable error code }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: string, pattern: '^-?\d+(\.\d{1,2})?$', examples: ["20.00"] }
+        currency: { type: string, examples: [RON] }
+
+    LocalizedText:
+      type: object
+      description: Used by admin endpoints; public endpoints return resolved strings
+      properties:
+        ro: { type: string }
+        en: { type: string }
+
+    PublicSettings:
+      type: object
+      required: [name, defaultLocale, locales, currency, theme, features]
+      properties:
+        name: { type: string }
+        logoUrl: { type: string, format: uri }
+        defaultLocale: { type: string, enum: [ro, en] }
+        locales: { type: array, items: { type: string, enum: [ro, en] } }
+        currency: { type: string }
+        theme:
+          type: object
+          additionalProperties: { type: string }
+          description: Design tokens, e.g. {"primary":"#C0392B","radius":"12px"}
+        features:
+          type: object
+          properties:
+            takeaway: { type: boolean }
+            tables: { type: boolean }
+            onlinePayments: { type: boolean }
+            kitchenDisplay: { type: boolean }
+            queueDisplay: { type: boolean }
+            invoiceOcr: { type: boolean }
+        openingHours:
+          type: array
+          items:
+            type: object
+            properties:
+              dayOfWeek: { type: integer, minimum: 1, maximum: 7 }
+              opens: { type: string, examples: ["10:00"] }
+              closes: { type: string, examples: ["22:00"] }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    TokenResponse:
+      type: object
+      required: [accessToken, refreshToken, expiresIn]
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        expiresIn: { type: integer, description: Seconds }
+
+    Menu:
+      type: object
+      required: [categories]
+      properties:
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/MenuCategory" }
+
+    MenuCategory:
+      type: object
+      required: [id, name, products]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        products:
+          type: array
+          items: { $ref: "#/components/schemas/MenuProduct" }
+
+    MenuProduct:
+      type: object
+      required: [id, name, price, available]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        imageUrl: { type: string, format: uri }
+        price: { $ref: "#/components/schemas/Money" }
+        available: { type: boolean }
+        prepTimeSec: { type: integer }
+        allergens: { type: array, items: { type: string } }
+        modifierGroups:
+          type: array
+          items: { $ref: "#/components/schemas/ModifierGroup" }
+
+    ModifierGroup:
+      type: object
+      required: [id, name, minSelect, maxSelect, options]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: ["Sos"] }
+        minSelect: { type: integer, minimum: 0 }
+        maxSelect: { type: integer, minimum: 1 }
+        options:
+          type: array
+          items:
+            type: object
+            required: [id, name, priceDelta]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string, examples: ["Sos cheese", "Sos usturoi"] }
+              priceDelta: { $ref: "#/components/schemas/Money" }
+
+    OrderChannel:
+      type: string
+      enum: [TAKEAWAY, DINE_IN, COUNTER]
+
+    OrderStatus:
+      type: string
+      enum: [PENDING_PAYMENT, PLACED, PREPARING, READY, COMPLETED, CANCELLED]
+
+    CreateOrderRequest:
+      type: object
+      required: [channel, lines]
+      properties:
+        channel: { $ref: "#/components/schemas/OrderChannel" }
+        tableSessionId: { type: string, format: uuid }
+        pickupAt: { type: string, format: date-time }
+        customer:
+          type: object
+          description: Required for TAKEAWAY (guest checkout); ignored for DINE_IN
+          required: [name, phone]
+          properties:
+            name: { type: string, minLength: 2, maxLength: 80 }
+            phone: { type: string, pattern: '^\+[1-9]\d{7,14}$', description: "E.164, e.g. +40722123456" }
+            email: { type: string, format: email }
+        notes: { type: string, maxLength: 500 }
+        lines:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1 }
+              notes: { type: string, maxLength: 200 }
+              modifierOptionIds:
+                type: array
+                items: { type: string, format: uuid }
+
+    Order:
+      type: object
+      required: [id, number, channel, status, lines, total, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string, examples: ["A-042"] }
+        channel: { $ref: "#/components/schemas/OrderChannel" }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        estimatedReadyAt: { type: string, format: date-time }
+        trackingToken: { type: string, description: Returned only on create }
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              productName: { type: string }
+              quantity: { type: integer }
+              unitPrice: { $ref: "#/components/schemas/Money" }
+              modifiers: { type: array, items: { type: string } }
+              total: { $ref: "#/components/schemas/Money" }
+        total: { $ref: "#/components/schemas/Money" }
+        createdAt: { type: string, format: date-time }
+
+    OrderStatusChanged:
+      type: object
+      required: [orderId, status, at]
+      properties:
+        orderId: { type: string, format: uuid }
+        number: { type: string }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        estimatedReadyAt: { type: string, format: date-time }
+        at: { type: string, format: date-time }
+
+security:
+  - bearerAuth: []

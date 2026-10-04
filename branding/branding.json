@@ -1,0 +1,12 @@
+{
+  "name": "Amadya",
+  "theme": {
+    "primary": "#B3261E",
+    "secondary": "#2E7D32",
+    "background": "#FFF8F0",
+    "foreground": "#1F1A17",
+    "radius": "12px",
+    "fontHeading": "Rubik",
+    "fontBody": "Inter"
+  }
+}
