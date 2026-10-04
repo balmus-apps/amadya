@@ -20,6 +20,8 @@ import ro.amadya.contract.model.MenuPromotion
 import ro.amadya.contract.model.ModifierGroupRequest
 import ro.amadya.contract.model.Product
 import ro.amadya.contract.model.ProductRequest
+import ro.amadya.contract.model.Promotion
+import ro.amadya.contract.model.PromotionRequest
 import ro.amadya.settings.RestaurantSettingsApi
 import ro.amadya.shared.ConflictException
 import ro.amadya.shared.LocalizedText
@@ -256,6 +258,49 @@ class CatalogService(
         updated.filter { it !in group.options }.forEach { group.options.add(it) }
         group.options.sortBy { it.sortOrder }
     }
+
+    // ---------------------------------------------------------------- promotions
+    fun listPromotions(): List<Promotion> = promotions.findAll().sortedWith(compareBy({ it.sortOrder }, { it.id })).map { it.toDto() }
+
+    @Transactional
+    fun createPromotion(req: PromotionRequest): Promotion = promotions.save(PromotionEntity(title = mutableMapOf()).also { applyPromotion(it, req) }).toDto()
+
+    @Transactional
+    fun updatePromotion(id: UUID, req: PromotionRequest): Promotion {
+        val promo = promotions.findByIdOrNull(id) ?: throw NotFoundException("Promotion")
+        applyPromotion(promo, req)
+        return promo.toDto()
+    }
+
+    @Transactional
+    fun deletePromotion(id: UUID) = promotions.delete(promotions.findByIdOrNull(id) ?: throw NotFoundException("Promotion"))
+
+    private fun applyPromotion(p: PromotionEntity, req: PromotionRequest) {
+        req.productId?.let { products.findByIdOrNull(it) ?: throw UnprocessableException("catalog.invalid_reference", "Product") }
+        if (req.startsAt != null && req.endsAt != null && !req.endsAt!!.isAfter(req.startsAt)) throw UnprocessableException("catalog.invalid_period")
+        p.title = LocalizedText.of(req.title).toMap()
+        p.subtitle = req.subtitle?.let { LocalizedText.of(it).toMap() }
+        p.badge = req.badge?.trim()?.ifBlank { null }
+        p.imageUrl = req.imageUrl?.ifBlank { null }
+        p.productId = req.productId
+        p.startsAt = req.startsAt?.toInstant()
+        p.endsAt = req.endsAt?.toInstant()
+        p.sortOrder = req.sortOrder ?: 0
+        p.active = req.active ?: true
+    }
+
+    private fun PromotionEntity.toDto() = Promotion(
+        id = id,
+        title = LocalizedText.fromMap(title)!!.toDto(),
+        sortOrder = sortOrder,
+        active = active,
+        subtitle = LocalizedText.fromMap(subtitle)?.toDto(),
+        badge = badge,
+        imageUrl = imageUrl,
+        productId = productId,
+        startsAt = startsAt?.atOffset(java.time.ZoneOffset.UTC),
+        endsAt = endsAt?.atOffset(java.time.ZoneOffset.UTC),
+    )
 
     // ---------------------------------------------------------------- mapping
     private fun CategoryEntity.toDto() = Category(id, LocalizedText.fromMap(name)!!.toDto(), sortOrder, active)

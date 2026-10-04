@@ -77,7 +77,7 @@ class SecurityConfig(private val props: AmadyaProperties) {
                 it.requestMatchers(
                     HttpMethod.GET,
                     "/api/v1/settings/public", "/api/v1/menu", "/api/v1/queue", "/api/v1/queue/events",
-                    "/api/v1/orders/*", "/api/v1/orders/*/events",
+                    "/api/v1/orders/*", "/api/v1/orders/*/events", "/api/v1/files/*",
                 ).permitAll()
                 it.requestMatchers(
                     HttpMethod.POST,

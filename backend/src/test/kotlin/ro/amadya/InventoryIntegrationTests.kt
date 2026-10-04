@@ -124,6 +124,7 @@ class InventoryIntegrationTests {
             .let { api.login(it.text("email"), "Password123!") }
         val beefAfterNir = balance(token, beef)
         val bunAfterNir = balance(token, bun)
+        val baconBefore = balance(token, bacon)
         val order = api.post("/api/v1/orders", mapOf("channel" to "COUNTER", "lines" to listOf(mapOf("productId" to classicBurger, "quantity" to 2))), cashier)
         await atMost Duration.ofSeconds(10) untilAsserted {
             assertSame(beefAfterNir - BigDecimal("300"), balance(token, beef))
@@ -139,7 +140,7 @@ class InventoryIntegrationTests {
         api.post("/api/v1/orders/${order.text("id")}/cancel", mapOf("reason" to "test"), cashier)
         await atMost Duration.ofSeconds(10) untilAsserted {
             assertSame(beefAfterNir, balance(token, beef))
-            assertEquals(0, balance(token, bacon).signum())
+            assertSame(baconBefore, balance(token, bacon))
         }
 
         // A second invoice from the same supplier recognises the cola line from the remembered supplier code.

@@ -37,6 +37,10 @@ tags:
     description: Units, warehouses, stock items, FIFO ledger, stock documents, recipes
   - name: procurement
     description: Suppliers, purchase invoices (e-Factura import), NIR
+  - name: media
+    description: Image upload and public file serving
+  - name: reporting
+    description: Dashboard KPIs
   - name: streams
     description: Server-Sent Events (hand-implemented)
   - name: webhooks
@@ -1367,6 +1371,128 @@ paths:
               schema: { $ref: "#/components/schemas/Nir" }
         "409": { $ref: "#/components/responses/Problem" }
 
+  # ---------------------------------------------------------------- promotions
+  /admin/promotions:
+    get:
+      tags: [catalog-admin]
+      operationId: listPromotions
+      summary: All promotions (active or not)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Promotion" } }
+        "403": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [catalog-admin]
+      operationId: createPromotion
+      summary: Create a promotional banner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Promotion" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/promotions/{id}:
+    put:
+      tags: [catalog-admin]
+      operationId: updatePromotion
+      summary: Update a promotional banner
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Promotion" }
+        "404": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [catalog-admin]
+      operationId: deletePromotion
+      summary: Delete a promotional banner
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- media
+  /admin/files:
+    post:
+      tags: [media]
+      operationId: uploadFile
+      summary: Upload an image (JPEG, PNG, WebP; max 5 MB) for products, promotions or the logo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadedFile" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /files/{key}:
+    get:
+      tags: [media]
+      operationId: getFile
+      summary: Public, immutable file content (served from object storage)
+      security: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[0-9a-f-]{36}\.(jpg|png|webp)$' }
+      responses:
+        "200":
+          description: File content
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- reporting
+  /admin/reports/dashboard:
+    get:
+      tags: [reporting]
+      operationId: getDashboard
+      summary: Sales, kitchen and stock KPIs for a date range (business days, restaurant time zone)
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Dashboard" }
+        "403": { $ref: "#/components/responses/Problem" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2357,3 +2483,97 @@ components:
         totalNet: { type: string }
         totalVat: { type: string }
         currency: { type: string }
+
+    # ---------------------------------------------------------- promotions
+    Promotion:
+      type: object
+      required: [id, title, sortOrder, active]
+      properties:
+        id: { type: string, format: uuid }
+        title: { $ref: "#/components/schemas/LocalizedText" }
+        subtitle: { $ref: "#/components/schemas/LocalizedText" }
+        badge: { type: string }
+        imageUrl: { type: string }
+        productId: { type: string, format: uuid }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+
+    PromotionRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { $ref: "#/components/schemas/LocalizedText" }
+        subtitle: { $ref: "#/components/schemas/LocalizedText" }
+        badge: { type: string, maxLength: 20 }
+        imageUrl: { type: string, maxLength: 500 }
+        productId: { type: string, format: uuid }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        sortOrder: { type: integer, default: 0 }
+        active: { type: boolean, default: true }
+
+    # ---------------------------------------------------------- media
+    UploadedFile:
+      type: object
+      required: [key, url, contentType, bytes]
+      properties:
+        key: { type: string }
+        url: { type: string, description: "Relative URL to use in imageUrl fields, e.g. /api/v1/files/{key}" }
+        contentType: { type: string }
+        bytes: { type: integer, format: int64 }
+
+    # ---------------------------------------------------------- reporting
+    Dashboard:
+      type: object
+      required: [from, to, revenue, orders, averageTicket, cancelled, byChannel, byDay, byHour, topProducts, stockValue, lowStockCount]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        revenue: { $ref: "#/components/schemas/Money" }
+        vat: { $ref: "#/components/schemas/Money" }
+        orders: { type: integer }
+        averageTicket: { $ref: "#/components/schemas/Money" }
+        cancelled: { type: integer }
+        averagePrepSeconds: { type: integer, description: Average time from kitchen ticket queued to ready }
+        byChannel:
+          type: array
+          items:
+            type: object
+            required: [channel, orders, revenue]
+            properties:
+              channel: { $ref: "#/components/schemas/OrderChannel" }
+              orders: { type: integer }
+              revenue: { $ref: "#/components/schemas/Money" }
+        byDay:
+          type: array
+          items:
+            type: object
+            required: [date, orders, revenue]
+            properties:
+              date: { type: string, format: date }
+              orders: { type: integer }
+              revenue: { $ref: "#/components/schemas/Money" }
+        byHour:
+          type: array
+          description: Orders per hour of day (0-23), restaurant time zone
+          items:
+            type: object
+            required: [hour, orders]
+            properties:
+              hour: { type: integer }
+              orders: { type: integer }
+        topProducts:
+          type: array
+          items:
+            type: object
+            required: [productId, name, quantity, revenue]
+            properties:
+              productId: { type: string, format: uuid }
+              name: { type: string }
+              quantity: { type: integer }
+              revenue: { $ref: "#/components/schemas/Money" }
+        foodCost: { $ref: "#/components/schemas/Money", description: FIFO cost of ingredients consumed by sales in the period }
+        stockValue: { $ref: "#/components/schemas/Money" }
+        lowStockCount: { type: integer }

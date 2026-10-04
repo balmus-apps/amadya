@@ -14,6 +14,8 @@ import ro.amadya.contract.model.Menu
 import ro.amadya.contract.model.ModifierGroupRequest
 import ro.amadya.contract.model.Product
 import ro.amadya.contract.model.ProductRequest
+import ro.amadya.contract.model.Promotion
+import ro.amadya.contract.model.PromotionRequest
 import java.util.UUID
 
 @RestController
@@ -63,6 +65,19 @@ class CatalogAdminController(private val catalog: CatalogService) : CatalogAdmin
 
     override fun deleteModifierGroup(id: UUID): ResponseEntity<Unit> {
         catalog.deleteModifierGroup(id)
+        return ResponseEntity.noContent().build()
+    }
+
+    override fun listPromotions(): ResponseEntity<List<Promotion>> = ResponseEntity.ok(catalog.listPromotions())
+
+    override fun createPromotion(promotionRequest: PromotionRequest): ResponseEntity<Promotion> =
+        ResponseEntity.status(HttpStatus.CREATED).body(catalog.createPromotion(promotionRequest))
+
+    override fun updatePromotion(id: UUID, promotionRequest: PromotionRequest): ResponseEntity<Promotion> =
+        ResponseEntity.ok(catalog.updatePromotion(id, promotionRequest))
+
+    override fun deletePromotion(id: UUID): ResponseEntity<Unit> {
+        catalog.deletePromotion(id)
         return ResponseEntity.noContent().build()
     }
 }

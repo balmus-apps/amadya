@@ -25,7 +25,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Services: PostgreSQL 17, MinIO, Caddy, the Core API (`https://localhost/api/v1`, or `http://localhost:8080/api/v1` directly) and the customer menu (`https://localhost`).
+Services: PostgreSQL 17, Caddy, the Core API (`https://localhost/api/v1`, or `http://localhost:8080/api/v1` directly) and the customer menu (`https://localhost`).
 With `SPRING_PROFILES_ACTIVE=dev` the demo restaurant (BurRegescu) is loaded. Apps are added to `docker-compose.yml` as each phase lands.
 
 ## Delivery phases
