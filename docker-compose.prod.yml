@@ -22,13 +22,27 @@ services:
   postgres:
     # Only the api talks to the database.
     ports: !reset []
+    # Sized for a 2 GB server shared with other apps; the api uses at most
+    # DB_POOL_SIZE connections.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - effective_cache_size=256MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - max_connections=30
     logging: *logging
     security_opt:
       - no-new-privileges:true
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 256M
 
   caddy:
     # No published ports: an internal router, not the edge.
@@ -65,11 +79,22 @@ services:
     logging: *logging
     security_opt:
       - no-new-privileges:true
+    environment:
+      # Measured: 150 concurrent orders + 450 reads, three rounds, peak RSS
+      # 430 MB with these settings. -Xmx overrides the image's MaxRAMPercentage.
+      JAVA_TOOL_OPTIONS: >-
+        -Xmx224m -Xss512k -XX:+UseSerialGC
+        -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=64m
+        -XX:MaxDirectMemorySize=32m -XX:TieredStopAtLevel=1
+        -XX:+ExitOnOutOfMemoryError
+      # glibc otherwise keeps one malloc arena per core-ish thread count.
+      MALLOC_ARENA_MAX: "2"
+      DB_POOL_SIZE: "5"
+      EVENT_WORKERS: "3"
     deploy:
       resources:
         limits:
-          # The JVM takes 75% of this as heap (-XX:MaxRAMPercentage=75).
-          memory: 1G
+          memory: 576M
 
   menu-web:
     logging: *logging
