@@ -100,7 +100,7 @@ export type VatRate = {
   name: LocalizedText;
   percent: string;
   /**
-   * Fiscal printer VAT group letter
+   * Fiscal printer VAT group letter, examples: [A]
    */
   fiscalGroup: string;
   active: boolean;
@@ -460,6 +460,499 @@ export type PaymentIntent = {
   clientSecret?: string;
   publishableKey?: string;
   amount: Money;
+};
+
+/**
+ * Decimal quantity, up to 3 decimals
+ */
+export type Quantity = string;
+
+export type Dimension = "MASS" | "VOLUME" | "COUNT" | "LENGTH";
+
+export type UnitStatus = "ACTIVE" | "UNMAPPED";
+
+export type MeasureUnit = {
+  id: string;
+  code: string;
+  name: LocalizedText;
+  dimension?: Dimension;
+  /**
+   * How many reference units one unit equals (kg = 1000)
+   */
+  factor: string;
+  isReference: boolean;
+  aliases: Array<string>;
+  status: UnitStatus;
+};
+
+export type MeasureUnitRequest = {
+  code: string;
+  name: LocalizedText;
+  dimension: Dimension;
+  factor: string;
+  aliases?: Array<string>;
+};
+
+export type WarehouseType =
+  "INGREDIENTS" | "FINISHED_GOODS" | "FIXED_ASSETS" | "CONSUMABLES";
+
+export type Warehouse = {
+  id: string;
+  code: string;
+  name: LocalizedText;
+  type: WarehouseType;
+  active: boolean;
+};
+
+export type WarehouseRequest = {
+  code: string;
+  name: LocalizedText;
+  type: WarehouseType;
+  active?: boolean;
+};
+
+export type Packaging = {
+  id?: string;
+  name: string;
+  qtyInBase: Quantity;
+  barcode?: string;
+};
+
+export type StockItem = {
+  id: string;
+  sku: string;
+  name: LocalizedText;
+  type: WarehouseType;
+  /**
+   * Reference unit of the item's dimension (g, ml, buc)
+   */
+  baseUnitId: string;
+  baseUnitCode: string;
+  displayUnitId?: string;
+  defaultWarehouseId?: string;
+  minStock: Quantity;
+  active: boolean;
+  packagings: Array<Packaging>;
+  quantityOnHand: Quantity;
+};
+
+export type StockItemRequest = {
+  sku: string;
+  name: LocalizedText;
+  type: WarehouseType;
+  dimension: Dimension;
+  displayUnitId?: string;
+  defaultWarehouseId?: string;
+  minStock?: Quantity;
+  active?: boolean;
+  packagings?: Array<Packaging>;
+};
+
+export type StockBalance = {
+  warehouseId: string;
+  stockItemId: string;
+  sku: string;
+  itemName: string;
+  quantity: Quantity;
+  unitCode: string;
+  value: Money;
+  minStock: Quantity;
+  low: boolean;
+};
+
+export type StockMovementType =
+  | "RECEIPT_NIR"
+  | "CONSUMPTION_SALE"
+  | "RETURN_SALE"
+  | "TRANSFER_OUT"
+  | "TRANSFER_IN"
+  | "CONSUMPTION_NOTE"
+  | "WASTE"
+  | "COUNT_LOSS"
+  | "COUNT_GAIN"
+  | "REVERSAL";
+
+export type StockMovement = {
+  id: string;
+  warehouseId: string;
+  stockItemId: string;
+  itemName: string;
+  type: StockMovementType;
+  quantity: Quantity;
+  unitCode: string;
+  cost: Money;
+  sourceType?: string;
+  sourceId?: string;
+  /**
+   * Human reference, e.g. NIR-2026-000012 or order B-014
+   */
+  sourceRef?: string;
+  occurredAt: string;
+};
+
+export type StockLot = {
+  id: string;
+  warehouseId: string;
+  stockItemId: string;
+  receivedAt: string;
+  quantityInitial: Quantity;
+  quantityRemaining: Quantity;
+  /**
+   * Cost per base unit (6 decimals)
+   */
+  unitCost: string;
+  unitCode: string;
+};
+
+export type StockDocumentType = "TRANSFER" | "CONSUMPTION" | "WASTE" | "COUNT";
+
+export type StockDocumentLineRequest = {
+  stockItemId: string;
+  quantity: Quantity;
+  /**
+   * Unit of `quantity`; defaults to the item's base unit
+   */
+  unitId?: string;
+  /**
+   * Alternative to unitId
+   */
+  packagingId?: string;
+  reason?: string;
+};
+
+export type StockDocumentRequest = {
+  type: StockDocumentType;
+  date?: string;
+  /**
+   * Source warehouse (counted warehouse for COUNT)
+   */
+  warehouseId: string;
+  /**
+   * Required for TRANSFER
+   */
+  targetWarehouseId?: string;
+  note?: string;
+  /**
+   * For COUNT, `quantity` is the counted quantity
+   */
+  lines: Array<StockDocumentLineRequest>;
+};
+
+export type StockDocumentLine = {
+  stockItemId: string;
+  itemName: string;
+  quantity: Quantity;
+  unitCode: string;
+  systemQuantity?: Quantity;
+  difference?: Quantity;
+  cost?: Money;
+  reason?: string;
+};
+
+export type StockDocument = {
+  id: string;
+  number: string;
+  type: StockDocumentType;
+  date: string;
+  warehouseId: string;
+  targetWarehouseId?: string;
+  note?: string;
+  lines: Array<StockDocumentLine>;
+  totalCost: Money;
+  createdAt: string;
+};
+
+export type RecipeLineRequest = {
+  stockItemId: string;
+  quantity: Quantity;
+  /**
+   * Unit of `quantity`; defaults to the item's base unit
+   */
+  unitId?: string;
+  /**
+   * Defaults to the item's default warehouse
+   */
+  warehouseId?: string;
+};
+
+export type RecipeRequest = {
+  lines: Array<RecipeLineRequest>;
+};
+
+export type RecipeLine = {
+  stockItemId: string;
+  itemName: string;
+  quantity: Quantity;
+  /**
+   * Base unit of the item
+   */
+  unitCode: string;
+  warehouseId?: string;
+  estimatedCost?: Money;
+};
+
+export type Recipe = {
+  productId?: string;
+  optionId?: string;
+  lines: Array<RecipeLine>;
+  /**
+   * Current FIFO cost of one portion
+   */
+  estimatedCost?: Money;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  cui?: string;
+  regCom?: string;
+  address?: string;
+  iban?: string;
+  email?: string;
+  phone?: string;
+  active: boolean;
+};
+
+export type SupplierRequest = {
+  name: string;
+  cui?: string;
+  regCom?: string;
+  address?: string;
+  iban?: string;
+  email?: string;
+  phone?: string;
+  active?: boolean;
+};
+
+export type InvoiceSource = "MANUAL" | "EFACTURA_XML" | "SCAN";
+
+export type PurchaseInvoiceLine = {
+  id: string;
+  position: number;
+  supplierCode?: string;
+  description: string;
+  quantity: Quantity;
+  /**
+   * As written on the invoice (e.g. KGM, kg, BAX)
+   */
+  unitCode: string;
+  unitId?: string;
+  packagingId?: string;
+  /**
+   * Net unit price
+   */
+  unitPrice: string;
+  vatPercent: string;
+  lineNet: string;
+  stockItemId?: string;
+  /**
+   * True when stock item and a convertible unit are known
+   */
+  matched?: boolean;
+};
+
+export type PurchaseInvoice = {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  series?: string;
+  number: string;
+  issueDate: string;
+  dueDate?: string;
+  currency: string;
+  totalNet: string;
+  totalVat: string;
+  totalGross: string;
+  source: InvoiceSource;
+  /**
+   * NIR created from this invoice, if any
+   */
+  nirId?: string;
+  lines: Array<PurchaseInvoiceLine>;
+};
+
+export type PurchaseInvoiceLineRequest = {
+  supplierCode?: string;
+  description: string;
+  quantity: Quantity;
+  unitCode?: string;
+  unitId?: string;
+  packagingId?: string;
+  unitPrice: string;
+  vatPercent: string;
+  stockItemId?: string;
+};
+
+export type PurchaseInvoiceRequest = {
+  supplierId: string;
+  series?: string;
+  number: string;
+  issueDate: string;
+  dueDate?: string;
+  currency?: string;
+  lines: Array<PurchaseInvoiceLineRequest>;
+};
+
+export type InvoiceLineMatchRequest = {
+  stockItemId: string;
+  unitId?: string;
+  packagingId?: string;
+  /**
+   * Remember this supplier code/description for future invoices
+   */
+  remember?: boolean;
+};
+
+export type NirStatus = "DRAFT" | "POSTED" | "REVERSED";
+
+export type NirLineRequest = {
+  stockItemId: string;
+  unitId?: string;
+  packagingId?: string;
+  quantityDocument: Quantity;
+  quantityReceived: Quantity;
+  /**
+   * Net purchase price per unit of the line
+   */
+  unitPrice: string;
+  vatPercent?: string;
+  discrepancyReason?: string;
+};
+
+export type NirRequest = {
+  /**
+   * Prefill supplier, references and lines from this invoice (create only)
+   */
+  invoiceId?: string;
+  warehouseId: string;
+  supplierId?: string;
+  date?: string;
+  invoiceRef?: string;
+  deliveryNoteRef?: string;
+  committee?: Array<string>;
+  notes?: string;
+  lines?: Array<NirLineRequest>;
+};
+
+export type NirLine = {
+  id: string;
+  position: number;
+  stockItemId: string;
+  itemName: string;
+  unitId?: string;
+  packagingId?: string;
+  unitCode: string;
+  quantityDocument: Quantity;
+  quantityReceived: Quantity;
+  difference: Quantity;
+  unitPrice: string;
+  vatPercent: string;
+  valueNet: string;
+  vatValue: string;
+  discrepancyReason?: string;
+};
+
+export type Nir = {
+  id: string;
+  /**
+   * Assigned when posted, e.g. NIR-2026-000012
+   */
+  number?: string;
+  status: NirStatus;
+  date: string;
+  warehouseId: string;
+  supplierId?: string;
+  supplierName?: string;
+  invoiceId?: string;
+  invoiceRef?: string;
+  deliveryNoteRef?: string;
+  committee: Array<string>;
+  notes?: string;
+  reversalOfId?: string;
+  reversedById?: string;
+  postedAt?: string;
+  lines: Array<NirLine>;
+  totalNet: string;
+  totalVat: string;
+  currency: string;
+};
+
+export type Promotion = {
+  id: string;
+  title: LocalizedText;
+  subtitle?: LocalizedText;
+  badge?: string;
+  imageUrl?: string;
+  productId?: string;
+  startsAt?: string;
+  endsAt?: string;
+  sortOrder: number;
+  active: boolean;
+};
+
+export type PromotionRequest = {
+  title: LocalizedText;
+  subtitle?: LocalizedText;
+  badge?: string;
+  imageUrl?: string;
+  productId?: string;
+  startsAt?: string;
+  endsAt?: string;
+  sortOrder?: number;
+  active?: boolean;
+};
+
+export type UploadedFile = {
+  key: string;
+  /**
+   * Relative URL to use in imageUrl fields, e.g. /api/v1/files/{key}
+   */
+  url: string;
+  contentType: string;
+  bytes: number;
+};
+
+export type Dashboard = {
+  from: string;
+  to: string;
+  revenue: Money;
+  vat?: Money;
+  orders: number;
+  averageTicket: Money;
+  cancelled: number;
+  /**
+   * Average time from kitchen ticket queued to ready
+   */
+  averagePrepSeconds?: number;
+  byChannel: Array<{
+    channel: OrderChannel;
+    orders: number;
+    revenue: Money;
+  }>;
+  byDay: Array<{
+    date: string;
+    orders: number;
+    revenue: Money;
+  }>;
+  /**
+   * Orders per hour of day (0-23), restaurant time zone
+   */
+  byHour: Array<{
+    hour: number;
+    orders: number;
+  }>;
+  topProducts: Array<{
+    productId: string;
+    name: string;
+    quantity: number;
+    revenue: Money;
+  }>;
+  /**
+   * FIFO cost of ingredients consumed by sales in the period
+   */
+  foodCost?: Money;
+  stockValue: Money;
+  lowStockCount: number;
 };
 
 export type AcceptLanguage = string;
@@ -1723,3 +2216,1158 @@ export type StripeWebhookResponses = {
    */
   200: unknown;
 };
+
+export type ListMeasureUnitsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/units";
+};
+
+export type ListMeasureUnitsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListMeasureUnitsError =
+  ListMeasureUnitsErrors[keyof ListMeasureUnitsErrors];
+
+export type ListMeasureUnitsResponses = {
+  /**
+   * OK
+   */
+  200: Array<MeasureUnit>;
+};
+
+export type ListMeasureUnitsResponse =
+  ListMeasureUnitsResponses[keyof ListMeasureUnitsResponses];
+
+export type CreateMeasureUnitData = {
+  body: MeasureUnitRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/units";
+};
+
+export type CreateMeasureUnitErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type CreateMeasureUnitError =
+  CreateMeasureUnitErrors[keyof CreateMeasureUnitErrors];
+
+export type CreateMeasureUnitResponses = {
+  /**
+   * Created
+   */
+  201: MeasureUnit;
+};
+
+export type CreateMeasureUnitResponse =
+  CreateMeasureUnitResponses[keyof CreateMeasureUnitResponses];
+
+export type UpdateMeasureUnitData = {
+  body: MeasureUnitRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/units/{id}";
+};
+
+export type UpdateMeasureUnitErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type UpdateMeasureUnitError =
+  UpdateMeasureUnitErrors[keyof UpdateMeasureUnitErrors];
+
+export type UpdateMeasureUnitResponses = {
+  /**
+   * OK
+   */
+  200: MeasureUnit;
+};
+
+export type UpdateMeasureUnitResponse =
+  UpdateMeasureUnitResponses[keyof UpdateMeasureUnitResponses];
+
+export type ListWarehousesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/warehouses";
+};
+
+export type ListWarehousesErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListWarehousesError =
+  ListWarehousesErrors[keyof ListWarehousesErrors];
+
+export type ListWarehousesResponses = {
+  /**
+   * OK
+   */
+  200: Array<Warehouse>;
+};
+
+export type ListWarehousesResponse =
+  ListWarehousesResponses[keyof ListWarehousesResponses];
+
+export type CreateWarehouseData = {
+  body: WarehouseRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/warehouses";
+};
+
+export type CreateWarehouseErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type CreateWarehouseError =
+  CreateWarehouseErrors[keyof CreateWarehouseErrors];
+
+export type CreateWarehouseResponses = {
+  /**
+   * Created
+   */
+  201: Warehouse;
+};
+
+export type CreateWarehouseResponse =
+  CreateWarehouseResponses[keyof CreateWarehouseResponses];
+
+export type UpdateWarehouseData = {
+  body: WarehouseRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/warehouses/{id}";
+};
+
+export type UpdateWarehouseErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type UpdateWarehouseError =
+  UpdateWarehouseErrors[keyof UpdateWarehouseErrors];
+
+export type UpdateWarehouseResponses = {
+  /**
+   * OK
+   */
+  200: Warehouse;
+};
+
+export type UpdateWarehouseResponse =
+  UpdateWarehouseResponses[keyof UpdateWarehouseResponses];
+
+export type ListStockItemsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    type?: WarehouseType;
+    /**
+     * Search in name or SKU
+     */
+    q?: string;
+  };
+  url: "/admin/stock-items";
+};
+
+export type ListStockItemsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListStockItemsError =
+  ListStockItemsErrors[keyof ListStockItemsErrors];
+
+export type ListStockItemsResponses = {
+  /**
+   * OK
+   */
+  200: Array<StockItem>;
+};
+
+export type ListStockItemsResponse =
+  ListStockItemsResponses[keyof ListStockItemsResponses];
+
+export type CreateStockItemData = {
+  body: StockItemRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/stock-items";
+};
+
+export type CreateStockItemErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type CreateStockItemError =
+  CreateStockItemErrors[keyof CreateStockItemErrors];
+
+export type CreateStockItemResponses = {
+  /**
+   * Created
+   */
+  201: StockItem;
+};
+
+export type CreateStockItemResponse =
+  CreateStockItemResponses[keyof CreateStockItemResponses];
+
+export type GetStockItemData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/stock-items/{id}";
+};
+
+export type GetStockItemErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetStockItemError = GetStockItemErrors[keyof GetStockItemErrors];
+
+export type GetStockItemResponses = {
+  /**
+   * OK
+   */
+  200: StockItem;
+};
+
+export type GetStockItemResponse =
+  GetStockItemResponses[keyof GetStockItemResponses];
+
+export type UpdateStockItemData = {
+  body: StockItemRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/stock-items/{id}";
+};
+
+export type UpdateStockItemErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type UpdateStockItemError =
+  UpdateStockItemErrors[keyof UpdateStockItemErrors];
+
+export type UpdateStockItemResponses = {
+  /**
+   * OK
+   */
+  200: StockItem;
+};
+
+export type UpdateStockItemResponse =
+  UpdateStockItemResponses[keyof UpdateStockItemResponses];
+
+export type ListStockBalancesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    warehouseId?: string;
+    lowOnly?: boolean;
+  };
+  url: "/admin/stock/balances";
+};
+
+export type ListStockBalancesErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListStockBalancesError =
+  ListStockBalancesErrors[keyof ListStockBalancesErrors];
+
+export type ListStockBalancesResponses = {
+  /**
+   * OK
+   */
+  200: Array<StockBalance>;
+};
+
+export type ListStockBalancesResponse =
+  ListStockBalancesResponses[keyof ListStockBalancesResponses];
+
+export type ListStockMovementsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    warehouseId?: string;
+    stockItemId?: string;
+    limit?: number;
+  };
+  url: "/admin/stock/movements";
+};
+
+export type ListStockMovementsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListStockMovementsError =
+  ListStockMovementsErrors[keyof ListStockMovementsErrors];
+
+export type ListStockMovementsResponses = {
+  /**
+   * OK
+   */
+  200: Array<StockMovement>;
+};
+
+export type ListStockMovementsResponse =
+  ListStockMovementsResponses[keyof ListStockMovementsResponses];
+
+export type ListStockLotsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    warehouseId?: string;
+    stockItemId?: string;
+  };
+  url: "/admin/stock/lots";
+};
+
+export type ListStockLotsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListStockLotsError = ListStockLotsErrors[keyof ListStockLotsErrors];
+
+export type ListStockLotsResponses = {
+  /**
+   * OK
+   */
+  200: Array<StockLot>;
+};
+
+export type ListStockLotsResponse =
+  ListStockLotsResponses[keyof ListStockLotsResponses];
+
+export type ListStockDocumentsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    type?: StockDocumentType;
+    limit?: number;
+  };
+  url: "/admin/stock/documents";
+};
+
+export type ListStockDocumentsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListStockDocumentsError =
+  ListStockDocumentsErrors[keyof ListStockDocumentsErrors];
+
+export type ListStockDocumentsResponses = {
+  /**
+   * OK
+   */
+  200: Array<StockDocument>;
+};
+
+export type ListStockDocumentsResponse =
+  ListStockDocumentsResponses[keyof ListStockDocumentsResponses];
+
+export type CreateStockDocumentData = {
+  body: StockDocumentRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/stock/documents";
+};
+
+export type CreateStockDocumentErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type CreateStockDocumentError =
+  CreateStockDocumentErrors[keyof CreateStockDocumentErrors];
+
+export type CreateStockDocumentResponses = {
+  /**
+   * Posted
+   */
+  201: StockDocument;
+};
+
+export type CreateStockDocumentResponse =
+  CreateStockDocumentResponses[keyof CreateStockDocumentResponses];
+
+export type GetStockDocumentData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/stock/documents/{id}";
+};
+
+export type GetStockDocumentErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetStockDocumentError =
+  GetStockDocumentErrors[keyof GetStockDocumentErrors];
+
+export type GetStockDocumentResponses = {
+  /**
+   * OK
+   */
+  200: StockDocument;
+};
+
+export type GetStockDocumentResponse =
+  GetStockDocumentResponses[keyof GetStockDocumentResponses];
+
+export type GetProductRecipeData = {
+  body?: never;
+  path: {
+    productId: string;
+  };
+  query?: never;
+  url: "/admin/recipes/products/{productId}";
+};
+
+export type GetProductRecipeErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetProductRecipeError =
+  GetProductRecipeErrors[keyof GetProductRecipeErrors];
+
+export type GetProductRecipeResponses = {
+  /**
+   * OK
+   */
+  200: Recipe;
+};
+
+export type GetProductRecipeResponse =
+  GetProductRecipeResponses[keyof GetProductRecipeResponses];
+
+export type ReplaceProductRecipeData = {
+  body: RecipeRequest;
+  path: {
+    productId: string;
+  };
+  query?: never;
+  url: "/admin/recipes/products/{productId}";
+};
+
+export type ReplaceProductRecipeErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type ReplaceProductRecipeError =
+  ReplaceProductRecipeErrors[keyof ReplaceProductRecipeErrors];
+
+export type ReplaceProductRecipeResponses = {
+  /**
+   * OK
+   */
+  200: Recipe;
+};
+
+export type ReplaceProductRecipeResponse =
+  ReplaceProductRecipeResponses[keyof ReplaceProductRecipeResponses];
+
+export type GetOptionRecipeData = {
+  body?: never;
+  path: {
+    optionId: string;
+  };
+  query?: never;
+  url: "/admin/recipes/options/{optionId}";
+};
+
+export type GetOptionRecipeErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetOptionRecipeError =
+  GetOptionRecipeErrors[keyof GetOptionRecipeErrors];
+
+export type GetOptionRecipeResponses = {
+  /**
+   * OK
+   */
+  200: Recipe;
+};
+
+export type GetOptionRecipeResponse =
+  GetOptionRecipeResponses[keyof GetOptionRecipeResponses];
+
+export type ReplaceOptionRecipeData = {
+  body: RecipeRequest;
+  path: {
+    optionId: string;
+  };
+  query?: never;
+  url: "/admin/recipes/options/{optionId}";
+};
+
+export type ReplaceOptionRecipeErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type ReplaceOptionRecipeError =
+  ReplaceOptionRecipeErrors[keyof ReplaceOptionRecipeErrors];
+
+export type ReplaceOptionRecipeResponses = {
+  /**
+   * OK
+   */
+  200: Recipe;
+};
+
+export type ReplaceOptionRecipeResponse =
+  ReplaceOptionRecipeResponses[keyof ReplaceOptionRecipeResponses];
+
+export type ListSuppliersData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/suppliers";
+};
+
+export type ListSuppliersErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListSuppliersError = ListSuppliersErrors[keyof ListSuppliersErrors];
+
+export type ListSuppliersResponses = {
+  /**
+   * OK
+   */
+  200: Array<Supplier>;
+};
+
+export type ListSuppliersResponse =
+  ListSuppliersResponses[keyof ListSuppliersResponses];
+
+export type CreateSupplierData = {
+  body: SupplierRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/suppliers";
+};
+
+export type CreateSupplierErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type CreateSupplierError =
+  CreateSupplierErrors[keyof CreateSupplierErrors];
+
+export type CreateSupplierResponses = {
+  /**
+   * Created
+   */
+  201: Supplier;
+};
+
+export type CreateSupplierResponse =
+  CreateSupplierResponses[keyof CreateSupplierResponses];
+
+export type UpdateSupplierData = {
+  body: SupplierRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/suppliers/{id}";
+};
+
+export type UpdateSupplierErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type UpdateSupplierError =
+  UpdateSupplierErrors[keyof UpdateSupplierErrors];
+
+export type UpdateSupplierResponses = {
+  /**
+   * OK
+   */
+  200: Supplier;
+};
+
+export type UpdateSupplierResponse =
+  UpdateSupplierResponses[keyof UpdateSupplierResponses];
+
+export type ListPurchaseInvoicesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    limit?: number;
+  };
+  url: "/admin/invoices";
+};
+
+export type ListPurchaseInvoicesErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListPurchaseInvoicesError =
+  ListPurchaseInvoicesErrors[keyof ListPurchaseInvoicesErrors];
+
+export type ListPurchaseInvoicesResponses = {
+  /**
+   * OK
+   */
+  200: Array<PurchaseInvoice>;
+};
+
+export type ListPurchaseInvoicesResponse =
+  ListPurchaseInvoicesResponses[keyof ListPurchaseInvoicesResponses];
+
+export type CreatePurchaseInvoiceData = {
+  body: PurchaseInvoiceRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/invoices";
+};
+
+export type CreatePurchaseInvoiceErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type CreatePurchaseInvoiceError =
+  CreatePurchaseInvoiceErrors[keyof CreatePurchaseInvoiceErrors];
+
+export type CreatePurchaseInvoiceResponses = {
+  /**
+   * Created
+   */
+  201: PurchaseInvoice;
+};
+
+export type CreatePurchaseInvoiceResponse =
+  CreatePurchaseInvoiceResponses[keyof CreatePurchaseInvoiceResponses];
+
+export type ImportEFacturaData = {
+  body: string;
+  path?: never;
+  query?: never;
+  url: "/admin/invoices/import/efactura";
+};
+
+export type ImportEFacturaErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type ImportEFacturaError =
+  ImportEFacturaErrors[keyof ImportEFacturaErrors];
+
+export type ImportEFacturaResponses = {
+  /**
+   * Imported
+   */
+  201: PurchaseInvoice;
+};
+
+export type ImportEFacturaResponse =
+  ImportEFacturaResponses[keyof ImportEFacturaResponses];
+
+export type GetPurchaseInvoiceData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/invoices/{id}";
+};
+
+export type GetPurchaseInvoiceErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetPurchaseInvoiceError =
+  GetPurchaseInvoiceErrors[keyof GetPurchaseInvoiceErrors];
+
+export type GetPurchaseInvoiceResponses = {
+  /**
+   * OK
+   */
+  200: PurchaseInvoice;
+};
+
+export type GetPurchaseInvoiceResponse =
+  GetPurchaseInvoiceResponses[keyof GetPurchaseInvoiceResponses];
+
+export type MatchInvoiceLineData = {
+  body: InvoiceLineMatchRequest;
+  path: {
+    id: string;
+    lineId: string;
+  };
+  query?: never;
+  url: "/admin/invoices/{id}/lines/{lineId}/match";
+};
+
+export type MatchInvoiceLineErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type MatchInvoiceLineError =
+  MatchInvoiceLineErrors[keyof MatchInvoiceLineErrors];
+
+export type MatchInvoiceLineResponses = {
+  /**
+   * OK
+   */
+  200: PurchaseInvoice;
+};
+
+export type MatchInvoiceLineResponse =
+  MatchInvoiceLineResponses[keyof MatchInvoiceLineResponses];
+
+export type ListNirsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    status?: NirStatus;
+    limit?: number;
+  };
+  url: "/admin/nirs";
+};
+
+export type ListNirsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListNirsError = ListNirsErrors[keyof ListNirsErrors];
+
+export type ListNirsResponses = {
+  /**
+   * OK
+   */
+  200: Array<Nir>;
+};
+
+export type ListNirsResponse = ListNirsResponses[keyof ListNirsResponses];
+
+export type CreateNirData = {
+  body: NirRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/nirs";
+};
+
+export type CreateNirErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type CreateNirError = CreateNirErrors[keyof CreateNirErrors];
+
+export type CreateNirResponses = {
+  /**
+   * Created
+   */
+  201: Nir;
+};
+
+export type CreateNirResponse = CreateNirResponses[keyof CreateNirResponses];
+
+export type GetNirData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/nirs/{id}";
+};
+
+export type GetNirErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetNirError = GetNirErrors[keyof GetNirErrors];
+
+export type GetNirResponses = {
+  /**
+   * OK
+   */
+  200: Nir;
+};
+
+export type GetNirResponse = GetNirResponses[keyof GetNirResponses];
+
+export type UpdateNirData = {
+  body: NirRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/nirs/{id}";
+};
+
+export type UpdateNirErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type UpdateNirError = UpdateNirErrors[keyof UpdateNirErrors];
+
+export type UpdateNirResponses = {
+  /**
+   * OK
+   */
+  200: Nir;
+};
+
+export type UpdateNirResponse = UpdateNirResponses[keyof UpdateNirResponses];
+
+export type PostNirData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/nirs/{id}/post";
+};
+
+export type PostNirErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type PostNirError = PostNirErrors[keyof PostNirErrors];
+
+export type PostNirResponses = {
+  /**
+   * Posted
+   */
+  200: Nir;
+};
+
+export type PostNirResponse = PostNirResponses[keyof PostNirResponses];
+
+export type ReverseNirData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/nirs/{id}/reverse";
+};
+
+export type ReverseNirErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type ReverseNirError = ReverseNirErrors[keyof ReverseNirErrors];
+
+export type ReverseNirResponses = {
+  /**
+   * The reversing NIR
+   */
+  200: Nir;
+};
+
+export type ReverseNirResponse = ReverseNirResponses[keyof ReverseNirResponses];
+
+export type ListPromotionsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/promotions";
+};
+
+export type ListPromotionsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListPromotionsError =
+  ListPromotionsErrors[keyof ListPromotionsErrors];
+
+export type ListPromotionsResponses = {
+  /**
+   * OK
+   */
+  200: Array<Promotion>;
+};
+
+export type ListPromotionsResponse =
+  ListPromotionsResponses[keyof ListPromotionsResponses];
+
+export type CreatePromotionData = {
+  body: PromotionRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/promotions";
+};
+
+export type CreatePromotionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type CreatePromotionError =
+  CreatePromotionErrors[keyof CreatePromotionErrors];
+
+export type CreatePromotionResponses = {
+  /**
+   * Created
+   */
+  201: Promotion;
+};
+
+export type CreatePromotionResponse =
+  CreatePromotionResponses[keyof CreatePromotionResponses];
+
+export type DeletePromotionData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/promotions/{id}";
+};
+
+export type DeletePromotionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type DeletePromotionError =
+  DeletePromotionErrors[keyof DeletePromotionErrors];
+
+export type DeletePromotionResponses = {
+  /**
+   * Deleted
+   */
+  204: void;
+};
+
+export type DeletePromotionResponse =
+  DeletePromotionResponses[keyof DeletePromotionResponses];
+
+export type UpdatePromotionData = {
+  body: PromotionRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/promotions/{id}";
+};
+
+export type UpdatePromotionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type UpdatePromotionError =
+  UpdatePromotionErrors[keyof UpdatePromotionErrors];
+
+export type UpdatePromotionResponses = {
+  /**
+   * OK
+   */
+  200: Promotion;
+};
+
+export type UpdatePromotionResponse =
+  UpdatePromotionResponses[keyof UpdatePromotionResponses];
+
+export type UploadFileData = {
+  body: {
+    file: Blob | File;
+  };
+  path?: never;
+  query?: never;
+  url: "/admin/files";
+};
+
+export type UploadFileErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type UploadFileError = UploadFileErrors[keyof UploadFileErrors];
+
+export type UploadFileResponses = {
+  /**
+   * Stored
+   */
+  201: UploadedFile;
+};
+
+export type UploadFileResponse = UploadFileResponses[keyof UploadFileResponses];
+
+export type GetFileData = {
+  body?: never;
+  path: {
+    key: string;
+  };
+  query?: never;
+  url: "/files/{key}";
+};
+
+export type GetFileErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetFileError = GetFileErrors[keyof GetFileErrors];
+
+export type GetFileResponses = {
+  /**
+   * File content
+   */
+  200: Blob | File;
+};
+
+export type GetFileResponse = GetFileResponses[keyof GetFileResponses];
+
+export type GetDashboardData = {
+  body?: never;
+  path?: never;
+  query: {
+    from: string;
+    to: string;
+  };
+  url: "/admin/reports/dashboard";
+};
+
+export type GetDashboardErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetDashboardError = GetDashboardErrors[keyof GetDashboardErrors];
+
+export type GetDashboardResponses = {
+  /**
+   * OK
+   */
+  200: Dashboard;
+};
+
+export type GetDashboardResponse =
+  GetDashboardResponses[keyof GetDashboardResponses];

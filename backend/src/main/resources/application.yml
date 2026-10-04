@@ -23,6 +23,10 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 7MB
   modulith:
     events:
       republish-outstanding-events-on-restart: true
@@ -70,6 +74,14 @@ amadya:
       enabled: ${EXPO_PUSH_ENABLED:true}
       url: https://exp.host/--/api/v2/push/send
       access-token: ${EXPO_ACCESS_TOKEN:}
+  media:
+    provider: ${MEDIA_PROVIDER:filesystem}
+    dir: ${MEDIA_DIR:./data/files}
+    endpoint: ${S3_ENDPOINT:}
+    region: ${S3_REGION:us-east-1}
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}
+    bucket: ${S3_BUCKET:amadya}
   printing:
     mode: ${PRINTING_MODE:log}
     out-dir: ${PRINTING_OUT_DIR:}

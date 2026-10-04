@@ -16,7 +16,7 @@ System_Boundary(s, "Amadya (docker-compose)") {
   Container(proxy, "Reverse proxy", "Caddy", "TLS, path routing")
   Container(api, "Core API", "Kotlin, Spring Boot, Spring Modulith", "REST (OpenAPI), WebSocket/STOMP, SSE")
   ContainerDb(db, "Database", "PostgreSQL 17", "Schema managed by Flyway")
-  ContainerDb(s3, "Object storage", "MinIO (S3)", "Images, invoice scans, generated PDFs")
+  ContainerDb(s3, "File storage", "Volume or any S3 service", "Images, invoice scans (ADR 0008)")
 }
 
 Container(menuMobile, "Menu Mobile", "Expo / React Native", "Customer app with push notifications")
@@ -40,7 +40,7 @@ Rel(kds, proxy, "HTTPS / WSS")
 Rel(queue, proxy, "SSE")
 Rel(proxy, api, "REST / WS / SSE")
 Rel(api, db, "JDBC")
-Rel(api, s3, "S3 API")
+Rel(api, s3, "Files / S3 API")
 Rel(api, psp, "HTTPS + webhooks")
 Rel(api, ocr, "HTTPS")
 Rel(api, push, "HTTPS")

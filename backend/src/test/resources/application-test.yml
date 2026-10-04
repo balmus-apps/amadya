@@ -14,6 +14,9 @@ amadya:
   notifications:
     expo:
       enabled: false
+  media:
+    provider: filesystem
+    dir: ${java.io.tmpdir}/amadya-test-files
   printing:
     mode: log
 

@@ -7,3 +7,5 @@ export * from "./components/input";
 export * from "./components/label";
 export * from "./components/misc";
 export * from "./components/sheet";
+export * from "./components/controls";
+export * from "./components/table";

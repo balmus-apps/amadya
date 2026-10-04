@@ -36,7 +36,9 @@ between the quantities on the supplier document and the quantities actually rece
 3. A posted NIR is immutable. To correct it, post a reversing NIR (negative quantities) linked to the original.
    A reversal is only allowed while the lots it created are not yet consumed; otherwise it is posted as an adjustment.
 4. Differences are recorded on the NIR and reported per supplier; they never silently change the invoice.
-5. The NIR is printable as a PDF in the legal layout, with the committee signature block.
+5. The NIR is printable in the legal layout, with the committee signature block (print view in the admin app; save as PDF from the browser).
+7. Invoice lines are matched to stock items by the supplier's item code, then by remembered description, then by exact name;
+   each manual match is remembered per supplier. Unknown units (e.g. `XBX`) become `UNMAPPED` units or are mapped to an item packaging.
 6. Allowed warehouse types for a NIR: all four (INGREDIENTS, FINISHED_GOODS, FIXED_ASSETS, CONSUMABLES).
 
 ## Valuation: FIFO
