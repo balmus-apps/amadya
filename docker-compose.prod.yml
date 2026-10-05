@@ -1,7 +1,11 @@
 # Production overlay for amadya.alphatech.ro, behind the shared reverse proxy in
 # repo/proxy:
 #
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+#
+# Images are built off the server by scripts/release.sh and pulled from GHCR;
+# the server (1 vCPU, 2 GB) never builds. AMADYA_TAG picks the release.
 #
 # This stack publishes no host port. The shared proxy owns 80/443 for the whole
 # server, terminates TLS, and reaches this project's own Caddy over the external
@@ -74,6 +78,7 @@ services:
           memory: 128M
 
   api:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-api:${AMADYA_TAG:-latest}
     # Reached only through Caddy (/api).
     ports: !reset []
     logging: *logging
@@ -97,6 +102,7 @@ services:
           memory: 576M
 
   menu-web:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-menu-web:${AMADYA_TAG:-latest}
     logging: *logging
     security_opt:
       - no-new-privileges:true
@@ -106,6 +112,7 @@ services:
           memory: 384M
 
   admin:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-admin:${AMADYA_TAG:-latest}
     logging: *logging
     security_opt:
       - no-new-privileges:true
@@ -115,6 +122,7 @@ services:
           memory: 64M
 
   kitchen:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-kitchen:${AMADYA_TAG:-latest}
     logging: *logging
     security_opt:
       - no-new-privileges:true

@@ -1,5 +1,6 @@
 # Build context: repository root (the OpenAPI spec in api/ is a build input).
-FROM eclipse-temurin:25-jdk AS build
+# The jar is platform-independent, so it is built natively even when the image targets another platform.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk AS build
 WORKDIR /src
 COPY backend/gradlew backend/settings.gradle.kts backend/build.gradle.kts backend/gradle.properties backend/
 COPY backend/gradle backend/gradle

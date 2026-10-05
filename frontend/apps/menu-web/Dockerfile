@@ -1,4 +1,5 @@
 # Build context: frontend/ (the pnpm workspace root).
+# Built on the target platform: the standalone output ships native modules (sharp).
 FROM node:24-alpine AS build
 RUN npm install -g pnpm@10.34.6
 WORKDIR /repo
