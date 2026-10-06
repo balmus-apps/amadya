@@ -15,6 +15,9 @@
   "menu": {
     "title": "Meniu",
     "categories": "Categorii",
+    "promotions": "Promoții",
+    "previous": "Înapoi",
+    "next": "Înainte",
     "soldOut": "Indisponibil",
     "add": "Adaugă",
     "addToCart": "Adaugă · {price}",

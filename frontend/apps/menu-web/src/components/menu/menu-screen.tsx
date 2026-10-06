@@ -11,6 +11,7 @@ import { useSettings } from "../providers";
 import { CartBar } from "./cart";
 import { ProductArt } from "./product-art";
 import { ProductSheet } from "./product-sheet";
+import { PromoStrip } from "./promo-strip";
 
 export function MenuScreen({ menu }: { menu: Menu }) {
   const t = useTranslations("menu");
@@ -100,37 +101,7 @@ export function MenuScreen({ menu }: { menu: Menu }) {
         </div>
       )}
 
-      {menu.promotions.length > 0 && (
-        <section aria-label="Promo" className="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
-          {menu.promotions.map((promo, i) => {
-            const product = promo.productId ? products.get(promo.productId) : undefined;
-            return (
-              <button
-                key={promo.id}
-                type="button"
-                onClick={() => product && setSelected(product)}
-                disabled={!product}
-                className={cn(
-                  "relative flex min-h-36 w-[85%] max-w-md shrink-0 snap-start flex-col justify-end overflow-hidden rounded-2xl p-5 text-left shadow-sm transition active:scale-[0.99] sm:w-[48%]",
-                  i % 2 === 0 ? "bg-foreground text-background" : "bg-primary text-primary-foreground",
-                )}
-              >
-                {promo.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={promo.imageUrl} alt="" className="absolute inset-0 size-full object-cover opacity-40" />
-                )}
-                {promo.badge && (
-                  <span className="absolute top-4 right-4 rotate-6 rounded-xl bg-accent px-3 py-1.5 font-heading text-lg font-extrabold text-accent-foreground shadow-md">
-                    {promo.badge}
-                  </span>
-                )}
-                <span className="relative font-heading text-2xl leading-tight font-extrabold">{promo.title}</span>
-                {promo.subtitle && <span className="relative mt-1 text-sm opacity-85">{promo.subtitle}</span>}
-              </button>
-            );
-          })}
-        </section>
-      )}
+      {menu.promotions.length > 0 && <PromoStrip promotions={menu.promotions} products={products} onSelect={setSelected} />}
 
       <nav ref={navRef} aria-label={t("categories")} className="sticky top-16 z-30 -mx-4 mt-2 flex gap-2 overflow-x-auto border-b bg-background px-4 py-3 [scrollbar-width:none]">
         {menu.categories.map((c) => (
