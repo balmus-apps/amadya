@@ -23,25 +23,65 @@ export function MenuScreen({ menu }: { menu: Menu }) {
   const products = useMemo(() => new Map(menu.categories.flatMap((c) => c.products).map((p) => [p.id, p])), [menu]);
   const orderingOn = settings.features.takeaway;
 
-  // Highlight the category currently on screen.
+  // While a tapped category is being scrolled to, the highlight stays on it instead of following the sections passing by.
+  const jumpingTo = useRef<string | null>(null);
+
+  // Highlight the category whose section is under the sticky bar. A passive, frame-throttled scroll listener:
+  // it never scrolls anything itself, so it cannot fight the finger or a jump in progress.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (visible) setActiveCategory(visible.target.id.replace("cat-", ""));
-      },
-      { rootMargin: "-140px 0px -60% 0px" },
-    );
-    menu.categories.forEach((c) => {
-      const el = document.getElementById(`cat-${c.id}`);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (jumpingTo.current) return;
+      const navBottom = navRef.current?.getBoundingClientRect().bottom ?? 0;
+      const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      let current = menu.categories[0]?.id;
+      for (const c of menu.categories) {
+        const top = document.getElementById(`cat-${c.id}`)?.getBoundingClientRect().top;
+        if (top !== undefined && top <= navBottom + 8) current = c.id;
+      }
+      setActiveCategory(atEnd ? menu.categories.at(-1)?.id : current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, [menu]);
 
+  // Keep the highlighted chip in view by scrolling the chip bar sideways only. scrollIntoView would also scroll
+  // the page, which interrupts the user's scroll and cancels a jump.
   useEffect(() => {
-    navRef.current?.querySelector(`[data-cat="${activeCategory}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    const nav = navRef.current;
+    const chip = nav?.querySelector<HTMLElement>(`[data-cat="${activeCategory}"]`);
+    if (!nav || !chip) return;
+    nav.scrollTo({ left: chip.offsetLeft - (nav.clientWidth - chip.offsetWidth) / 2, behavior: scrollBehavior() });
   }, [activeCategory]);
+
+  function jumpTo(categoryId: string) {
+    const section = document.getElementById(`cat-${categoryId}`);
+    const nav = navRef.current;
+    if (!section || !nav) return;
+    jumpingTo.current = categoryId;
+    setActiveCategory(categoryId);
+    // Where the bar's bottom will be once stuck; before the page has scrolled past the promos it still sits lower.
+    const stuckBottom = parseFloat(getComputedStyle(nav).top) + nav.offsetHeight;
+    const top = section.getBoundingClientRect().top + window.scrollY - stuckBottom;
+    window.scrollTo({ top, behavior: scrollBehavior() });
+    history.replaceState(null, "", `#cat-${categoryId}`);
+    // scrollend is not available everywhere; the timeout releases the highlight in any case.
+    const release = () => {
+      jumpingTo.current = null;
+      window.removeEventListener("scrollend", release);
+      window.dispatchEvent(new Event("scroll"));
+    };
+    window.addEventListener("scrollend", release, { once: true });
+    setTimeout(release, 1200);
+  }
 
   function quickAdd(product: MenuProduct) {
     add({ productId: product.id, name: product.name, unitPrice: product.price.amount, currency: product.price.currency, quantity: 1, options: [] });
@@ -92,12 +132,17 @@ export function MenuScreen({ menu }: { menu: Menu }) {
         </section>
       )}
 
-      <div ref={navRef} className="sticky top-16 z-30 -mx-4 mt-2 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur [scrollbar-width:none]">
+      <nav ref={navRef} aria-label={t("categories")} className="sticky top-16 z-30 -mx-4 mt-2 flex gap-2 overflow-x-auto border-b bg-background px-4 py-3 [scrollbar-width:none]">
         {menu.categories.map((c) => (
           <a
             key={c.id}
             data-cat={c.id}
             href={`#cat-${c.id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              jumpTo(c.id);
+            }}
+            aria-current={activeCategory === c.id ? "true" : undefined}
             className={cn(
               "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
               activeCategory === c.id ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:text-foreground",
@@ -106,7 +151,7 @@ export function MenuScreen({ menu }: { menu: Menu }) {
             {c.name}
           </a>
         ))}
-      </div>
+      </nav>
 
       {menu.categories.map((category) => (
         <section key={category.id} id={`cat-${category.id}`} className="pt-6">
@@ -161,4 +206,8 @@ export function MenuScreen({ menu }: { menu: Menu }) {
       <CartBar />
     </>
   );
+}
+
+function scrollBehavior(): ScrollBehavior {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 }

@@ -14,6 +14,7 @@
   },
   "menu": {
     "title": "Menu",
+    "categories": "Categories",
     "soldOut": "Sold out",
     "add": "Add",
     "addToCart": "Add · {price}",

@@ -14,6 +14,7 @@
   },
   "menu": {
     "title": "Meniu",
+    "categories": "Categorii",
     "soldOut": "Indisponibil",
     "add": "Adaugă",
     "addToCart": "Adaugă · {price}",
