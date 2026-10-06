@@ -24,6 +24,7 @@ services:
     restart: unless-stopped
     environment:
       AMADYA_DOMAIN: ${AMADYA_DOMAIN}
+      AMADYA_LAN_SITE: ${AMADYA_LAN_SITE:-http://lan.localhost}
     ports:
       - "80:80"
       - "443:443"
