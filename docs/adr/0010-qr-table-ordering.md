@@ -20,8 +20,12 @@ This design keeps the idea and fixes those.
    - **Nothing reaches the kitchen until the waiter confirms the session.** The waiter app shows "Table 5: new guests
      (QR)" with Confirm or Reject.
    - If the waiter already seated the table, the first guest who scans becomes the owner.
-2. **Guest rounds:** each round a guest sends **waits for the waiter's OK**, within a time set in the settings. The
-   waiter confirms (it goes to the kitchen) or rejects it (with a reason the guest sees).
+2. **Guest rounds:** each round a guest sends **waits for the waiter's OK**. The waiter confirms it (it goes to the
+   kitchen) or rejects it (with a reason the guest sees).
+   - **If nobody answers in time, it is confirmed automatically** and goes to the kitchen.
+   - The time limit is **5 minutes by default**. A manager can change it in Admin → Setări at any time, e.g. longer on
+     crowded days. It is a restaurant setting, not a deploy setting.
+   - **The same applies to a guest-started table:** it is confirmed automatically when the time runs out.
 3. **Joining:**
    - Anyone else who scans **asks to join**. The **owner or any waiter** can let them in or refuse.
    - The waiter can also remove a guest.
@@ -58,7 +62,10 @@ This design keeps the idea and fixes those.
 **Guest rounds**
 - They are stored as **pending rounds** (the items, who sent them, when) and only become an order (`placeRound`) when
   the waiter confirms, so the kitchen never sees unconfirmed food.
-- They show in the waiter app with a countdown, set by `amadya.tables.guest-round-timeout` in the settings.
+- They show in the waiter app with a countdown. A scheduled job confirms whatever is still waiting when the time is up,
+  and the activity log says it was confirmed automatically.
+- The time limit (`guestConfirmMinutes`, default 5) is stored with the restaurant settings, next to the QR ordering
+  switch. Changing it applies to new requests.
 
 **Who did what**
 - Rounds record who placed them (guest or waiter), and payments record who paid (guest or waiter).
@@ -90,13 +97,14 @@ This design keeps the idea and fixes those.
 1. QR codes per table (create, regenerate) and the public endpoint that resolves a code to a table.
 2. Guests: start or join a session, the device token, approve, reject or remove (owner or waiter), owner handover by the
    waiter.
-3. Waiter confirmation of guest-started sessions, and pending guest rounds with confirm or reject and the time limit.
+3. Waiter confirmation of guest-started sessions, and pending guest rounds with confirm or reject. Both are confirmed
+   automatically when the time runs out (default 5 minutes, changeable in the settings).
 4. Recording who placed each round and who made each payment, plus the activity log.
 5. Online payments from the table: whole or selected units, reservations, webhook → session payment.
 6. Guest event stream and the new waiter events. Rate limits and expiry jobs.
 7. Integration tests:
    - start → confirm → join → approve;
-   - guest round → confirm and → reject;
+   - guest round → confirm, → reject, and → confirmed automatically when the time runs out;
    - two guests paying overlapping items (reservation);
    - the fake-provider webhook closing the table;
    - a removed guest's token being refused.
@@ -117,14 +125,7 @@ This design keeps the idea and fixes those.
 
 **Admin and infrastructure**
 
-13. Print or download the QR codes, the QR ordering switch, and the time limit for guest rounds.
+13. Print or download the QR codes, the QR ordering switch, and the confirmation time limit (default 5 minutes,
+    changeable at any time).
 14. A Caddy route for `/t/*`, a compose service, the production image and the release script.
 15. Docs: `tables.md`, plus the waiter todo (the QR item is done).
-
-## Open question
-- **What happens when the waiter does not answer a guest round in time?**
-  - (a) It is **sent to the kitchen automatically**: guests are never stuck.
-  - (b) It **expires** and the guest is told to call the waiter.
-  - (c) It **stays waiting**, and the waiter app escalates: an alert to all waiters and the manager.
-
-  Same question for a guest-started table nobody confirms.
