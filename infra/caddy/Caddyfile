@@ -35,7 +35,10 @@
 	handle_path /admin/* {
 		reverse_proxy admin:80
 	}
-	# handle_path /waiter/*  { reverse_proxy waiter:80 }
+	redir /waiter /waiter/
+	handle_path /waiter/* {
+		reverse_proxy waiter:80
+	}
 	redir /kitchen /kitchen/
 	handle_path /kitchen/* {
 		reverse_proxy kitchen:80

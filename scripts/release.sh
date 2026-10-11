@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the four Amadya images for the server (linux/amd64) and pushes them to
+# Builds the Amadya images for the server (linux/amd64) and pushes them to
 # GitHub Container Registry. The server only pulls; it never builds (1 vCPU, 2 GB).
 #
 #   scripts/release.sh            # build + push, tagged <git sha> and latest
@@ -34,6 +34,7 @@ build() { # name, context, dockerfile
 build api      .        backend/Dockerfile
 build admin    frontend frontend/apps/admin/Dockerfile
 build kitchen  frontend frontend/apps/kitchen/Dockerfile
+build waiter   frontend frontend/apps/waiter/Dockerfile
 build menu-web frontend frontend/apps/menu-web/Dockerfile
 
 if [[ $PUSH == 1 ]]; then
