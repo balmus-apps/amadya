@@ -1,4 +1,4 @@
--- DEV ONLY: stock items, packagings, recipes and a demo supplier for the BurRegescu menu.
+-- DEV ONLY: stock items, packagings, recipes and a demo supplier for the Amadya demo menu.
 
 INSERT INTO stock_item (id, sku, name, type, base_unit_id, default_warehouse_id, min_stock)
 VALUES ('0190a000-0000-7000-8000-000000001201', 'CHIFLA-BURGER', '{"ro":"Chiflă burger","en":"Burger bun"}', 'INGREDIENTS', '0190a000-0000-7000-8000-000000001007', '0190a000-0000-7000-8000-000000001101', 40),

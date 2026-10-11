@@ -29,7 +29,7 @@
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cac:PartyLegalEntity><cbc:RegistrationName>BurRegescu Fast Food (demo)</cbc:RegistrationName></cac:PartyLegalEntity>
+      <cac:PartyLegalEntity><cbc:RegistrationName>Amadya Demo SRL</cbc:RegistrationName></cac:PartyLegalEntity>
     </cac:Party>
   </cac:AccountingCustomerParty>
   <cac:InvoiceLine>

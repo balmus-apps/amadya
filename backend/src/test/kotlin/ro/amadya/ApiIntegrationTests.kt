@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Black-box tests over HTTP against PostgreSQL (Testcontainers) with the dev demo menu (BurRegescu) loaded.
+ * Black-box tests over HTTP against PostgreSQL (Testcontainers) with the dev demo menu (Amadya) loaded.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration::class, PushTestConfiguration::class)
@@ -65,7 +65,7 @@ class ApiIntegrationTests {
     fun `public settings and localized menu`() {
         val settings = api.get("/api/v1/settings/public")
         assertEquals(200, settings.status)
-        assertEquals("BurRegescu", settings.text("name"))
+        assertEquals("Amadya", settings.text("name"))
         assertEquals("#FFC400", settings["theme"].path("primary").asString())
 
         val menu = api.get("/api/v1/menu", lang = "en")
@@ -274,7 +274,7 @@ class ApiIntegrationTests {
 
         await atMost Duration.ofSeconds(10) untilAsserted {
             val message = push.sent.first { it.to == expoToken }
-            assertEquals("BurRegescu", message.title)
+            assertEquals("Amadya", message.title)
             assertEquals("Comanda ${order.text("number")} este gata de ridicare!", message.body)
         }
     }

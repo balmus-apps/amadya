@@ -14,7 +14,7 @@ SPRING_PROFILES_ACTIVE=dev POSTGRES_PASSWORD=... DB_PORT=5432 ./gradlew bootRun
 ```
 
 With the `dev` profile:
-- the BurRegescu demo menu is loaded;
+- the Amadya demo menu is loaded;
 - `admin@amadya.local` is created on first start (the password comes from `AMADYA_ADMIN_PASSWORD`, or is generated and logged);
 - CORS allows the local dev servers;
 - the JWT secret may be generated (tokens then reset on restart).

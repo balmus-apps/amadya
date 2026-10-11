@@ -168,7 +168,7 @@ docker compose up -d
 
 - **Services:** PostgreSQL 17, Caddy, the core API (`https://localhost/api/v1`, or `http://localhost:8080/api/v1`
   directly) and the apps listed in the tables above.
-- **Demo data:** with `SPRING_PROFILES_ACTIVE=dev` the demo restaurant (BurRegescu) is loaded, with tables, a waiter
+- **Demo data:** with `SPRING_PROFILES_ACTIVE=dev` the Amadya demo restaurant is loaded, with tables, a waiter
   account and QR codes `demo-1` … `demo-6`, `demo-t1` … `demo-t4`.
 - **Certificate:** locally Caddy uses its own certificate, so the browser asks you to accept it once.
 - **Phones on the same Wi-Fi:** set `AMADYA_LAN_SITE=http://<this machine's IP>` in `.env` and run
