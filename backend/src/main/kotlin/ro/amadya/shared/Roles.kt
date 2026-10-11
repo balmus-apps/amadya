@@ -16,7 +16,7 @@ object Roles {
 }
 
 /** The authenticated caller of the current request, if any (read from the JWT). */
-data class Actor(val userId: UUID, val roles: Set<String>) {
+data class Actor(val userId: UUID, val roles: Set<String>, val name: String? = null) {
     fun hasAny(vararg role: String) = role.any { it in roles }
     val isStaff get() = roles.any { it in Roles.STAFF }
 
@@ -24,7 +24,7 @@ data class Actor(val userId: UUID, val roles: Set<String>) {
         fun current(): Actor? {
             val auth = SecurityContextHolder.getContext().authentication as? JwtAuthenticationToken ?: return null
             val roles = auth.authorities.mapNotNull { it.authority?.removePrefix("ROLE_") }.toSet()
-            return Actor(UUID.fromString(auth.token.subject), roles)
+            return Actor(UUID.fromString(auth.token.subject), roles, auth.token.getClaimAsString("name"))
         }
     }
 }

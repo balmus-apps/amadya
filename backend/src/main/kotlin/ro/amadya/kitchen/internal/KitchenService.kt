@@ -147,6 +147,7 @@ class KitchenService(
         queuedAt = queuedAt,
         estimatedReadyAt = estimatedReadyAt,
         notes = notes,
+        tableLabel = tableLabel,
         lines = lines.map { l ->
             TicketLine(LocalizedText.fromMap(l.productName)!!, l.quantity, l.modifiers.mapNotNull { LocalizedText.fromMap(it) }, l.notes)
         },

@@ -15,6 +15,8 @@ data class KitchenTicketCreated(
     val estimatedReadyAt: Instant,
     val notes: String?,
     val lines: List<TicketLine>,
+    /** Dine-in rounds: the table the round goes to. */
+    val tableLabel: String? = null,
 )
 
 data class TicketLine(val productName: LocalizedText, val quantity: Int, val modifiers: List<LocalizedText>, val notes: String?)

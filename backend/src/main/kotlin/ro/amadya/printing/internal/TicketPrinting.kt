@@ -46,6 +46,7 @@ class TicketPrinting(
             appendLine("=".repeat(width))
             appendLine(center("#${ticket.orderNumber}", width))
             appendLine(center("${station.uppercase()} · ${ticket.channel}", width))
+            ticket.tableLabel?.let { appendLine(center("MASA $it", width)) }
             appendLine("Primit ${time.format(ticket.queuedAt.atZone(zone))}  Gata ~${time.format(ticket.estimatedReadyAt.atZone(zone))}")
             appendLine("-".repeat(width))
             ticket.lines.forEach { line ->

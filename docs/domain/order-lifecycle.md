@@ -2,7 +2,8 @@
 
 ## Channels
 - `TAKEAWAY`: customer orders from menu-web or menu-mobile and pays online (Apple/Google Pay).
-- `DINE_IN`: waiter orders for a table session, in one or more rounds; the bill is paid at the end.
+- `DINE_IN`: waiter orders for a table session, in one or more rounds; the bill is paid at the end (see [tables.md](tables.md)).
+  Only the tables module creates them; `POST /orders` refuses `DINE_IN`.
 - `COUNTER`: a staff member enters a walk-in order (later, POS).
 
 ## Customer identity (takeaway)

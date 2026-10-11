@@ -1,0 +1,148 @@
+# Production overlay for amadya.alphatech.ro, behind the shared reverse proxy in
+# repo/proxy:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+#
+# Images are built off the server by scripts/release.sh and pulled from GHCR;
+# the server (1 vCPU, 2 GB) never builds. AMADYA_TAG picks the release.
+#
+# This stack publishes no host port. The shared proxy owns 80/443 for the whole
+# server, terminates TLS, and reaches this project's own Caddy over the external
+# "web" network (alias amadya-web). That internal Caddy still splits /api,
+# /admin, /kitchen, /waiter and the customer menu - it simply speaks plain HTTP now.
+#
+# In .env: AMADYA_DOMAIN=amadya.alphatech.ro (bare host, no scheme), and real
+# values for POSTGRES_PASSWORD, JWT_SECRET and AMADYA_ADMIN_PASSWORD.
+
+# json-file logs grow without limit by default; 10 MB x 5 files caps each service.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    # Only the api talks to the database.
+    ports: !reset []
+    # Sized for a 2 GB server shared with other apps; the api uses at most
+    # DB_POOL_SIZE connections.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - effective_cache_size=256MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - max_connections=30
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  caddy:
+    # No published ports: an internal router, not the edge.
+    ports: !reset []
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    environment:
+      # The "http://" prefix keeps this Caddy from requesting its own
+      # certificate: it serves plain HTTP on :80 for the Host the shared proxy
+      # passes through. TLS is the proxy's job.
+      AMADYA_DOMAIN: http://${AMADYA_DOMAIN}
+      # Trust X-Forwarded-For/-Proto from the shared proxy, so the api sees the
+      # real visitor and https. Safe because this container publishes no port.
+      TRUSTED_PROXY_CIDR: private_ranges
+    networks:
+      default: {}
+      web:
+        aliases:
+          # The name repo/proxy/Caddyfile targets; unique across the web network.
+          - amadya-web
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  api:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-api:${AMADYA_TAG:-latest}
+    # Reached only through Caddy (/api).
+    ports: !reset []
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      # Measured: 150 concurrent orders + 450 reads, three rounds, peak RSS
+      # 430 MB with these settings. -Xmx overrides the image's MaxRAMPercentage.
+      JAVA_TOOL_OPTIONS: >-
+        -Xmx224m -Xss512k -XX:+UseSerialGC
+        -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=64m
+        -XX:MaxDirectMemorySize=32m -XX:TieredStopAtLevel=1
+        -XX:+ExitOnOutOfMemoryError
+      # glibc otherwise keeps one malloc arena per core-ish thread count.
+      MALLOC_ARENA_MAX: "2"
+      DB_POOL_SIZE: "5"
+      EVENT_WORKERS: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 576M
+
+  menu-web:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-menu-web:${AMADYA_TAG:-latest}
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  admin:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-admin:${AMADYA_TAG:-latest}
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  kitchen:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-kitchen:${AMADYA_TAG:-latest}
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  waiter:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-waiter:${AMADYA_TAG:-latest}
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+networks:
+  # Created once on the server with `docker network create web`, shared with
+  # the proxy and every other app.
+  web:
+    external: true

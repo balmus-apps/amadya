@@ -83,7 +83,23 @@ pnpm --filter @amadya/kitchen dev          # http://localhost:5174/kitchen
 - **Customer side:** each status change reaches the customer's tracking page and the push notification.
 - **Changing colours:** the status colours are CSS variables in `apps/kitchen/src/styles.css`. Swapping orange for blue is one line.
 
-`@amadya/staff-auth` holds the session shared by the staff apps (admin, kitchen; waiter next).
+## Waiter app (`apps/waiter`, Phase 4)
+
+Vite PWA served at `/waiter`, built for the waiters' phones. Demo login: `ospatar@amadya.local` / `Ospatar12345!`.
+
+- **Floor:** tables per area: free (dashed), occupied (orange), a round ready to serve (green, pulsing). Filter "My tables".
+- **Table:** rounds newest first, with the kitchen status in the kitchen display's colours. "Served" and "Cancel" per
+  round. Bottom bar with total, paid and what is left.
+- **Order pad:** search (ignores diacritics), category chips, options sheet for sauces and extras, notes per item and per
+  round. The round being taken stays while the waiter moves between screens.
+- **Payment:** whole bill, equal split, or by item; cash (amount handed over, change) or card terminal. Undo a payment.
+- **Actions:** pre-bill, move to a free table, merge with another table, free a table with nothing owed.
+- **Live:** `/tables/events` (SSE) refreshes the floor and the open table; a ready round plays a chime, vibrates and
+  shows which table to serve.
+
+Rules and bill arithmetic: [docs/domain/tables.md](../docs/domain/tables.md).
+
+`@amadya/staff-auth` holds the session shared by the staff apps (admin, kitchen, waiter).
 
 ## Checks
 

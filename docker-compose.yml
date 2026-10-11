@@ -24,6 +24,7 @@ services:
     restart: unless-stopped
     environment:
       AMADYA_DOMAIN: ${AMADYA_DOMAIN}
+      AMADYA_LAN_SITE: ${AMADYA_LAN_SITE:-http://lan.localhost}
     ports:
       - "80:80"
       - "443:443"
@@ -90,8 +91,13 @@ services:
       dockerfile: apps/kitchen/Dockerfile
     restart: unless-stopped
 
+  waiter:
+    build:
+      context: ./frontend
+      dockerfile: apps/waiter/Dockerfile
+    restart: unless-stopped
+
   # --- Added per phase ---
-  # waiter:         (Phase 4)
   # queue-display:  (Phase 5)
 
 volumes:

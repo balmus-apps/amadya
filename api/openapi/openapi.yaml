@@ -41,6 +41,8 @@ tags:
     description: Image upload and public file serving
   - name: reporting
     description: Dashboard KPIs
+  - name: tables
+    description: Floor areas, dining tables, table sessions, rounds, bill and in-person payments (waiter app)
   - name: streams
     description: Server-Sent Events (hand-implemented)
   - name: webhooks
@@ -792,6 +794,296 @@ paths:
           content:
             text/event-stream:
               schema: { $ref: "#/components/schemas/QueueBoard" }
+
+  # ---------------------------------------------------------------- tables (waiter app)
+  /admin/floor-areas:
+    get:
+      tags: [tables]
+      operationId: listFloorAreas
+      summary: Floor areas, e.g. Salon, Terrace (ADMIN, MANAGER)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/FloorAreaAdmin" } }
+    post:
+      tags: [tables]
+      operationId: createFloorArea
+      summary: Create a floor area (ADMIN, MANAGER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FloorAreaRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FloorAreaAdmin" }
+
+  /admin/floor-areas/{id}:
+    put:
+      tags: [tables]
+      operationId: updateFloorArea
+      summary: Update a floor area (ADMIN, MANAGER)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FloorAreaRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FloorAreaAdmin" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/tables:
+    get:
+      tags: [tables]
+      operationId: listDiningTables
+      summary: Dining tables (ADMIN, MANAGER)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/DiningTableAdmin" } }
+    post:
+      tags: [tables]
+      operationId: createDiningTable
+      summary: Create a dining table (ADMIN, MANAGER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DiningTableRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DiningTableAdmin" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /admin/tables/{id}:
+    put:
+      tags: [tables]
+      operationId: updateDiningTable
+      summary: Update a dining table (ADMIN, MANAGER)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DiningTableRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DiningTableAdmin" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/floor:
+    get:
+      tags: [tables]
+      operationId: getFloor
+      summary: Active areas and tables with their open session, if any (WAITER, CASHIER, MANAGER, ADMIN)
+      parameters: [{ $ref: "#/components/parameters/AcceptLanguage" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/FloorArea" } }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /tables/{id}/sessions:
+    post:
+      tags: [tables]
+      operationId: openTableSession
+      summary: Seat guests at a free table
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenTableSessionRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}:
+    get:
+      tags: [tables]
+      operationId: getTableSession
+      summary: A table session with its rounds, bill and payments
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/rounds:
+    post:
+      tags: [tables]
+      operationId: addTableRound
+      summary: Send a round to the kitchen and bar (a DINE_IN order of this session)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddRoundRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/payments:
+    post:
+      tags: [tables]
+      operationId: recordTablePayment
+      summary: "Record a cash or card-terminal payment: a whole or equal-split amount, or selected items. The session closes when nothing is left to pay."
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TablePaymentRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/payments/{paymentId}/void:
+    post:
+      tags: [tables]
+      operationId: voidTablePayment
+      summary: Undo a payment recorded by mistake, while the session is still open
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/close:
+    post:
+      tags: [tables]
+      operationId: closeTableSession
+      summary: Free the table; only when nothing is left to pay (e.g. guests left without ordering)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/transfer:
+    post:
+      tags: [tables]
+      operationId: transferTableSession
+      summary: Move the guests to another free table
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransferTableRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/merge:
+    post:
+      tags: [tables]
+      operationId: mergeTableSession
+      summary: Join this table's bill into another open table; this table becomes free
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MergeTableRequest" }
+      responses:
+        "200":
+          description: The target session, with both bills
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/pre-bill:
+    post:
+      tags: [tables]
+      operationId: printPreBill
+      summary: Print the pre-bill (nota de plată) for the guests
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "202": { description: Sent to the printer }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /tables/events:
+    get:
+      tags: [streams]
+      operationId: streamTableEvents
+      summary: "Server-Sent Events for the waiter app: event `table` with TableEvent whenever a session changes or a round is ready (WAITER, CASHIER, MANAGER, ADMIN)"
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/TableEvent" }
+        "403": { $ref: "#/components/responses/Problem" }
 
   # ---------------------------------------------------------------- webhooks (hand-implemented)
   /payments/webhooks/stripe:
@@ -2620,3 +2912,194 @@ components:
         foodCost: { $ref: "#/components/schemas/Money", description: FIFO cost of ingredients consumed by sales in the period }
         stockValue: { $ref: "#/components/schemas/Money" }
         lowStockCount: { type: integer }
+
+    # ---------------------------------------------------------- tables
+    FloorAreaAdmin:
+      type: object
+      required: [id, name, sortOrder, active]
+      properties:
+        id: { type: string, format: uuid }
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+
+    FloorAreaRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { $ref: "#/components/schemas/LocalizedText" }
+        sortOrder: { type: integer, default: 0 }
+        active: { type: boolean, default: true }
+
+    DiningTableAdmin:
+      type: object
+      required: [id, areaId, label, seats, sortOrder, active]
+      properties:
+        id: { type: string, format: uuid }
+        areaId: { type: string, format: uuid }
+        label: { type: string, examples: ["5", T2] }
+        seats: { type: integer }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+
+    DiningTableRequest:
+      type: object
+      required: [areaId, label, seats]
+      properties:
+        areaId: { type: string, format: uuid }
+        label: { type: string, minLength: 1, maxLength: 12 }
+        seats: { type: integer, minimum: 1, maximum: 50 }
+        sortOrder: { type: integer, default: 0 }
+        active: { type: boolean, default: true }
+
+    FloorArea:
+      type: object
+      required: [id, name, tables]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        tables: { type: array, items: { $ref: "#/components/schemas/FloorTable" } }
+
+    FloorTable:
+      type: object
+      required: [id, label, seats]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        seats: { type: integer }
+        session: { $ref: "#/components/schemas/FloorSession", description: The open session; absent when the table is free }
+
+    FloorSession:
+      type: object
+      required: [id, guests, openedAt, total, remaining, roundsInKitchen, roundsReady]
+      properties:
+        id: { type: string, format: uuid }
+        guests: { type: integer }
+        waiterName: { type: string }
+        openedAt: { type: string, format: date-time }
+        total: { $ref: "#/components/schemas/Money" }
+        remaining: { $ref: "#/components/schemas/Money" }
+        roundsInKitchen: { type: integer, description: Rounds placed or being prepared }
+        roundsReady: { type: integer, description: Rounds ready to be served }
+
+    TableSessionStatus:
+      type: string
+      enum: [OPEN, CLOSED, MERGED]
+
+    TableSession:
+      type: object
+      required: [id, tableId, tableLabel, status, guests, openedAt, rounds, payments, total, paid, remaining]
+      properties:
+        id: { type: string, format: uuid }
+        tableId: { type: string, format: uuid }
+        tableLabel: { type: string }
+        areaName: { type: string }
+        status: { $ref: "#/components/schemas/TableSessionStatus" }
+        guests: { type: integer }
+        waiterName: { type: string }
+        openedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time }
+        mergedIntoSessionId: { type: string, format: uuid }
+        rounds: { type: array, items: { $ref: "#/components/schemas/TableRound" } }
+        payments: { type: array, items: { $ref: "#/components/schemas/TablePayment" } }
+        total: { $ref: "#/components/schemas/Money", description: Sum of the rounds that were not cancelled }
+        paid: { $ref: "#/components/schemas/Money" }
+        remaining: { $ref: "#/components/schemas/Money" }
+
+    TableRound:
+      type: object
+      required: [orderId, number, status, total, lines]
+      properties:
+        orderId: { type: string, format: uuid }
+        number: { type: string }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        placedAt: { type: string, format: date-time }
+        readyAt: { type: string, format: date-time }
+        total: { $ref: "#/components/schemas/Money" }
+        lines: { type: array, items: { $ref: "#/components/schemas/TableRoundLine" } }
+
+    TableRoundLine:
+      type: object
+      required: [lineId, productName, modifiers, quantity, unitPrice, total, paidQuantity]
+      properties:
+        lineId: { type: string, format: uuid }
+        productName: { type: string }
+        modifiers: { type: array, items: { type: string } }
+        quantity: { type: integer }
+        unitPrice: { $ref: "#/components/schemas/Money" }
+        total: { $ref: "#/components/schemas/Money" }
+        notes: { type: string }
+        paidQuantity: { type: integer, description: Units already paid for item by item }
+
+    InPersonPaymentMethod:
+      type: string
+      enum: [CASH, CARD_POS]
+
+    TablePayment:
+      type: object
+      required: [id, method, amount, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        method: { $ref: "#/components/schemas/InPersonPaymentMethod" }
+        amount: { $ref: "#/components/schemas/Money" }
+        tendered: { $ref: "#/components/schemas/Money", description: Cash handed over by the guest }
+        change: { $ref: "#/components/schemas/Money" }
+        status: { type: string, enum: [CAPTURED, VOIDED] }
+        createdAt: { type: string, format: date-time }
+        itemCount: { type: integer, description: Units paid item by item; absent for amount payments }
+
+    OpenTableSessionRequest:
+      type: object
+      required: [guests]
+      properties:
+        guests: { type: integer, minimum: 1, maximum: 50 }
+
+    AddRoundRequest:
+      type: object
+      required: [lines]
+      properties:
+        notes: { type: string, maxLength: 500 }
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/CreateOrderLine" }
+
+    TablePaymentRequest:
+      type: object
+      required: [method]
+      description: Either `amount` (whole bill or an equal share) or `items` (pay for selected units); not both.
+      properties:
+        method: { $ref: "#/components/schemas/InPersonPaymentMethod" }
+        amount: { type: string, pattern: '^\d+(\.\d{1,2})?$' }
+        tendered: { type: string, pattern: '^\d+(\.\d{1,2})?$', description: Cash handed over; must cover the amount }
+        items:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [lineId, quantity]
+            properties:
+              lineId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1 }
+
+    TransferTableRequest:
+      type: object
+      required: [tableId]
+      properties:
+        tableId: { type: string, format: uuid }
+
+    MergeTableRequest:
+      type: object
+      required: [targetSessionId]
+      properties:
+        targetSessionId: { type: string, format: uuid }
+
+    TableEvent:
+      type: object
+      required: [sessionId, kind]
+      properties:
+        sessionId: { type: string, format: uuid }
+        tableId: { type: string, format: uuid }
+        kind: { type: string, enum: [UPDATED, ROUND_READY, CLOSED] }
+        orderNumber: { type: string, description: The round that became ready (ROUND_READY) }

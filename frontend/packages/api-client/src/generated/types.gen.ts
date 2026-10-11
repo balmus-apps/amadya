@@ -973,6 +973,178 @@ export type Dashboard = {
   lowStockCount: number;
 };
 
+export type FloorAreaAdmin = {
+  id: string;
+  name: LocalizedText;
+  sortOrder: number;
+  active: boolean;
+};
+
+export type FloorAreaRequest = {
+  name: LocalizedText;
+  sortOrder?: number;
+  active?: boolean;
+};
+
+export type DiningTableAdmin = {
+  id: string;
+  areaId: string;
+  label: string;
+  seats: number;
+  sortOrder: number;
+  active: boolean;
+};
+
+export type DiningTableRequest = {
+  areaId: string;
+  label: string;
+  seats: number;
+  sortOrder?: number;
+  active?: boolean;
+};
+
+export type FloorArea = {
+  id: string;
+  name: string;
+  tables: Array<FloorTable>;
+};
+
+export type FloorTable = {
+  id: string;
+  label: string;
+  seats: number;
+  /**
+   * The open session; absent when the table is free
+   */
+  session?: FloorSession;
+};
+
+export type FloorSession = {
+  id: string;
+  guests: number;
+  waiterName?: string;
+  openedAt: string;
+  total: Money;
+  remaining: Money;
+  /**
+   * Rounds placed or being prepared
+   */
+  roundsInKitchen: number;
+  /**
+   * Rounds ready to be served
+   */
+  roundsReady: number;
+};
+
+export type TableSessionStatus = "OPEN" | "CLOSED" | "MERGED";
+
+export type TableSession = {
+  id: string;
+  tableId: string;
+  tableLabel: string;
+  areaName?: string;
+  status: TableSessionStatus;
+  guests: number;
+  waiterName?: string;
+  openedAt: string;
+  closedAt?: string;
+  mergedIntoSessionId?: string;
+  rounds: Array<TableRound>;
+  payments: Array<TablePayment>;
+  /**
+   * Sum of the rounds that were not cancelled
+   */
+  total: Money;
+  paid: Money;
+  remaining: Money;
+};
+
+export type TableRound = {
+  orderId: string;
+  number: string;
+  status: OrderStatus;
+  placedAt?: string;
+  readyAt?: string;
+  total: Money;
+  lines: Array<TableRoundLine>;
+};
+
+export type TableRoundLine = {
+  lineId: string;
+  productName: string;
+  modifiers: Array<string>;
+  quantity: number;
+  unitPrice: Money;
+  total: Money;
+  notes?: string;
+  /**
+   * Units already paid for item by item
+   */
+  paidQuantity: number;
+};
+
+export type InPersonPaymentMethod = "CASH" | "CARD_POS";
+
+export type TablePayment = {
+  id: string;
+  method: InPersonPaymentMethod;
+  amount: Money;
+  /**
+   * Cash handed over by the guest
+   */
+  tendered?: Money;
+  change?: Money;
+  status: "CAPTURED" | "VOIDED";
+  createdAt: string;
+  /**
+   * Units paid item by item; absent for amount payments
+   */
+  itemCount?: number;
+};
+
+export type OpenTableSessionRequest = {
+  guests: number;
+};
+
+export type AddRoundRequest = {
+  notes?: string;
+  lines: Array<CreateOrderLine>;
+};
+
+/**
+ * Either `amount` (whole bill or an equal share) or `items` (pay for selected units); not both.
+ */
+export type TablePaymentRequest = {
+  method: InPersonPaymentMethod;
+  amount?: string;
+  /**
+   * Cash handed over; must cover the amount
+   */
+  tendered?: string;
+  items?: Array<{
+    lineId: string;
+    quantity: number;
+  }>;
+};
+
+export type TransferTableRequest = {
+  tableId: string;
+};
+
+export type MergeTableRequest = {
+  targetSessionId: string;
+};
+
+export type TableEvent = {
+  sessionId: string;
+  tableId?: string;
+  kind: "UPDATED" | "ROUND_READY" | "CLOSED";
+  /**
+   * The round that became ready (ROUND_READY)
+   */
+  orderNumber?: string;
+};
+
 export type AcceptLanguage = string;
 
 export type Id = string;
@@ -2265,6 +2437,491 @@ export type StreamQueueEventsResponses = {
 
 export type StreamQueueEventsResponse =
   StreamQueueEventsResponses[keyof StreamQueueEventsResponses];
+
+export type ListFloorAreasData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/floor-areas";
+};
+
+export type ListFloorAreasResponses = {
+  /**
+   * OK
+   */
+  200: Array<FloorAreaAdmin>;
+};
+
+export type ListFloorAreasResponse =
+  ListFloorAreasResponses[keyof ListFloorAreasResponses];
+
+export type CreateFloorAreaData = {
+  body: FloorAreaRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/floor-areas";
+};
+
+export type CreateFloorAreaResponses = {
+  /**
+   * Created
+   */
+  201: FloorAreaAdmin;
+};
+
+export type CreateFloorAreaResponse =
+  CreateFloorAreaResponses[keyof CreateFloorAreaResponses];
+
+export type UpdateFloorAreaData = {
+  body: FloorAreaRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/floor-areas/{id}";
+};
+
+export type UpdateFloorAreaErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type UpdateFloorAreaError =
+  UpdateFloorAreaErrors[keyof UpdateFloorAreaErrors];
+
+export type UpdateFloorAreaResponses = {
+  /**
+   * OK
+   */
+  200: FloorAreaAdmin;
+};
+
+export type UpdateFloorAreaResponse =
+  UpdateFloorAreaResponses[keyof UpdateFloorAreaResponses];
+
+export type ListDiningTablesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/tables";
+};
+
+export type ListDiningTablesResponses = {
+  /**
+   * OK
+   */
+  200: Array<DiningTableAdmin>;
+};
+
+export type ListDiningTablesResponse =
+  ListDiningTablesResponses[keyof ListDiningTablesResponses];
+
+export type CreateDiningTableData = {
+  body: DiningTableRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/tables";
+};
+
+export type CreateDiningTableErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type CreateDiningTableError =
+  CreateDiningTableErrors[keyof CreateDiningTableErrors];
+
+export type CreateDiningTableResponses = {
+  /**
+   * Created
+   */
+  201: DiningTableAdmin;
+};
+
+export type CreateDiningTableResponse =
+  CreateDiningTableResponses[keyof CreateDiningTableResponses];
+
+export type UpdateDiningTableData = {
+  body: DiningTableRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/tables/{id}";
+};
+
+export type UpdateDiningTableErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type UpdateDiningTableError =
+  UpdateDiningTableErrors[keyof UpdateDiningTableErrors];
+
+export type UpdateDiningTableResponses = {
+  /**
+   * OK
+   */
+  200: DiningTableAdmin;
+};
+
+export type UpdateDiningTableResponse =
+  UpdateDiningTableResponses[keyof UpdateDiningTableResponses];
+
+export type GetFloorData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path?: never;
+  query?: never;
+  url: "/tables/floor";
+};
+
+export type GetFloorErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetFloorError = GetFloorErrors[keyof GetFloorErrors];
+
+export type GetFloorResponses = {
+  /**
+   * OK
+   */
+  200: Array<FloorArea>;
+};
+
+export type GetFloorResponse = GetFloorResponses[keyof GetFloorResponses];
+
+export type OpenTableSessionData = {
+  body: OpenTableSessionRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/{id}/sessions";
+};
+
+export type OpenTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type OpenTableSessionError =
+  OpenTableSessionErrors[keyof OpenTableSessionErrors];
+
+export type OpenTableSessionResponses = {
+  /**
+   * Created
+   */
+  201: TableSession;
+};
+
+export type OpenTableSessionResponse =
+  OpenTableSessionResponses[keyof OpenTableSessionResponses];
+
+export type GetTableSessionData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}";
+};
+
+export type GetTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetTableSessionError =
+  GetTableSessionErrors[keyof GetTableSessionErrors];
+
+export type GetTableSessionResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type GetTableSessionResponse =
+  GetTableSessionResponses[keyof GetTableSessionResponses];
+
+export type AddTableRoundData = {
+  body: AddRoundRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/rounds";
+};
+
+export type AddTableRoundErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type AddTableRoundError = AddTableRoundErrors[keyof AddTableRoundErrors];
+
+export type AddTableRoundResponses = {
+  /**
+   * Created
+   */
+  201: TableSession;
+};
+
+export type AddTableRoundResponse =
+  AddTableRoundResponses[keyof AddTableRoundResponses];
+
+export type RecordTablePaymentData = {
+  body: TablePaymentRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/payments";
+};
+
+export type RecordTablePaymentErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type RecordTablePaymentError =
+  RecordTablePaymentErrors[keyof RecordTablePaymentErrors];
+
+export type RecordTablePaymentResponses = {
+  /**
+   * Created
+   */
+  201: TableSession;
+};
+
+export type RecordTablePaymentResponse =
+  RecordTablePaymentResponses[keyof RecordTablePaymentResponses];
+
+export type VoidTablePaymentData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+    paymentId: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/payments/{paymentId}/void";
+};
+
+export type VoidTablePaymentErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type VoidTablePaymentError =
+  VoidTablePaymentErrors[keyof VoidTablePaymentErrors];
+
+export type VoidTablePaymentResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type VoidTablePaymentResponse =
+  VoidTablePaymentResponses[keyof VoidTablePaymentResponses];
+
+export type CloseTableSessionData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/close";
+};
+
+export type CloseTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type CloseTableSessionError =
+  CloseTableSessionErrors[keyof CloseTableSessionErrors];
+
+export type CloseTableSessionResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type CloseTableSessionResponse =
+  CloseTableSessionResponses[keyof CloseTableSessionResponses];
+
+export type TransferTableSessionData = {
+  body: TransferTableRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/transfer";
+};
+
+export type TransferTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type TransferTableSessionError =
+  TransferTableSessionErrors[keyof TransferTableSessionErrors];
+
+export type TransferTableSessionResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type TransferTableSessionResponse =
+  TransferTableSessionResponses[keyof TransferTableSessionResponses];
+
+export type MergeTableSessionData = {
+  body: MergeTableRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/merge";
+};
+
+export type MergeTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type MergeTableSessionError =
+  MergeTableSessionErrors[keyof MergeTableSessionErrors];
+
+export type MergeTableSessionResponses = {
+  /**
+   * The target session, with both bills
+   */
+  200: TableSession;
+};
+
+export type MergeTableSessionResponse =
+  MergeTableSessionResponses[keyof MergeTableSessionResponses];
+
+export type PrintPreBillData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/pre-bill";
+};
+
+export type PrintPreBillErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type PrintPreBillError = PrintPreBillErrors[keyof PrintPreBillErrors];
+
+export type PrintPreBillResponses = {
+  /**
+   * Sent to the printer
+   */
+  202: unknown;
+};
+
+export type StreamTableEventsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/tables/events";
+};
+
+export type StreamTableEventsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type StreamTableEventsError =
+  StreamTableEventsErrors[keyof StreamTableEventsErrors];
+
+export type StreamTableEventsResponses = {
+  /**
+   * Event stream
+   */
+  200: TableEvent;
+};
+
+export type StreamTableEventsResponse =
+  StreamTableEventsResponses[keyof StreamTableEventsResponses];
 
 export type StripeWebhookData = {
   body: {

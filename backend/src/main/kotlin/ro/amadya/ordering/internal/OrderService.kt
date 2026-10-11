@@ -20,6 +20,10 @@ import ro.amadya.ordering.OrderStatusChanged
 import ro.amadya.ordering.PayableOrder
 import ro.amadya.ordering.PlacedLine
 import ro.amadya.ordering.QueueBoardView
+import ro.amadya.ordering.RoundLine
+import ro.amadya.ordering.SessionOrder
+import ro.amadya.ordering.SessionOrderLine
+import ro.amadya.ordering.TableOrders
 import ro.amadya.settings.RestaurantSettingsApi
 import ro.amadya.shared.Actor
 import ro.amadya.shared.AmadyaProperties
@@ -58,7 +62,7 @@ class OrderService(
     private val props: AmadyaProperties,
     private val orderingProps: OrderingProperties,
     private val clock: Clock,
-) : OrderProgress, OrderPayments, OrderQueries {
+) : OrderProgress, OrderPayments, OrderQueries, TableOrders {
 
     private val log = LoggerFactory.getLogger(javaClass)
     private val random = SecureRandom()
@@ -78,11 +82,105 @@ class OrderService(
                 if (req.customer == null) throw UnprocessableException("order.customer_required")
                 if (req.pickupAt != null && req.pickupAt!!.toInstant().isBefore(now)) throw UnprocessableException("order.pickup_in_past")
             }
-            OrderChannel.COUNTER, OrderChannel.DINE_IN -> if (!staff) throw ForbiddenException("order.staff_only", channel.name)
+            OrderChannel.COUNTER -> if (!staff) throw ForbiddenException("order.staff_only", channel.name)
+            // Rounds belong to a table session, which only the tables module opens and checks.
+            OrderChannel.DINE_IN -> throw UnprocessableException("order.dine_in_via_tables")
         }
 
-        val priced = catalog.priceLines(req.lines.map { LineSelection(it.productId, it.quantity, it.modifierOptionIds.orEmpty(), it.notes) })
-        val lines = priced.mapIndexed { index, p ->
+        // Guests pay online first when online payments are on; staff-created orders go straight to the kitchen.
+        val awaitPayment = channel == OrderChannel.TAKEAWAY && features.onlinePayments && !staff
+        return createOrder(
+            channel = channel,
+            status = if (awaitPayment) OrderStatus.PENDING_PAYMENT else OrderStatus.PLACED,
+            lines = req.lines.map { LineSelection(it.productId, it.quantity, it.modifierOptionIds.orEmpty(), it.notes) },
+            locale = locale,
+            notes = req.notes,
+            pickupAt = req.pickupAt?.toInstant(),
+            customerName = req.customer?.name?.trim(),
+            customerPhone = req.customer?.phone,
+            customerEmail = req.customer?.email,
+            customerUserId = actor?.takeIf { Roles.CUSTOMER in it.roles }?.userId,
+        )
+    }
+
+    // ---------------------------------------------------------------- TableOrders (tables module)
+    @Transactional
+    override fun placeRound(sessionId: UUID, tableLabel: String, lines: List<RoundLine>, notes: String?, locale: Locale): UUID =
+        createOrder(
+            channel = OrderChannel.DINE_IN,
+            status = OrderStatus.PLACED,
+            lines = lines.map { LineSelection(it.productId, it.quantity, it.modifierOptionIds, it.notes) },
+            locale = locale,
+            notes = notes,
+            tableSessionId = sessionId,
+            tableLabel = tableLabel,
+        ).order.id
+
+    override fun sessionOrders(sessionIds: Collection<UUID>): List<SessionOrder> =
+        if (sessionIds.isEmpty()) emptyList() else orders.findAllByTableSessionIdInOrderByCreatedAtAsc(sessionIds).map { o ->
+            SessionOrder(
+                orderId = o.id,
+                sessionId = o.tableSessionId!!,
+                number = o.number,
+                status = o.status.name,
+                placedAt = o.placedAt,
+                readyAt = o.readyAt,
+                total = o.total,
+                currency = o.currency,
+                lines = o.lines.map { l ->
+                    SessionOrderLine(
+                        lineId = l.id,
+                        productName = LocalizedText.fromMap(l.productName)!!,
+                        modifiers = l.modifiers.map { LocalizedText.fromMap(it.name)!! },
+                        quantity = l.quantity,
+                        unitPrice = l.unitPrice,
+                        total = l.total,
+                        notes = l.notes,
+                    )
+                },
+            )
+        }
+
+    @Transactional
+    override fun settle(sessionId: UUID) {
+        val now = clock.instant()
+        orders.findAllByTableSessionIdInOrderByCreatedAtAsc(listOf(sessionId)).filter { it.status != OrderStatus.CANCELLED }.forEach { order ->
+            order.paymentStatus = PaymentStatus.PAID
+            // Paying closes the table: anything not yet marked served is considered served. The kitchen can still
+            // bump its tickets; that no longer moves a completed order.
+            if (order.status != OrderStatus.COMPLETED) {
+                order.status = OrderStatus.COMPLETED
+                order.completedAt = now
+                statusChanged(order)
+            }
+        }
+    }
+
+    @Transactional
+    override fun moveToSession(fromSessionId: UUID, toSessionId: UUID) {
+        orders.findAllByTableSessionIdInOrderByCreatedAtAsc(listOf(fromSessionId)).forEach {
+            it.tableSessionId = toSessionId
+            statusChanged(it)
+        }
+    }
+
+    private fun createOrder(
+        channel: OrderChannel,
+        status: OrderStatus,
+        lines: List<LineSelection>,
+        locale: Locale,
+        notes: String?,
+        pickupAt: java.time.Instant? = null,
+        customerName: String? = null,
+        customerPhone: String? = null,
+        customerEmail: String? = null,
+        customerUserId: UUID? = null,
+        tableSessionId: UUID? = null,
+        tableLabel: String? = null,
+    ): CreatedOrder {
+        val actor = Actor.current()
+        val priced = catalog.priceLines(lines)
+        val orderLines = priced.mapIndexed { index, p ->
             val total = p.unitPrice.multiply(BigDecimal(p.quantity))
             OrderLineEntity(
                 position = index + 1,
@@ -99,32 +197,29 @@ class OrderService(
                 modifiers = p.modifiers.map { OrderLineModifierEntity(optionId = it.optionId, name = it.name.toMap(), priceDelta = it.priceDelta) }.toMutableList(),
             )
         }
-
-        // Guests pay online first when online payments are on; staff-created orders go straight to the kitchen.
-        val awaitPayment = channel == OrderChannel.TAKEAWAY && features.onlinePayments && !staff
         val token = newToken()
         val order = OrderEntity(
             number = numbers.next(businessDate(), settings.orderNumberPrefix()),
             businessDate = businessDate(),
             channel = channel,
-            status = if (awaitPayment) OrderStatus.PENDING_PAYMENT else OrderStatus.PLACED,
-            customerName = req.customer?.name?.trim(),
-            customerPhone = req.customer?.phone,
-            customerEmail = req.customer?.email,
-            customerUserId = actor?.takeIf { Roles.CUSTOMER in it.roles }?.userId,
-            createdByUserId = actor?.takeIf { staff }?.userId,
-            tableSessionId = req.tableSessionId,
-            pickupAt = req.pickupAt?.toInstant(),
-            notes = req.notes?.trim()?.ifBlank { null },
+            status = status,
+            customerName = customerName,
+            customerPhone = customerPhone,
+            customerEmail = customerEmail,
+            customerUserId = customerUserId,
+            createdByUserId = actor?.takeIf { it.isStaff }?.userId,
+            tableSessionId = tableSessionId,
+            pickupAt = pickupAt,
+            notes = notes?.trim()?.ifBlank { null },
             locale = locale.language.takeIf { it == "en" } ?: "ro",
             currency = settings.currency(),
-            total = lines.fold(BigDecimal.ZERO) { acc, l -> acc + l.total },
-            vatTotal = lines.fold(BigDecimal.ZERO) { acc, l -> acc + l.vatAmount },
+            total = orderLines.fold(BigDecimal.ZERO) { acc, l -> acc + l.total },
+            vatTotal = orderLines.fold(BigDecimal.ZERO) { acc, l -> acc + l.vatAmount },
             trackingTokenHash = hash(token),
-            lines = lines.toMutableList(),
+            lines = orderLines.toMutableList(),
         )
         orders.save(order)
-        if (order.status == OrderStatus.PLACED) place(order) else statusChanged(order)
+        if (order.status == OrderStatus.PLACED) place(order, tableLabel) else statusChanged(order)
         log.info("Order {} created: channel={} status={} total={}", order.number, channel, order.status, order.total)
         return CreatedOrder(order, token)
     }
@@ -253,7 +348,7 @@ class OrderService(
     }
 
     // ---------------------------------------------------------------- internals
-    private fun place(order: OrderEntity) {
+    private fun place(order: OrderEntity, tableLabel: String? = null) {
         val now = clock.instant()
         order.status = OrderStatus.PLACED
         order.placedAt = now
@@ -266,6 +361,7 @@ class OrderService(
                 pickupAt = order.pickupAt,
                 notes = order.notes,
                 customerName = order.customerName,
+                tableLabel = tableLabel,
                 lines = order.lines.map { l ->
                     PlacedLine(
                         productId = l.productId,
@@ -299,7 +395,7 @@ class OrderService(
     private fun statusChanged(order: OrderEntity) = events.publishEvent(order.toEvent())
 
     private fun OrderEntity.toEvent() =
-        OrderStatusChanged(id, number, channel.name, status.name, estimatedReadyAt, clock.instant())
+        OrderStatusChanged(id, number, channel.name, status.name, estimatedReadyAt, clock.instant(), tableSessionId)
 
     private fun load(orderId: UUID) = orders.findByIdOrNull(orderId) ?: throw NotFoundException("Order")
 

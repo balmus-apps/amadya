@@ -11,18 +11,29 @@ import {
 } from "./client";
 import { client } from "./client.gen";
 import type {
+  AddTableRoundData,
+  AddTableRoundErrors,
+  AddTableRoundResponses,
   BumpKitchenTicketData,
   BumpKitchenTicketErrors,
   BumpKitchenTicketResponses,
   CancelOrderData,
   CancelOrderErrors,
   CancelOrderResponses,
+  CloseTableSessionData,
+  CloseTableSessionErrors,
+  CloseTableSessionResponses,
   CompleteOrderData,
   CompleteOrderErrors,
   CompleteOrderResponses,
   CreateCategoryData,
   CreateCategoryErrors,
   CreateCategoryResponses,
+  CreateDiningTableData,
+  CreateDiningTableErrors,
+  CreateDiningTableResponses,
+  CreateFloorAreaData,
+  CreateFloorAreaResponses,
   CreateMeasureUnitData,
   CreateMeasureUnitErrors,
   CreateMeasureUnitResponses,
@@ -89,6 +100,9 @@ import type {
   GetFileData,
   GetFileErrors,
   GetFileResponses,
+  GetFloorData,
+  GetFloorErrors,
+  GetFloorResponses,
   GetMenuData,
   GetMenuResponses,
   GetNirData,
@@ -122,12 +136,19 @@ import type {
   GetStockItemData,
   GetStockItemErrors,
   GetStockItemResponses,
+  GetTableSessionData,
+  GetTableSessionErrors,
+  GetTableSessionResponses,
   ImportEFacturaData,
   ImportEFacturaErrors,
   ImportEFacturaResponses,
   ListCategoriesData,
   ListCategoriesErrors,
   ListCategoriesResponses,
+  ListDiningTablesData,
+  ListDiningTablesResponses,
+  ListFloorAreasData,
+  ListFloorAreasResponses,
   ListKitchenStationsData,
   ListKitchenStationsErrors,
   ListKitchenStationsResponses,
@@ -194,12 +215,24 @@ import type {
   MatchInvoiceLineData,
   MatchInvoiceLineErrors,
   MatchInvoiceLineResponses,
+  MergeTableSessionData,
+  MergeTableSessionErrors,
+  MergeTableSessionResponses,
+  OpenTableSessionData,
+  OpenTableSessionErrors,
+  OpenTableSessionResponses,
   PostNirData,
   PostNirErrors,
   PostNirResponses,
+  PrintPreBillData,
+  PrintPreBillErrors,
+  PrintPreBillResponses,
   RecallKitchenTicketData,
   RecallKitchenTicketErrors,
   RecallKitchenTicketResponses,
+  RecordTablePaymentData,
+  RecordTablePaymentErrors,
+  RecordTablePaymentResponses,
   RefreshTokenData,
   RefreshTokenErrors,
   RefreshTokenResponses,
@@ -232,12 +265,25 @@ import type {
   StreamQueueEventsData,
   StreamQueueEventsResponse,
   StreamQueueEventsResponses,
+  StreamTableEventsData,
+  StreamTableEventsErrors,
+  StreamTableEventsResponse,
+  StreamTableEventsResponses,
   StripeWebhookData,
   StripeWebhookErrors,
   StripeWebhookResponses,
+  TransferTableSessionData,
+  TransferTableSessionErrors,
+  TransferTableSessionResponses,
   UpdateCategoryData,
   UpdateCategoryErrors,
   UpdateCategoryResponses,
+  UpdateDiningTableData,
+  UpdateDiningTableErrors,
+  UpdateDiningTableResponses,
+  UpdateFloorAreaData,
+  UpdateFloorAreaErrors,
+  UpdateFloorAreaResponses,
   UpdateMeasureUnitData,
   UpdateMeasureUnitErrors,
   UpdateMeasureUnitResponses,
@@ -277,6 +323,9 @@ import type {
   UploadFileData,
   UploadFileErrors,
   UploadFileResponses,
+  VoidTablePaymentData,
+  VoidTablePaymentErrors,
+  VoidTablePaymentResponses,
 } from "./types.gen";
 
 export type Options<
@@ -1162,6 +1211,358 @@ export const streamQueueEvents = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({ url: "/queue/events", ...options });
+
+/**
+ * Floor areas, e.g. Salon, Terrace (ADMIN, MANAGER)
+ */
+export const listFloorAreas = <ThrowOnError extends boolean = false>(
+  options?: Options<ListFloorAreasData, ThrowOnError>,
+): RequestResult<ListFloorAreasResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListFloorAreasResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/floor-areas",
+    ...options,
+  });
+
+/**
+ * Create a floor area (ADMIN, MANAGER)
+ */
+export const createFloorArea = <ThrowOnError extends boolean = false>(
+  options: Options<CreateFloorAreaData, ThrowOnError>,
+): RequestResult<CreateFloorAreaResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    CreateFloorAreaResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/floor-areas",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update a floor area (ADMIN, MANAGER)
+ */
+export const updateFloorArea = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateFloorAreaData, ThrowOnError>,
+): RequestResult<
+  UpdateFloorAreaResponses,
+  UpdateFloorAreaErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).put<
+    UpdateFloorAreaResponses,
+    UpdateFloorAreaErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/floor-areas/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Dining tables (ADMIN, MANAGER)
+ */
+export const listDiningTables = <ThrowOnError extends boolean = false>(
+  options?: Options<ListDiningTablesData, ThrowOnError>,
+): RequestResult<ListDiningTablesResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListDiningTablesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/tables",
+    ...options,
+  });
+
+/**
+ * Create a dining table (ADMIN, MANAGER)
+ */
+export const createDiningTable = <ThrowOnError extends boolean = false>(
+  options: Options<CreateDiningTableData, ThrowOnError>,
+): RequestResult<
+  CreateDiningTableResponses,
+  CreateDiningTableErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    CreateDiningTableResponses,
+    CreateDiningTableErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/tables",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update a dining table (ADMIN, MANAGER)
+ */
+export const updateDiningTable = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateDiningTableData, ThrowOnError>,
+): RequestResult<
+  UpdateDiningTableResponses,
+  UpdateDiningTableErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).put<
+    UpdateDiningTableResponses,
+    UpdateDiningTableErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/tables/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Active areas and tables with their open session, if any (WAITER, CASHIER, MANAGER, ADMIN)
+ */
+export const getFloor = <ThrowOnError extends boolean = false>(
+  options?: Options<GetFloorData, ThrowOnError>,
+): RequestResult<GetFloorResponses, GetFloorErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetFloorResponses,
+    GetFloorErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/floor",
+    ...options,
+  });
+
+/**
+ * Seat guests at a free table
+ */
+export const openTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<OpenTableSessionData, ThrowOnError>,
+): RequestResult<
+  OpenTableSessionResponses,
+  OpenTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    OpenTableSessionResponses,
+    OpenTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/{id}/sessions",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * A table session with its rounds, bill and payments
+ */
+export const getTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<GetTableSessionData, ThrowOnError>,
+): RequestResult<
+  GetTableSessionResponses,
+  GetTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetTableSessionResponses,
+    GetTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}",
+    ...options,
+  });
+
+/**
+ * Send a round to the kitchen and bar (a DINE_IN order of this session)
+ */
+export const addTableRound = <ThrowOnError extends boolean = false>(
+  options: Options<AddTableRoundData, ThrowOnError>,
+): RequestResult<AddTableRoundResponses, AddTableRoundErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    AddTableRoundResponses,
+    AddTableRoundErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/rounds",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Record a cash or card-terminal payment: a whole or equal-split amount, or selected items. The session closes when nothing is left to pay.
+ */
+export const recordTablePayment = <ThrowOnError extends boolean = false>(
+  options: Options<RecordTablePaymentData, ThrowOnError>,
+): RequestResult<
+  RecordTablePaymentResponses,
+  RecordTablePaymentErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    RecordTablePaymentResponses,
+    RecordTablePaymentErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/payments",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Undo a payment recorded by mistake, while the session is still open
+ */
+export const voidTablePayment = <ThrowOnError extends boolean = false>(
+  options: Options<VoidTablePaymentData, ThrowOnError>,
+): RequestResult<
+  VoidTablePaymentResponses,
+  VoidTablePaymentErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    VoidTablePaymentResponses,
+    VoidTablePaymentErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/payments/{paymentId}/void",
+    ...options,
+  });
+
+/**
+ * Free the table; only when nothing is left to pay (e.g. guests left without ordering)
+ */
+export const closeTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<CloseTableSessionData, ThrowOnError>,
+): RequestResult<
+  CloseTableSessionResponses,
+  CloseTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    CloseTableSessionResponses,
+    CloseTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/close",
+    ...options,
+  });
+
+/**
+ * Move the guests to another free table
+ */
+export const transferTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<TransferTableSessionData, ThrowOnError>,
+): RequestResult<
+  TransferTableSessionResponses,
+  TransferTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    TransferTableSessionResponses,
+    TransferTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/transfer",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Join this table's bill into another open table; this table becomes free
+ */
+export const mergeTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<MergeTableSessionData, ThrowOnError>,
+): RequestResult<
+  MergeTableSessionResponses,
+  MergeTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    MergeTableSessionResponses,
+    MergeTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/merge",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Print the pre-bill (nota de plată) for the guests
+ */
+export const printPreBill = <ThrowOnError extends boolean = false>(
+  options: Options<PrintPreBillData, ThrowOnError>,
+): RequestResult<PrintPreBillResponses, PrintPreBillErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    PrintPreBillResponses,
+    PrintPreBillErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/pre-bill",
+    ...options,
+  });
+
+/**
+ * Server-Sent Events for the waiter app: event `table` with TableEvent whenever a session changes or a round is ready (WAITER, CASHIER, MANAGER, ADMIN)
+ */
+export const streamTableEvents = <ThrowOnError extends boolean = false>(
+  options?: Options<
+    StreamTableEventsData,
+    ThrowOnError,
+    StreamTableEventsResponse
+  >,
+): Promise<ServerSentEventsResult<StreamTableEventsResponses>> =>
+  (options?.client ?? client).sse.get<
+    StreamTableEventsResponses,
+    StreamTableEventsErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/events",
+    ...options,
+  });
 
 /**
  * Stripe webhook (signature verified with STRIPE_WEBHOOK_SECRET)

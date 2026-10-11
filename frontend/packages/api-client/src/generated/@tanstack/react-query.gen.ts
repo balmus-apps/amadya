@@ -8,10 +8,14 @@ import {
 
 import { client } from "../client.gen";
 import {
+  addTableRound,
   bumpKitchenTicket,
   cancelOrder,
+  closeTableSession,
   completeOrder,
   createCategory,
+  createDiningTable,
+  createFloorArea,
   createMeasureUnit,
   createModifierGroup,
   createNir,
@@ -34,6 +38,7 @@ import {
   getCurrentUser,
   getDashboard,
   getFile,
+  getFloor,
   getMenu,
   getNir,
   getOptionRecipe,
@@ -46,8 +51,11 @@ import {
   getRestaurantSettings,
   getStockDocument,
   getStockItem,
+  getTableSession,
   importEFactura,
   listCategories,
+  listDiningTables,
+  listFloorAreas,
   listKitchenStations,
   listKitchenTickets,
   listMeasureUnits,
@@ -70,9 +78,13 @@ import {
   login,
   logout,
   matchInvoiceLine,
+  mergeTableSession,
+  openTableSession,
   type Options,
   postNir,
+  printPreBill,
   recallKitchenTicket,
+  recordTablePayment,
   refreshToken,
   registerPushSubscription,
   replaceOptionRecipe,
@@ -81,7 +93,10 @@ import {
   simulatePaymentCapture,
   startKitchenTicket,
   stripeWebhook,
+  transferTableSession,
   updateCategory,
+  updateDiningTable,
+  updateFloorArea,
   updateMeasureUnit,
   updateModifierGroup,
   updateNir,
@@ -95,20 +110,32 @@ import {
   updateVatRate,
   updateWarehouse,
   uploadFile,
+  voidTablePayment,
 } from "../sdk.gen";
 import type {
+  AddTableRoundData,
+  AddTableRoundError,
+  AddTableRoundResponse,
   BumpKitchenTicketData,
   BumpKitchenTicketError,
   BumpKitchenTicketResponse,
   CancelOrderData,
   CancelOrderError,
   CancelOrderResponse,
+  CloseTableSessionData,
+  CloseTableSessionError,
+  CloseTableSessionResponse,
   CompleteOrderData,
   CompleteOrderError,
   CompleteOrderResponse,
   CreateCategoryData,
   CreateCategoryError,
   CreateCategoryResponse,
+  CreateDiningTableData,
+  CreateDiningTableError,
+  CreateDiningTableResponse,
+  CreateFloorAreaData,
+  CreateFloorAreaResponse,
   CreateMeasureUnitData,
   CreateMeasureUnitError,
   CreateMeasureUnitResponse,
@@ -175,6 +202,9 @@ import type {
   GetFileData,
   GetFileError,
   GetFileResponse,
+  GetFloorData,
+  GetFloorError,
+  GetFloorResponse,
   GetMenuData,
   GetMenuResponse,
   GetNirData,
@@ -208,12 +238,19 @@ import type {
   GetStockItemData,
   GetStockItemError,
   GetStockItemResponse,
+  GetTableSessionData,
+  GetTableSessionError,
+  GetTableSessionResponse,
   ImportEFacturaData,
   ImportEFacturaError,
   ImportEFacturaResponse,
   ListCategoriesData,
   ListCategoriesError,
   ListCategoriesResponse,
+  ListDiningTablesData,
+  ListDiningTablesResponse,
+  ListFloorAreasData,
+  ListFloorAreasResponse,
   ListKitchenStationsData,
   ListKitchenStationsError,
   ListKitchenStationsResponse,
@@ -280,12 +317,23 @@ import type {
   MatchInvoiceLineData,
   MatchInvoiceLineError,
   MatchInvoiceLineResponse,
+  MergeTableSessionData,
+  MergeTableSessionError,
+  MergeTableSessionResponse,
+  OpenTableSessionData,
+  OpenTableSessionError,
+  OpenTableSessionResponse,
   PostNirData,
   PostNirError,
   PostNirResponse,
+  PrintPreBillData,
+  PrintPreBillError,
   RecallKitchenTicketData,
   RecallKitchenTicketError,
   RecallKitchenTicketResponse,
+  RecordTablePaymentData,
+  RecordTablePaymentError,
+  RecordTablePaymentResponse,
   RefreshTokenData,
   RefreshTokenError,
   RefreshTokenResponse,
@@ -309,9 +357,18 @@ import type {
   StartKitchenTicketResponse,
   StripeWebhookData,
   StripeWebhookError,
+  TransferTableSessionData,
+  TransferTableSessionError,
+  TransferTableSessionResponse,
   UpdateCategoryData,
   UpdateCategoryError,
   UpdateCategoryResponse,
+  UpdateDiningTableData,
+  UpdateDiningTableError,
+  UpdateDiningTableResponse,
+  UpdateFloorAreaData,
+  UpdateFloorAreaError,
+  UpdateFloorAreaResponse,
   UpdateMeasureUnitData,
   UpdateMeasureUnitError,
   UpdateMeasureUnitResponse,
@@ -351,6 +408,9 @@ import type {
   UploadFileData,
   UploadFileError,
   UploadFileResponse,
+  VoidTablePaymentData,
+  VoidTablePaymentError,
+  VoidTablePaymentResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -1548,6 +1608,434 @@ export const registerPushSubscriptionMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await registerPushSubscription({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listFloorAreasQueryKey = (options?: Options<ListFloorAreasData>) =>
+  createQueryKey("listFloorAreas", options);
+
+/**
+ * Floor areas, e.g. Salon, Terrace (ADMIN, MANAGER)
+ */
+export const listFloorAreasOptions = (options?: Options<ListFloorAreasData>) =>
+  queryOptions<
+    ListFloorAreasResponse,
+    DefaultError,
+    ListFloorAreasResponse,
+    ReturnType<typeof listFloorAreasQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listFloorAreas({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listFloorAreasQueryKey(options),
+  });
+
+/**
+ * Create a floor area (ADMIN, MANAGER)
+ */
+export const createFloorAreaMutation = (
+  options?: Partial<Options<CreateFloorAreaData>>,
+): UseMutationOptions<
+  CreateFloorAreaResponse,
+  DefaultError,
+  Options<CreateFloorAreaData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateFloorAreaResponse,
+    DefaultError,
+    Options<CreateFloorAreaData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createFloorArea({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update a floor area (ADMIN, MANAGER)
+ */
+export const updateFloorAreaMutation = (
+  options?: Partial<Options<UpdateFloorAreaData>>,
+): UseMutationOptions<
+  UpdateFloorAreaResponse,
+  UpdateFloorAreaError,
+  Options<UpdateFloorAreaData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateFloorAreaResponse,
+    UpdateFloorAreaError,
+    Options<UpdateFloorAreaData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateFloorArea({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listDiningTablesQueryKey = (
+  options?: Options<ListDiningTablesData>,
+) => createQueryKey("listDiningTables", options);
+
+/**
+ * Dining tables (ADMIN, MANAGER)
+ */
+export const listDiningTablesOptions = (
+  options?: Options<ListDiningTablesData>,
+) =>
+  queryOptions<
+    ListDiningTablesResponse,
+    DefaultError,
+    ListDiningTablesResponse,
+    ReturnType<typeof listDiningTablesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listDiningTables({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listDiningTablesQueryKey(options),
+  });
+
+/**
+ * Create a dining table (ADMIN, MANAGER)
+ */
+export const createDiningTableMutation = (
+  options?: Partial<Options<CreateDiningTableData>>,
+): UseMutationOptions<
+  CreateDiningTableResponse,
+  CreateDiningTableError,
+  Options<CreateDiningTableData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateDiningTableResponse,
+    CreateDiningTableError,
+    Options<CreateDiningTableData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createDiningTable({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Update a dining table (ADMIN, MANAGER)
+ */
+export const updateDiningTableMutation = (
+  options?: Partial<Options<UpdateDiningTableData>>,
+): UseMutationOptions<
+  UpdateDiningTableResponse,
+  UpdateDiningTableError,
+  Options<UpdateDiningTableData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateDiningTableResponse,
+    UpdateDiningTableError,
+    Options<UpdateDiningTableData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateDiningTable({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getFloorQueryKey = (options?: Options<GetFloorData>) =>
+  createQueryKey("getFloor", options);
+
+/**
+ * Active areas and tables with their open session, if any (WAITER, CASHIER, MANAGER, ADMIN)
+ */
+export const getFloorOptions = (options?: Options<GetFloorData>) =>
+  queryOptions<
+    GetFloorResponse,
+    GetFloorError,
+    GetFloorResponse,
+    ReturnType<typeof getFloorQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getFloor({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getFloorQueryKey(options),
+  });
+
+/**
+ * Seat guests at a free table
+ */
+export const openTableSessionMutation = (
+  options?: Partial<Options<OpenTableSessionData>>,
+): UseMutationOptions<
+  OpenTableSessionResponse,
+  OpenTableSessionError,
+  Options<OpenTableSessionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    OpenTableSessionResponse,
+    OpenTableSessionError,
+    Options<OpenTableSessionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await openTableSession({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getTableSessionQueryKey = (
+  options: Options<GetTableSessionData>,
+) => createQueryKey("getTableSession", options);
+
+/**
+ * A table session with its rounds, bill and payments
+ */
+export const getTableSessionOptions = (options: Options<GetTableSessionData>) =>
+  queryOptions<
+    GetTableSessionResponse,
+    GetTableSessionError,
+    GetTableSessionResponse,
+    ReturnType<typeof getTableSessionQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getTableSession({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getTableSessionQueryKey(options),
+  });
+
+/**
+ * Send a round to the kitchen and bar (a DINE_IN order of this session)
+ */
+export const addTableRoundMutation = (
+  options?: Partial<Options<AddTableRoundData>>,
+): UseMutationOptions<
+  AddTableRoundResponse,
+  AddTableRoundError,
+  Options<AddTableRoundData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    AddTableRoundResponse,
+    AddTableRoundError,
+    Options<AddTableRoundData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await addTableRound({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Record a cash or card-terminal payment: a whole or equal-split amount, or selected items. The session closes when nothing is left to pay.
+ */
+export const recordTablePaymentMutation = (
+  options?: Partial<Options<RecordTablePaymentData>>,
+): UseMutationOptions<
+  RecordTablePaymentResponse,
+  RecordTablePaymentError,
+  Options<RecordTablePaymentData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RecordTablePaymentResponse,
+    RecordTablePaymentError,
+    Options<RecordTablePaymentData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await recordTablePayment({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Undo a payment recorded by mistake, while the session is still open
+ */
+export const voidTablePaymentMutation = (
+  options?: Partial<Options<VoidTablePaymentData>>,
+): UseMutationOptions<
+  VoidTablePaymentResponse,
+  VoidTablePaymentError,
+  Options<VoidTablePaymentData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    VoidTablePaymentResponse,
+    VoidTablePaymentError,
+    Options<VoidTablePaymentData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await voidTablePayment({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Free the table; only when nothing is left to pay (e.g. guests left without ordering)
+ */
+export const closeTableSessionMutation = (
+  options?: Partial<Options<CloseTableSessionData>>,
+): UseMutationOptions<
+  CloseTableSessionResponse,
+  CloseTableSessionError,
+  Options<CloseTableSessionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CloseTableSessionResponse,
+    CloseTableSessionError,
+    Options<CloseTableSessionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await closeTableSession({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Move the guests to another free table
+ */
+export const transferTableSessionMutation = (
+  options?: Partial<Options<TransferTableSessionData>>,
+): UseMutationOptions<
+  TransferTableSessionResponse,
+  TransferTableSessionError,
+  Options<TransferTableSessionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    TransferTableSessionResponse,
+    TransferTableSessionError,
+    Options<TransferTableSessionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await transferTableSession({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Join this table's bill into another open table; this table becomes free
+ */
+export const mergeTableSessionMutation = (
+  options?: Partial<Options<MergeTableSessionData>>,
+): UseMutationOptions<
+  MergeTableSessionResponse,
+  MergeTableSessionError,
+  Options<MergeTableSessionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    MergeTableSessionResponse,
+    MergeTableSessionError,
+    Options<MergeTableSessionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await mergeTableSession({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Print the pre-bill (nota de plată) for the guests
+ */
+export const printPreBillMutation = (
+  options?: Partial<Options<PrintPreBillData>>,
+): UseMutationOptions<
+  unknown,
+  PrintPreBillError,
+  Options<PrintPreBillData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    unknown,
+    PrintPreBillError,
+    Options<PrintPreBillData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await printPreBill({
         ...options,
         ...fnOptions,
         throwOnError: true,
