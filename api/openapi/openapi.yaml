@@ -43,6 +43,8 @@ tags:
     description: Dashboard KPIs
   - name: tables
     description: Floor areas, dining tables, table sessions, rounds, bill and in-person payments (waiter app)
+  - name: table-guest
+    description: "Guests at a table: scan the QR, join, order and pay from the phone (device token in X-Table-Guest, no login)"
   - name: streams
     description: Server-Sent Events (hand-implemented)
   - name: webhooks
@@ -1072,6 +1074,269 @@ paths:
         "202": { description: Sent to the printer }
         "404": { $ref: "#/components/responses/Problem" }
 
+  /admin/tables/{id}/qr:
+    post:
+      tags: [tables]
+      operationId: regenerateTableQr
+      summary: Give the table a new QR code; the old one stops working (ADMIN, MANAGER)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DiningTableAdmin" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/confirm:
+    post:
+      tags: [tables]
+      operationId: confirmTableSession
+      summary: Confirm a table started by guests from the QR code
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/reject:
+    post:
+      tags: [tables]
+      operationId: rejectTableSession
+      summary: Refuse a table started by guests (e.g. nobody is sitting there); the table is freed
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RejectRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/pending-rounds/{roundId}/confirm:
+    post:
+      tags: [tables]
+      operationId: confirmGuestRound
+      summary: Send a round ordered by a guest to the kitchen and bar
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - name: roundId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/pending-rounds/{roundId}/reject:
+    post:
+      tags: [tables]
+      operationId: rejectGuestRound
+      summary: Refuse a round ordered by a guest, with a reason the guest sees
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - name: roundId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RejectRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /tables/sessions/{id}/guests/{guestId}/{action}:
+    post:
+      tags: [tables]
+      operationId: decideTableGuest
+      summary: Let a guest join, refuse them, or remove a guest from the table
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/GuestId"
+        - name: action
+          in: path
+          required: true
+          schema: { type: string, enum: [approve, reject, remove] }
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableSession" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- guests at the table (QR, no login)
+  /t/{code}:
+    get:
+      tags: [table-guest]
+      operationId: getGuestTable
+      summary: What the QR code points to (table, restaurant, whether QR ordering is on)
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuestTable" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /t/{code}/join:
+    post:
+      tags: [table-guest]
+      operationId: joinTable
+      summary: "Join the table: start its session (free table), become owner (table seated by the waiter, no owner yet) or ask to join"
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JoinTableRequest" }
+      responses:
+        "201":
+          description: Joined, or waiting to be let in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JoinTableResult" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /t/{code}/me:
+    get:
+      tags: [table-guest]
+      operationId: getGuestView
+      summary: The table as this guest sees it (bill without names, activity log, join requests for the owner)
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/GuestToken"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuestView" }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /t/{code}/rounds:
+    post:
+      tags: [table-guest]
+      operationId: sendGuestRound
+      summary: Order a round; it waits for the waiter's OK (confirmed automatically after the configured time)
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/GuestToken"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddRoundRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuestView" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /t/{code}/guests/{guestId}/{action}:
+    post:
+      tags: [table-guest]
+      operationId: ownerDecideGuest
+      summary: The table owner lets someone join or refuses them
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/GuestId"
+        - name: action
+          in: path
+          required: true
+          schema: { type: string, enum: [approve, reject] }
+        - $ref: "#/components/parameters/GuestToken"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuestView" }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /t/{code}/payments:
+    post:
+      tags: [table-guest]
+      operationId: startGuestPayment
+      summary: Pay the whole rest or selected items from the phone; the items are reserved while the payment is pending
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/GuestToken"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GuestPaymentRequest" }
+      responses:
+        "201":
+          description: Payment started; complete it with the provider (wallet sheet)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentIntent" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /t/{code}/events:
+    get:
+      tags: [streams]
+      operationId: streamGuestEvents
+      summary: "Server-Sent Events for a guest: event `table` with TableEvent whenever the table changes"
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TableCode"
+        - $ref: "#/components/parameters/GuestToken"
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/TableEvent" }
+        "403": { $ref: "#/components/responses/Problem" }
+
   /tables/events:
     get:
       tags: [streams]
@@ -1844,6 +2109,23 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    TableCode:
+      name: code
+      in: path
+      required: true
+      description: The table's QR code
+      schema: { type: string }
+    GuestToken:
+      name: X-Table-Guest
+      in: header
+      required: true
+      description: Device token returned when the guest joined
+      schema: { type: string }
+    GuestId:
+      name: guestId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     TrackingToken:
       name: token
       in: query
@@ -1906,6 +2188,7 @@ components:
         kitchenDisplay: { type: boolean }
         queueDisplay: { type: boolean }
         invoiceOcr: { type: boolean }
+        qrOrdering: { type: boolean, default: false, description: Guests order and pay from the table by scanning its QR code }
 
     OpeningHours:
       type: object
@@ -1954,6 +2237,12 @@ components:
         features: { $ref: "#/components/schemas/Features" }
         openingHours: { type: array, items: { $ref: "#/components/schemas/OpeningHours" } }
         orderNumberPrefix: { type: string, maxLength: 3, examples: [A] }
+        guestConfirmMinutes:
+          type: integer
+          minimum: 1
+          maximum: 60
+          default: 5
+          description: "QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long"
 
     VatRate:
       type: object
@@ -2954,6 +3243,7 @@ components:
         seats: { type: integer }
         sortOrder: { type: integer }
         active: { type: boolean }
+        qrCode: { type: string, description: "Code in the table's QR (https://<domain>/t/<code>)" }
 
     DiningTableRequest:
       type: object
@@ -2984,7 +3274,7 @@ components:
 
     FloorSession:
       type: object
-      required: [id, guests, openedAt, total, remaining, roundsInKitchen, roundsReady]
+      required: [id, guests, openedAt, total, remaining, roundsInKitchen, roundsReady, awaitingConfirmation, pendingRounds, joinRequests]
       properties:
         id: { type: string, format: uuid }
         guests: { type: integer }
@@ -2994,6 +3284,9 @@ components:
         remaining: { $ref: "#/components/schemas/Money" }
         roundsInKitchen: { type: integer, description: Rounds placed or being prepared }
         roundsReady: { type: integer, description: Rounds ready to be served }
+        awaitingConfirmation: { type: boolean, description: Started by guests from the QR code; the waiter has not confirmed it yet }
+        pendingRounds: { type: integer, description: Guest rounds waiting for the waiter's OK }
+        joinRequests: { type: integer, description: Guests asking to join }
 
     TableSessionStatus:
       type: string
@@ -3001,7 +3294,7 @@ components:
 
     TableSession:
       type: object
-      required: [id, tableId, tableLabel, status, guests, openedAt, rounds, payments, total, paid, remaining]
+      required: [id, tableId, tableLabel, status, origin, awaitingConfirmation, guests, openedAt, rounds, payments, total, paid, remaining, pending, guestList, pendingRounds, activity]
       properties:
         id: { type: string, format: uuid }
         tableId: { type: string, format: uuid }
@@ -3013,11 +3306,18 @@ components:
         openedAt: { type: string, format: date-time }
         closedAt: { type: string, format: date-time }
         mergedIntoSessionId: { type: string, format: uuid }
+        origin: { type: string, enum: [WAITER, GUEST], description: Who started the session }
+        awaitingConfirmation: { type: boolean, description: Started from the QR code and not yet confirmed by a waiter }
+        confirmDeadline: { type: string, format: date-time, description: When it is confirmed automatically }
         rounds: { type: array, items: { $ref: "#/components/schemas/TableRound" } }
         payments: { type: array, items: { $ref: "#/components/schemas/TablePayment" } }
         total: { $ref: "#/components/schemas/Money", description: Sum of the rounds that were not cancelled }
         paid: { $ref: "#/components/schemas/Money" }
         remaining: { $ref: "#/components/schemas/Money" }
+        pending: { $ref: "#/components/schemas/Money", description: Online payments from guests still in progress (their items are reserved) }
+        guestList: { type: array, items: { $ref: "#/components/schemas/TableGuest" } }
+        pendingRounds: { type: array, items: { $ref: "#/components/schemas/PendingRound" } }
+        activity: { type: array, items: { $ref: "#/components/schemas/TableActivity" } }
 
     TableRound:
       type: object
@@ -3030,10 +3330,11 @@ components:
         readyAt: { type: string, format: date-time }
         total: { $ref: "#/components/schemas/Money" }
         lines: { type: array, items: { $ref: "#/components/schemas/TableRoundLine" } }
+        placedBy: { type: string, description: "Guest who ordered it from the QR code (waiter app only)" }
 
     TableRoundLine:
       type: object
-      required: [lineId, productName, modifiers, quantity, unitPrice, total, paidQuantity]
+      required: [lineId, productName, modifiers, quantity, unitPrice, total, paidQuantity, reservedQuantity]
       properties:
         lineId: { type: string, format: uuid }
         productName: { type: string }
@@ -3043,6 +3344,7 @@ components:
         total: { $ref: "#/components/schemas/Money" }
         notes: { type: string }
         paidQuantity: { type: integer, description: Units already paid for item by item }
+        reservedQuantity: { type: integer, description: Units in an online payment still in progress }
 
     InPersonPaymentMethod:
       type: string
@@ -3053,7 +3355,7 @@ components:
       required: [id, method, amount, status, createdAt]
       properties:
         id: { type: string, format: uuid }
-        method: { $ref: "#/components/schemas/InPersonPaymentMethod" }
+        method: { type: string, enum: [CASH, CARD_POS, ONLINE], description: "ONLINE: paid by a guest from their phone" }
         amount: { $ref: "#/components/schemas/Money" }
         tendered: { $ref: "#/components/schemas/Money", description: Cash handed over by the guest }
         change: { $ref: "#/components/schemas/Money" }
@@ -3114,5 +3416,125 @@ components:
       properties:
         sessionId: { type: string, format: uuid }
         tableId: { type: string, format: uuid }
-        kind: { type: string, enum: [UPDATED, ROUND_READY, CLOSED] }
+        kind: { type: string, enum: [UPDATED, ROUND_READY, CLOSED, SESSION_TO_CONFIRM, ROUND_TO_CONFIRM, JOIN_REQUEST] }
         orderNumber: { type: string, description: The round that became ready (ROUND_READY) }
+
+    RejectRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 200 }
+
+    TableGuest:
+      type: object
+      required: [id, name, role, status, requestedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        role: { type: string, enum: [OWNER, MEMBER] }
+        status: { type: string, enum: [PENDING, ACTIVE, REJECTED, REMOVED] }
+        requestedAt: { type: string, format: date-time }
+
+    PendingRound:
+      type: object
+      required: [id, status, lines, total, createdAt, deadline]
+      properties:
+        id: { type: string, format: uuid }
+        guestName: { type: string }
+        status: { type: string, enum: [PENDING, CONFIRMED, REJECTED] }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [productName, modifiers, quantity, total]
+            properties:
+              productName: { type: string }
+              modifiers: { type: array, items: { type: string } }
+              quantity: { type: integer }
+              total: { $ref: "#/components/schemas/Money" }
+              notes: { type: string }
+        notes: { type: string }
+        total: { $ref: "#/components/schemas/Money" }
+        createdAt: { type: string, format: date-time }
+        deadline: { type: string, format: date-time, description: Confirmed automatically at this time }
+        reason: { type: string, description: Why the waiter refused it }
+
+    TableActivity:
+      type: object
+      description: One line of the table's log, e.g. "Robert ordered 2 coffees and a steak"
+      required: [at, kind, actorKind]
+      properties:
+        at: { type: string, format: date-time }
+        kind: { type: string, enum: [JOINED, REMOVED, ORDERED, ROUND_CONFIRMED, ROUND_REJECTED, TABLE_CONFIRMED, PAID] }
+        actor: { type: string, description: Guest or waiter name }
+        actorKind: { type: string, enum: [GUEST, WAITER, SYSTEM] }
+        items:
+          type: array
+          items:
+            type: object
+            required: [name, quantity]
+            properties:
+              name: { type: string }
+              quantity: { type: integer }
+        amount: { $ref: "#/components/schemas/Money" }
+        method: { type: string, enum: [CASH, CARD_POS, ONLINE] }
+        automatic: { type: boolean, description: Confirmed because the waiter did not answer in time }
+        reason: { type: string }
+
+    GuestTable:
+      type: object
+      required: [tableLabel, restaurantName, enabled, occupied]
+      properties:
+        tableLabel: { type: string }
+        areaName: { type: string }
+        restaurantName: { type: string }
+        logoUrl: { type: string }
+        enabled: { type: boolean, description: QR ordering is switched on }
+        occupied: { type: boolean, description: Somebody is already seated; scanning asks to join }
+
+    JoinTableRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+
+    JoinTableResult:
+      type: object
+      required: [token, view]
+      properties:
+        token: { type: string, description: "Keep on this device and send as X-Table-Guest; it is shown only once" }
+        view: { $ref: "#/components/schemas/GuestView" }
+
+    GuestView:
+      type: object
+      required: [me, status, tableLabel, rounds, pendingRounds, joinRequests, activity, total, paid, remaining, pending, payable, confirmMinutes]
+      properties:
+        me: { $ref: "#/components/schemas/TableGuest" }
+        status: { type: string, enum: [AWAITING_CONFIRMATION, OPEN, CLOSED] }
+        tableLabel: { type: string }
+        areaName: { type: string }
+        confirmDeadline: { type: string, format: date-time }
+        confirmMinutes: { type: integer }
+        rounds: { type: array, items: { $ref: "#/components/schemas/TableRound" } }
+        pendingRounds: { type: array, items: { $ref: "#/components/schemas/PendingRound" } }
+        joinRequests: { type: array, items: { $ref: "#/components/schemas/TableGuest" }, description: Only for the owner }
+        activity: { type: array, items: { $ref: "#/components/schemas/TableActivity" } }
+        total: { $ref: "#/components/schemas/Money" }
+        paid: { $ref: "#/components/schemas/Money" }
+        remaining: { $ref: "#/components/schemas/Money" }
+        pending: { $ref: "#/components/schemas/Money", description: Online payments still in progress }
+        payable: { $ref: "#/components/schemas/Money", description: What can be paid now (remaining minus pending) }
+
+    GuestPaymentRequest:
+      type: object
+      description: Either `all` (the whole rest) or `items` (selected units)
+      properties:
+        all: { type: boolean }
+        items:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [lineId, quantity]
+            properties:
+              lineId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1 }

@@ -1,6 +1,7 @@
 package ro.amadya.payments.internal
 
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Service
@@ -8,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional
 import ro.amadya.contract.model.PaymentIntent
 import ro.amadya.ordering.OrderCancelled
 import ro.amadya.ordering.OrderPayments
+import ro.amadya.payments.SessionPaymentCaptured
+import ro.amadya.payments.SessionPaymentEnded
 import ro.amadya.shared.ConflictException
 import ro.amadya.shared.NotFoundException
 import ro.amadya.shared.toMoney
@@ -19,6 +22,7 @@ class PaymentService(
     private val payments: PaymentRepository,
     private val provider: PaymentProvider,
     private val orders: OrderPayments,
+    private val events: ApplicationEventPublisher,
     private val clock: Clock,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -33,7 +37,7 @@ class PaymentService(
             PaymentEntity(orderId = orderId, method = PaymentMethod.ONLINE, provider = provider.name, amount = order.total, currency = order.currency),
         )
         val clientSecret = if (payment.providerRef == null) {
-            provider.createIntent(payment, order.number).also { payment.providerRef = it.providerRef }.clientSecret
+            provider.createIntent(payment, "Order ${order.number}").also { payment.providerRef = it.providerRef }.clientSecret
         } else {
             provider.clientSecret(payment.providerRef!!)
         }
@@ -52,6 +56,13 @@ class PaymentService(
         if (payment.status == PaymentState.CAPTURED || payment.status == PaymentState.REFUNDED) return
         payment.status = PaymentState.CAPTURED
         payment.capturedAt = clock.instant()
+        val sessionId = payment.tableSessionId
+        if (sessionId != null) {
+            // Paid from a guest's phone at the table: the tables module settles the bill (or refunds a late capture).
+            events.publishEvent(SessionPaymentCaptured(payment.id, sessionId, payment.amount, payment.currency))
+            log.info("Payment {} captured for table session {}", payment.id, sessionId)
+            return
+        }
         orders.markPaid(requireNotNull(payment.orderId) { "online payment without an order" })
         log.info("Payment {} captured for order {}", payment.id, payment.orderId)
     }
@@ -67,6 +78,7 @@ class PaymentService(
         payments.findByProviderAndProviderRef(providerName, providerRef)?.takeIf { it.status == PaymentState.PENDING }?.let {
             it.status = PaymentState.FAILED
             it.failure = reason
+            it.tableSessionId?.let { sessionId -> events.publishEvent(SessionPaymentEnded(it.id, sessionId)) }
         }
     }
 

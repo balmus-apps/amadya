@@ -1,0 +1,93 @@
+{
+  "table": {
+    "title": "Masa {label}",
+    "notFound": "Codul QR nu este valid. Rugați ospătarul un cod nou.",
+    "disabled": "Comanda de la masă nu este disponibilă acum. Vă rugăm chemați ospătarul.",
+    "language": "Limba",
+    "join": {
+      "welcome": "Bine ați venit la {restaurant}",
+      "start": "Comandați și plătiți de pe telefon. Ospătarul vă ajută oricând.",
+      "occupied": "Masa are deja clienți. Cereți să vă alăturați: vă primește cine a deschis masa sau ospătarul.",
+      "name": "Numele dumneavoastră",
+      "namePlaceholder": "ex. Andrei",
+      "submit": "Intră la masă",
+      "ask": "Cere să te alături"
+    },
+    "waiting": {
+      "title": "Așteptați să fiți primit",
+      "text": "Persoana care a deschis masa sau ospătarul vă va primi în curând.",
+      "rejected": "Nu ați fost primit la această masă.",
+      "again": "Încearcă din nou"
+    },
+    "closed": {
+      "title": "Masa a fost închisă",
+      "text": "Mulțumim! Vă așteptăm cu drag.",
+      "paid": "Total achitat: {amount}"
+    },
+    "tabs": { "menu": "Meniu", "bill": "Nota", "activity": "Activitate" },
+    "awaiting": "Ospătarul confirmă masa. Comenzile pleacă spre bucătărie după confirmare, cel târziu la {time}.",
+    "requests": {
+      "wants": "{name} vrea să se alăture mesei",
+      "approve": "Primește",
+      "reject": "Refuză"
+    },
+    "menu": {
+      "search": "Caută în meniu",
+      "noResults": "Niciun produs",
+      "options": "opțiuni",
+      "soldOut": "indisponibil",
+      "required": "Obligatoriu",
+      "optional": "Opțional",
+      "notes": "Mențiuni",
+      "notesPlaceholder": "ex. fără ceapă",
+      "add": "Adaugă · {price}",
+      "cart": "{count, plural, one {# produs} few {# produse} other {# de produse}}",
+      "reviewTitle": "Comanda ta",
+      "reviewHint": "Ospătarul o confirmă, apoi pleacă la bucătărie. Dacă nu răspunde, se trimite automat în {minutes} min.",
+      "roundNotes": "Mențiune pentru ospătar",
+      "send": "Trimite · {amount}",
+      "sent": "Comanda a fost trimisă ospătarului"
+    },
+    "bill": {
+      "empty": "Nu ați comandat încă nimic.",
+      "round": "Comanda {number}",
+      "waiting": "Așteaptă ospătarul · pleacă automat la {time}",
+      "rejected": "Refuzată{reason}",
+      "state": { "pending": "În așteptare", "preparing": "În preparare", "ready": "Gata", "served": "Servită", "cancelled": "Anulată" },
+      "paidUnits": "{count} achitat",
+      "reservedUnits": "{count} în curs de plată",
+      "total": "Total",
+      "paid": "Achitat",
+      "inProgress": "Plăți în curs",
+      "remaining": "De plată",
+      "payAll": "Plătește tot · {amount}",
+      "payItems": "Plătește doar ce aleg",
+      "choose": "Alegeți ce plătiți",
+      "chooseHint": "Produsele alese sunt rezervate pentru dumneavoastră cât durează plata.",
+      "paySelected": "Plătește {amount}",
+      "cancel": "Renunță",
+      "nothing": "Nu mai este nimic de plată."
+    },
+    "pay": {
+      "title": "Plată {amount}",
+      "done": "Plata a fost primită. Mulțumim!"
+    },
+    "activity": {
+      "empty": "Nimic încă.",
+      "someone": "Cineva",
+      "joined": "{actor} s-a alăturat mesei",
+      "removed": "{actor} nu mai face parte din masă",
+      "ordered": "{actor} a comandat {items}",
+      "orderedByWaiter": "{actor} (ospătar) a adăugat {items}",
+      "roundConfirmed": "{actor} a trimis la bucătărie: {items}",
+      "roundAuto": "Trimisă automat la bucătărie: {items}",
+      "roundRejected": "Refuzată de ospătar: {items}{reason}",
+      "tableConfirmed": "{actor} a confirmat masa",
+      "tableAuto": "Masa a fost confirmată automat",
+      "paid": "{actor} a plătit {amount} {how}",
+      "paidItems": "{actor} a plătit {amount} {how} pentru {items}",
+      "method": { "ONLINE": "de pe telefon", "CASH": "numerar", "CARD_POS": "cu cardul" }
+    },
+    "feed": { "ready": "Comanda dumneavoastră este gata. Vine ospătarul!" }
+  }
+}

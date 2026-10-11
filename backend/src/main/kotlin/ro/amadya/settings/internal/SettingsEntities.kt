@@ -32,6 +32,7 @@ class RestaurantSettingsEntity(
     @JdbcTypeCode(SqlTypes.JSON) var features: MutableMap<String, Boolean>,
     @Column(name = "opening_hours") @JdbcTypeCode(SqlTypes.JSON) var openingHours: MutableList<Map<String, Any>>,
     @Column(name = "order_number_prefix") var orderNumberPrefix: String,
+    @Column(name = "guest_confirm_minutes") var guestConfirmMinutes: Int = 5,
 ) {
     @Column(name = "created_at", updatable = false) var createdAt: Instant = Instant.now()
     @Column(name = "updated_at") var updatedAt: Instant = Instant.now()

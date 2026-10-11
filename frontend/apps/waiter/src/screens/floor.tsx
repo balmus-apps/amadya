@@ -2,7 +2,7 @@ import { openTableSession, type FloorArea, type FloorTable } from "@amadya/api-c
 import { formatMoney } from "@amadya/i18n";
 import { session, signOut } from "@amadya/staff-auth";
 import { Button, cn, Dialog, DialogContent, DialogDescription, DialogTitle, QuantityStepper, Skeleton } from "@amadya/ui";
-import { BellRingIcon, LogOutIcon, UsersIcon, Volume2Icon, VolumeXIcon, WifiIcon, WifiOffIcon } from "lucide-react";
+import { BellRingIcon, LogOutIcon, QrCodeIcon, UsersIcon, Volume2Icon, VolumeXIcon, WifiIcon, WifiOffIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { useStore } from "zustand";
@@ -122,6 +122,7 @@ function TableCard({ table, now, onTap }: { table: FloorTable; now: number; onTa
         state === "free" && "border-dashed border-border bg-card",
         state === "occupied" && "border-[var(--status-progress-strong)] bg-[var(--status-occupied)]",
         state === "ready" && "ready-pulse border-[var(--status-done-strong)] bg-[var(--status-done)]",
+        state === "attention" && "attention-pulse border-[var(--status-attention-strong)] bg-[var(--status-attention)]",
       )}
     >
       <div className="flex w-full items-start justify-between gap-2">
@@ -136,6 +137,16 @@ function TableCard({ table, now, onTap }: { table: FloorTable; now: number; onTa
       </div>
       {s ? (
         <div className="mt-auto space-y-0.5 text-sm">
+          {(s.awaitingConfirmation || s.pendingRounds > 0 || s.joinRequests > 0) && (
+            <p className="flex items-center gap-1 font-bold text-[var(--status-attention-strong)]">
+              <QrCodeIcon className="size-4 shrink-0" />
+              <span className="truncate">
+                {s.awaitingConfirmation
+                  ? t("floor.qrNew")
+                  : [s.pendingRounds > 0 && t("floor.qrRounds", { count: s.pendingRounds }), s.joinRequests > 0 && t("floor.qrJoin", { count: s.joinRequests })].filter(Boolean).join(" · ")}
+              </span>
+            </p>
+          )}
           {s.roundsReady > 0 && (
             <p className="flex items-center gap-1 font-bold text-[var(--status-done-strong)]">
               <BellRingIcon className="size-4" /> {t("floor.readyToServe", { count: s.roundsReady })}
@@ -193,6 +204,7 @@ function Legend() {
     { key: "free", className: "border-2 border-dashed bg-card" },
     { key: "occupied", className: "border-2 border-[var(--status-progress-strong)] bg-[var(--status-occupied)]" },
     { key: "ready", className: "border-2 border-[var(--status-done-strong)] bg-[var(--status-done)]" },
+    { key: "attention", className: "border-2 border-[var(--status-attention-strong)] bg-[var(--status-attention)]" },
   ] as const;
   return (
     <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">

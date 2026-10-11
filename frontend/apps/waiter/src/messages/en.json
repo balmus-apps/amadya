@@ -13,7 +13,10 @@
   "language": "Language",
   "sound": "Sound",
   "logout": "Sign out",
-  "common": { "no": "No", "back": "Back" },
+  "common": {
+    "no": "No",
+    "back": "Back"
+  },
   "floor": {
     "title": "Tables",
     "areas": "Areas",
@@ -22,7 +25,15 @@
     "seats": "{count, plural, one {# seat} other {# seats}}",
     "readyToServe": "{count, plural, one {# round ready} other {# rounds ready}}",
     "inKitchen": "{count} in the kitchen",
-    "state": { "free": "Free", "occupied": "Occupied", "ready": "To serve" }
+    "state": {
+      "free": "Free",
+      "occupied": "Occupied",
+      "ready": "To serve",
+      "attention": "QR guests"
+    },
+    "qrNew": "QR: confirm table",
+    "qrRounds": "{count, plural, one {# QR order} other {# QR orders}}",
+    "qrJoin": "{count, plural, one {# request} other {# requests}}"
   },
   "seat": {
     "title": "Table {label}",
@@ -39,10 +50,20 @@
     "addRound": "Order",
     "pay": "Pay"
   },
-  "bill": { "total": "Total", "paid": "Paid", "remaining": "Left" },
+  "bill": {
+    "total": "Total",
+    "paid": "Paid",
+    "remaining": "Left"
+  },
   "round": {
     "title": "Round {index}",
-    "state": { "pending": "Pending", "preparing": "In preparation", "ready": "Ready", "served": "Served", "cancelled": "Cancelled" },
+    "state": {
+      "pending": "Pending",
+      "preparing": "In preparation",
+      "ready": "Ready",
+      "served": "Served",
+      "cancelled": "Cancelled"
+    },
     "paidUnits": "{count} paid",
     "cancel": "Cancel",
     "markServed": "Served",
@@ -55,7 +76,11 @@
   },
   "payments": {
     "title": "Payments",
-    "method": { "CASH": "Cash", "CARD_POS": "Card" },
+    "method": {
+      "CASH": "Cash",
+      "CARD_POS": "Card",
+      "ONLINE": "Phone"
+    },
     "items": "{count, plural, one {# item} other {# items}}",
     "change": "change {amount}",
     "undo": "Undo payment",
@@ -86,7 +111,11 @@
     "title": "Payment · table {label}",
     "remaining": "Left to pay: {amount}",
     "how": "How they pay",
-    "mode": { "full": "Whole bill", "equal": "Split equally", "items": "By item" },
+    "mode": {
+      "full": "Whole bill",
+      "equal": "Split equally",
+      "items": "By item"
+    },
     "peopleLeft": "People still paying",
     "eachPays": "Each pays {amount}",
     "allItemsPaid": "Every item is paid",
@@ -123,6 +152,42 @@
     "sent": "Round sent"
   },
   "feed": {
-    "roundReady": "Table {table}: round {number} is ready to serve"
+    "roundReady": "Table {table}: round {number} is ready to serve",
+    "SESSION_TO_CONFIRM": "Table {table}: new guests from the QR code, confirm the table",
+    "ROUND_TO_CONFIRM": "Table {table}: new QR order to confirm",
+    "JOIN_REQUEST": "Table {table}: someone asks to join"
+  },
+  "qr": {
+    "title": "Guests from the QR code",
+    "newTable": "Guests opened this table from the QR code. Confirm they are seated.",
+    "autoIn": "automatic in {time}",
+    "confirmTable": "Confirm table",
+    "refuseTable": "Refuse",
+    "tableConfirmed": "Table confirmed",
+    "roundFrom": "{name}'s order",
+    "sendToKitchen": "Send to kitchen",
+    "roundConfirmed": "Order sent to the kitchen",
+    "refuse": "Refuse",
+    "letIn": "Let in",
+    "remove": "Remove",
+    "asking": "asks to join",
+    "owner": "opened the table",
+    "member": "at the table",
+    "refuseRoundTitle": "Refuse this order?",
+    "refuseRoundText": "The guest sees the refusal and the reason.",
+    "refuseTableTitle": "Refuse this table?",
+    "refuseTableText": "The table is freed and the QR guests are disconnected."
+  },
+  "activity": {
+    "title": "Activity",
+    "system": "The system",
+    "auto": " (automatically)",
+    "JOINED": "{actor} joined the table",
+    "REMOVED": "{actor} was removed from the table",
+    "ORDERED": "{actor} ordered {items}",
+    "ROUND_CONFIRMED": "{actor} sent to the kitchen{auto}: {items}",
+    "ROUND_REJECTED": "{actor} refused: {items} {reason}",
+    "TABLE_CONFIRMED": "{actor} confirmed the table{auto}",
+    "PAID": "{actor} paid {amount} ({method}) {items}"
   }
 }

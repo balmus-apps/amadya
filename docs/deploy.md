@@ -5,9 +5,9 @@ The server has 1 vCPU and 2 GB of RAM, which is too small to compile Amadya. So 
 pushed to **GitHub Container Registry** (`ghcr.io/balmus-apps/amadya-*`, private) and only pulled on the server.
 
 ```
-Mac: scripts/release.sh ──push──▶ ghcr.io/balmus-apps/amadya-{api,menu-web,admin,kitchen,waiter,queue-display}:<sha>, :latest
+Mac: scripts/release.sh ──push──▶ ghcr.io/balmus-apps/amadya-{api,menu-web,admin,kitchen,waiter,queue-display,table}:<sha>, :latest
                                           │ pull
-Server: proxy (80/443, TLS) ──web network──▶ amadya-web (internal Caddy) ─▶ api, menu-web, admin, kitchen, waiter, queue-display, postgres
+Server: proxy (80/443, TLS) ──web network──▶ amadya-web (internal Caddy) ─▶ api, menu-web, admin, kitchen, waiter, queue-display, table, postgres
 ```
 
 ## Release (on the Mac)
@@ -54,5 +54,5 @@ rollback across a migration needs the database restored from a backup.
 
 ## Memory budget
 Measured with 150 concurrent orders plus 450 reads: the api peaks at 430 MB, menu-web at about 105 MB, Postgres at about
-75 MB and Caddy at about 60 MB. The admin, kitchen, waiter and queue-display apps use about 12 MB each, about 720 MB in total. The limits in
+75 MB and Caddy at about 60 MB. The admin, kitchen, waiter, queue-display and table apps use about 12 MB each, about 730 MB in total. The limits in
 `docker-compose.prod.yml` are ceilings above these numbers.

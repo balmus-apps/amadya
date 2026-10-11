@@ -43,6 +43,10 @@
 	handle_path /kitchen/* {
 		reverse_proxy kitchen:80
 	}
+	# Guests at a table: the QR on each table opens /t/<code> (public, device token per guest)
+	handle_path /t/* {
+		reverse_proxy table:80
+	}
 	# The TV above the pickup counter (public, numbers only)
 	redir /queue /queue/
 	handle_path /queue/* {

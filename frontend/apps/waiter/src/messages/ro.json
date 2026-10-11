@@ -13,7 +13,10 @@
   "language": "Limba",
   "sound": "Sunet",
   "logout": "Ieșire",
-  "common": { "no": "Nu", "back": "Înapoi" },
+  "common": {
+    "no": "Nu",
+    "back": "Înapoi"
+  },
   "floor": {
     "title": "Mese",
     "areas": "Zone",
@@ -22,7 +25,15 @@
     "seats": "{count, plural, one {# loc} few {# locuri} other {# de locuri}}",
     "readyToServe": "{count, plural, one {# rundă gata} few {# runde gata} other {# de runde gata}}",
     "inKitchen": "{count, plural, one {# în bucătărie} other {# în bucătărie}}",
-    "state": { "free": "Liberă", "occupied": "Ocupată", "ready": "De servit" }
+    "state": {
+      "free": "Liberă",
+      "occupied": "Ocupată",
+      "ready": "De servit",
+      "attention": "Clienți QR"
+    },
+    "qrNew": "QR: de confirmat",
+    "qrRounds": "{count, plural, one {# comandă} few {# comenzi} other {# de comenzi}} QR",
+    "qrJoin": "{count, plural, one {# cerere} few {# cereri} other {# de cereri}}"
   },
   "seat": {
     "title": "Masa {label}",
@@ -39,10 +50,20 @@
     "addRound": "Comandă",
     "pay": "Plată"
   },
-  "bill": { "total": "Total", "paid": "Achitat", "remaining": "Rest" },
+  "bill": {
+    "total": "Total",
+    "paid": "Achitat",
+    "remaining": "Rest"
+  },
   "round": {
     "title": "Runda {index}",
-    "state": { "pending": "În așteptare", "preparing": "În preparare", "ready": "Gata", "served": "Servită", "cancelled": "Anulată" },
+    "state": {
+      "pending": "În așteptare",
+      "preparing": "În preparare",
+      "ready": "Gata",
+      "served": "Servită",
+      "cancelled": "Anulată"
+    },
     "paidUnits": "{count} achitat",
     "cancel": "Anulează",
     "markServed": "Servită",
@@ -55,7 +76,11 @@
   },
   "payments": {
     "title": "Plăți",
-    "method": { "CASH": "Numerar", "CARD_POS": "Card" },
+    "method": {
+      "CASH": "Numerar",
+      "CARD_POS": "Card",
+      "ONLINE": "Telefon"
+    },
     "items": "{count, plural, one {# produs} few {# produse} other {# de produse}}",
     "change": "rest {amount}",
     "undo": "Anulează plata",
@@ -86,7 +111,11 @@
     "title": "Plată · masa {label}",
     "remaining": "Rest de plată: {amount}",
     "how": "Cum se plătește",
-    "mode": { "full": "Toată nota", "equal": "Împărțit egal", "items": "Pe produse" },
+    "mode": {
+      "full": "Toată nota",
+      "equal": "Împărțit egal",
+      "items": "Pe produse"
+    },
     "peopleLeft": "Persoane care mai plătesc",
     "eachPays": "Fiecare plătește {amount}",
     "allItemsPaid": "Toate produsele sunt achitate",
@@ -123,6 +152,42 @@
     "sent": "Runda a fost trimisă"
   },
   "feed": {
-    "roundReady": "Masa {table}: runda {number} este gata de servit"
+    "roundReady": "Masa {table}: runda {number} este gata de servit",
+    "SESSION_TO_CONFIRM": "Masa {table}: clienți noi din QR, confirmați masa",
+    "ROUND_TO_CONFIRM": "Masa {table}: comandă nouă din QR de confirmat",
+    "JOIN_REQUEST": "Masa {table}: cineva cere să se alăture"
+  },
+  "qr": {
+    "title": "Clienți din QR",
+    "newTable": "Clienții au deschis masa din QR. Confirmați că stau la masă.",
+    "autoIn": "automat în {time}",
+    "confirmTable": "Confirmă masa",
+    "refuseTable": "Refuză",
+    "tableConfirmed": "Masa a fost confirmată",
+    "roundFrom": "Comanda lui {name}",
+    "sendToKitchen": "Trimite la bucătărie",
+    "roundConfirmed": "Comanda a fost trimisă la bucătărie",
+    "refuse": "Refuză",
+    "letIn": "Primește",
+    "remove": "Scoate",
+    "asking": "cere să intre",
+    "owner": "a deschis masa",
+    "member": "la masă",
+    "refuseRoundTitle": "Refuzați comanda?",
+    "refuseRoundText": "Clientul vede refuzul și motivul.",
+    "refuseTableTitle": "Refuzați masa?",
+    "refuseTableText": "Masa se eliberează, iar clienții din QR sunt deconectați."
+  },
+  "activity": {
+    "title": "Activitate",
+    "system": "Sistemul",
+    "auto": " (automat)",
+    "JOINED": "{actor} s-a alăturat mesei",
+    "REMOVED": "{actor} a fost scos de la masă",
+    "ORDERED": "{actor} a comandat {items}",
+    "ROUND_CONFIRMED": "{actor} a trimis la bucătărie{auto}: {items}",
+    "ROUND_REJECTED": "{actor} a refuzat: {items} {reason}",
+    "TABLE_CONFIRMED": "{actor} a confirmat masa{auto}",
+    "PAID": "{actor} a plătit {amount} ({method}) {items}"
   }
 }

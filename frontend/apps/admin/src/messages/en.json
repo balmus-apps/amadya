@@ -360,7 +360,8 @@
    "onlinePayments": "Online payments",
    "kitchenDisplay": "Kitchen display",
    "queueDisplay": "Queue display",
-   "invoiceOcr": "Invoice scanning"
+   "invoiceOcr": "Invoice scanning",
+   "qrOrdering": "QR ordering at the table"
   },
   "openingHours": "Opening hours",
   "days": {
@@ -382,7 +383,9 @@
   "fiscalGroup": "Fiscal group",
   "stationsTitle": "Preparation stations",
   "newStation": "New station",
-  "parallelSlots": "Orders in parallel"
+  "parallelSlots": "Orders in parallel",
+  "guestConfirmMinutes": "Minutes until automatic confirmation",
+  "guestConfirmHint": "Orders from QR guests and tables they open, which no waiter answers, are confirmed automatically after this long. Raise it on busy days."
  },
  "users": {
   "title": "Users",
@@ -415,6 +418,14 @@
   "labelHint": "What is written on the table, e.g. 5 or T2",
   "seats": "Seats",
   "area": "Area",
-  "sortOrder": "Order"
+  "sortOrder": "Order",
+  "qr": "QR code",
+  "qrTitle": "QR code of table {label}",
+  "qrHint": "Guests scan it to order and pay from their phone. If someone photographed the code, generate a new one: the old one stops working.",
+  "regenerate": "Generate a new code",
+  "regenerated": "Code replaced; print it again",
+  "print": "Print the QR codes",
+  "scan": "Scan to order and pay",
+  "openLink": "Open"
  }
 }

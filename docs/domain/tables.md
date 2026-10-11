@@ -45,6 +45,26 @@ sequenceDiagram
 - **Pre-bill:** prints what was ordered and what is left to pay. It is not a fiscal receipt; the bon fiscal comes with
   the fiscal printer (Phase 6), which will print it when the bill is paid.
 
+## Guests ordering from the table (QR)
+Decided in [ADR 0010](../adr/0010-qr-table-ordering.md). In short:
+- Each table has a QR code with a random code (`https://<domain>/t/<code>`). Admin → Setări → Mese shows it, regenerates it
+  and prints a sheet of them. The switch is *Comandă din QR la masă* in Admin → Setări.
+- **Joining:** a guest gives a first name.
+  - On a free table they start the session as **owner**. A waiter confirms the table; until then nothing reaches the
+    kitchen.
+  - On a table seated by a waiter with no owner yet, they become owner at once.
+  - Otherwise they **ask to join**: the owner or a waiter lets them in or refuses.
+  - Each phone gets a token that only works for that session.
+- **Guest rounds** wait for the waiter's OK. Nobody answering within the restaurant's *minutes until automatic
+  confirmation* (default 5, changeable any time) confirms them automatically. The same applies to a table a guest started.
+- **Paying from the phone:** the whole rest or chosen items, through the same payment provider as takeaway.
+  - Items being paid for are **reserved** until the payment is captured, fails or expires (15 minutes): nobody else can
+    pay them, and the waiter's payment sheet leaves them out.
+  - A payment captured after the bill was settled some other way is refunded automatically.
+- **The log:** joins, orders, confirmations (by whom, or automatically) and payments (by whom, how, for what). Guests see
+  it under *Activitate*; their bill has no names. Waiters see the names of guest rounds (`QR · Andrei`) and the guests at
+  the table, and can remove a guest.
+
 ## Not yet
 See [docs/todo/waiter.md](../todo/waiter.md): a floor plan drawn to scale, removing a single item, QR ordering, tips and the
 fiscal receipt.

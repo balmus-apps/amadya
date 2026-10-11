@@ -1,0 +1,93 @@
+{
+  "table": {
+    "title": "Table {label}",
+    "notFound": "This QR code is not valid. Please ask the waiter for a new one.",
+    "disabled": "Ordering from the table is not available right now. Please call the waiter.",
+    "language": "Language",
+    "join": {
+      "welcome": "Welcome to {restaurant}",
+      "start": "Order and pay from your phone. The waiter is always there to help.",
+      "occupied": "Guests are already seated here. Ask to join: whoever opened the table or the waiter lets you in.",
+      "name": "Your name",
+      "namePlaceholder": "e.g. Andrew",
+      "submit": "Join the table",
+      "ask": "Ask to join"
+    },
+    "waiting": {
+      "title": "Waiting to be let in",
+      "text": "The person who opened the table or the waiter will let you in shortly.",
+      "rejected": "You were not let in at this table.",
+      "again": "Try again"
+    },
+    "closed": {
+      "title": "This table is closed",
+      "text": "Thank you! We hope to see you again.",
+      "paid": "Total paid: {amount}"
+    },
+    "tabs": { "menu": "Menu", "bill": "Bill", "activity": "Activity" },
+    "awaiting": "The waiter is confirming the table. Orders go to the kitchen once confirmed, at the latest at {time}.",
+    "requests": {
+      "wants": "{name} wants to join the table",
+      "approve": "Let in",
+      "reject": "Refuse"
+    },
+    "menu": {
+      "search": "Search the menu",
+      "noResults": "No products",
+      "options": "options",
+      "soldOut": "sold out",
+      "required": "Required",
+      "optional": "Optional",
+      "notes": "Notes",
+      "notesPlaceholder": "e.g. no onions",
+      "add": "Add · {price}",
+      "cart": "{count, plural, one {# item} other {# items}}",
+      "reviewTitle": "Your order",
+      "reviewHint": "The waiter confirms it, then it goes to the kitchen. If there is no answer, it is sent automatically in {minutes} min.",
+      "roundNotes": "Note for the waiter",
+      "send": "Send · {amount}",
+      "sent": "Your order was sent to the waiter"
+    },
+    "bill": {
+      "empty": "You have not ordered anything yet.",
+      "round": "Order {number}",
+      "waiting": "Waiting for the waiter · sent automatically at {time}",
+      "rejected": "Refused{reason}",
+      "state": { "pending": "Pending", "preparing": "In preparation", "ready": "Ready", "served": "Served", "cancelled": "Cancelled" },
+      "paidUnits": "{count} paid",
+      "reservedUnits": "{count} being paid",
+      "total": "Total",
+      "paid": "Paid",
+      "inProgress": "Payments in progress",
+      "remaining": "To pay",
+      "payAll": "Pay everything · {amount}",
+      "payItems": "Pay only what I choose",
+      "choose": "Choose what you pay for",
+      "chooseHint": "The items you choose are kept for you while you pay.",
+      "paySelected": "Pay {amount}",
+      "cancel": "Cancel",
+      "nothing": "Nothing left to pay."
+    },
+    "pay": {
+      "title": "Payment {amount}",
+      "done": "Payment received. Thank you!"
+    },
+    "activity": {
+      "empty": "Nothing yet.",
+      "someone": "Someone",
+      "joined": "{actor} joined the table",
+      "removed": "{actor} is no longer at the table",
+      "ordered": "{actor} ordered {items}",
+      "orderedByWaiter": "{actor} (waiter) added {items}",
+      "roundConfirmed": "{actor} sent to the kitchen: {items}",
+      "roundAuto": "Sent to the kitchen automatically: {items}",
+      "roundRejected": "Refused by the waiter: {items}{reason}",
+      "tableConfirmed": "{actor} confirmed the table",
+      "tableAuto": "The table was confirmed automatically",
+      "paid": "{actor} paid {amount} {how}",
+      "paidItems": "{actor} paid {amount} {how} for {items}",
+      "method": { "ONLINE": "by phone", "CASH": "in cash", "CARD_POS": "by card" }
+    },
+    "feed": { "ready": "Your order is ready. The waiter is on the way!" }
+  }
+}

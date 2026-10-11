@@ -37,6 +37,13 @@ export function useTableFeed(soundOn: boolean) {
         const event = raw as unknown as TableEvent;
         void client.invalidateQueries({ queryKey: keys.floor });
         void client.invalidateQueries({ queryKey: keys.session(event.sessionId) });
+        if (event.kind === "SESSION_TO_CONFIRM" || event.kind === "ROUND_TO_CONFIRM" || event.kind === "JOIN_REQUEST") {
+          await client.refetchQueries({ queryKey: keys.floor });
+          const label = tableLabel(client.getQueriesData<FloorArea[]>({ queryKey: keys.floor }), event.sessionId);
+          toast.info(t(`feed.${event.kind}`, { table: label ?? "?" }), { duration: 8000 });
+          if (sound.current) chime();
+          navigator.vibrate?.([80, 40, 80, 40, 80]);
+        }
         if (event.kind === "ROUND_READY") {
           const label = tableLabel(client.getQueriesData<FloorArea[]>({ queryKey: keys.floor }), event.sessionId);
           toast.success(t("feed.roundReady", { table: label ?? "?", number: event.orderNumber ?? "" }), { duration: 8000 });

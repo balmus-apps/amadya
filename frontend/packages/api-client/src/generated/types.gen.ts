@@ -42,6 +42,10 @@ export type Features = {
   kitchenDisplay: boolean;
   queueDisplay: boolean;
   invoiceOcr: boolean;
+  /**
+   * Guests order and pay from the table by scanning its QR code
+   */
+  qrOrdering?: boolean;
 };
 
 export type OpeningHours = {
@@ -92,6 +96,10 @@ export type RestaurantSettings = {
   features: Features;
   openingHours: Array<OpeningHours>;
   orderNumberPrefix?: string;
+  /**
+   * QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long
+   */
+  guestConfirmMinutes?: number;
 };
 
 export type VatRate = {
@@ -1007,6 +1015,10 @@ export type DiningTableAdmin = {
   seats: number;
   sortOrder: number;
   active: boolean;
+  /**
+   * Code in the table's QR (https://<domain>/t/<code>)
+   */
+  qrCode?: string;
 };
 
 export type DiningTableRequest = {
@@ -1048,6 +1060,18 @@ export type FloorSession = {
    * Rounds ready to be served
    */
   roundsReady: number;
+  /**
+   * Started by guests from the QR code; the waiter has not confirmed it yet
+   */
+  awaitingConfirmation: boolean;
+  /**
+   * Guest rounds waiting for the waiter's OK
+   */
+  pendingRounds: number;
+  /**
+   * Guests asking to join
+   */
+  joinRequests: number;
 };
 
 export type TableSessionStatus = "OPEN" | "CLOSED" | "MERGED";
@@ -1063,6 +1087,18 @@ export type TableSession = {
   openedAt: string;
   closedAt?: string;
   mergedIntoSessionId?: string;
+  /**
+   * Who started the session
+   */
+  origin: "WAITER" | "GUEST";
+  /**
+   * Started from the QR code and not yet confirmed by a waiter
+   */
+  awaitingConfirmation: boolean;
+  /**
+   * When it is confirmed automatically
+   */
+  confirmDeadline?: string;
   rounds: Array<TableRound>;
   payments: Array<TablePayment>;
   /**
@@ -1071,6 +1107,13 @@ export type TableSession = {
   total: Money;
   paid: Money;
   remaining: Money;
+  /**
+   * Online payments from guests still in progress (their items are reserved)
+   */
+  pending: Money;
+  guestList: Array<TableGuest>;
+  pendingRounds: Array<PendingRound>;
+  activity: Array<TableActivity>;
 };
 
 export type TableRound = {
@@ -1081,6 +1124,10 @@ export type TableRound = {
   readyAt?: string;
   total: Money;
   lines: Array<TableRoundLine>;
+  /**
+   * Guest who ordered it from the QR code (waiter app only)
+   */
+  placedBy?: string;
 };
 
 export type TableRoundLine = {
@@ -1095,13 +1142,20 @@ export type TableRoundLine = {
    * Units already paid for item by item
    */
   paidQuantity: number;
+  /**
+   * Units in an online payment still in progress
+   */
+  reservedQuantity: number;
 };
 
 export type InPersonPaymentMethod = "CASH" | "CARD_POS";
 
 export type TablePayment = {
   id: string;
-  method: InPersonPaymentMethod;
+  /**
+   * ONLINE: paid by a guest from their phone
+   */
+  method: "CASH" | "CARD_POS" | "ONLINE";
   amount: Money;
   /**
    * Cash handed over by the guest
@@ -1152,11 +1206,149 @@ export type MergeTableRequest = {
 export type TableEvent = {
   sessionId: string;
   tableId?: string;
-  kind: "UPDATED" | "ROUND_READY" | "CLOSED";
+  kind:
+    | "UPDATED"
+    | "ROUND_READY"
+    | "CLOSED"
+    | "SESSION_TO_CONFIRM"
+    | "ROUND_TO_CONFIRM"
+    | "JOIN_REQUEST";
   /**
    * The round that became ready (ROUND_READY)
    */
   orderNumber?: string;
+};
+
+export type RejectRequest = {
+  reason?: string;
+};
+
+export type TableGuest = {
+  id: string;
+  name: string;
+  role: "OWNER" | "MEMBER";
+  status: "PENDING" | "ACTIVE" | "REJECTED" | "REMOVED";
+  requestedAt: string;
+};
+
+export type PendingRound = {
+  id: string;
+  guestName?: string;
+  status: "PENDING" | "CONFIRMED" | "REJECTED";
+  lines: Array<{
+    productName: string;
+    modifiers: Array<string>;
+    quantity: number;
+    total: Money;
+    notes?: string;
+  }>;
+  notes?: string;
+  total: Money;
+  createdAt: string;
+  /**
+   * Confirmed automatically at this time
+   */
+  deadline: string;
+  /**
+   * Why the waiter refused it
+   */
+  reason?: string;
+};
+
+/**
+ * One line of the table's log, e.g. "Robert ordered 2 coffees and a steak"
+ */
+export type TableActivity = {
+  at: string;
+  kind:
+    | "JOINED"
+    | "REMOVED"
+    | "ORDERED"
+    | "ROUND_CONFIRMED"
+    | "ROUND_REJECTED"
+    | "TABLE_CONFIRMED"
+    | "PAID";
+  /**
+   * Guest or waiter name
+   */
+  actor?: string;
+  actorKind: "GUEST" | "WAITER" | "SYSTEM";
+  items?: Array<{
+    name: string;
+    quantity: number;
+  }>;
+  amount?: Money;
+  method?: "CASH" | "CARD_POS" | "ONLINE";
+  /**
+   * Confirmed because the waiter did not answer in time
+   */
+  automatic?: boolean;
+  reason?: string;
+};
+
+export type GuestTable = {
+  tableLabel: string;
+  areaName?: string;
+  restaurantName: string;
+  logoUrl?: string;
+  /**
+   * QR ordering is switched on
+   */
+  enabled: boolean;
+  /**
+   * Somebody is already seated; scanning asks to join
+   */
+  occupied: boolean;
+};
+
+export type JoinTableRequest = {
+  name: string;
+};
+
+export type JoinTableResult = {
+  /**
+   * Keep on this device and send as X-Table-Guest; it is shown only once
+   */
+  token: string;
+  view: GuestView;
+};
+
+export type GuestView = {
+  me: TableGuest;
+  status: "AWAITING_CONFIRMATION" | "OPEN" | "CLOSED";
+  tableLabel: string;
+  areaName?: string;
+  confirmDeadline?: string;
+  confirmMinutes: number;
+  rounds: Array<TableRound>;
+  pendingRounds: Array<PendingRound>;
+  /**
+   * Only for the owner
+   */
+  joinRequests: Array<TableGuest>;
+  activity: Array<TableActivity>;
+  total: Money;
+  paid: Money;
+  remaining: Money;
+  /**
+   * Online payments still in progress
+   */
+  pending: Money;
+  /**
+   * What can be paid now (remaining minus pending)
+   */
+  payable: Money;
+};
+
+/**
+ * Either `all` (the whole rest) or `items` (selected units)
+ */
+export type GuestPaymentRequest = {
+  all?: boolean;
+  items?: Array<{
+    lineId: string;
+    quantity: number;
+  }>;
 };
 
 export type AcceptLanguage = string;
@@ -1166,6 +1358,18 @@ export type Id = string;
 export type OrderId = string;
 
 export type TicketId = string;
+
+/**
+ * The table's QR code
+ */
+export type TableCode = string;
+
+/**
+ * Device token returned when the guest joined
+ */
+export type GuestToken = string;
+
+export type GuestId = string;
 
 /**
  * Per-order tracking token returned when the order is created (not needed for staff)
@@ -2909,6 +3113,477 @@ export type PrintPreBillResponses = {
    */
   202: unknown;
 };
+
+export type RegenerateTableQrData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/tables/{id}/qr";
+};
+
+export type RegenerateTableQrErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type RegenerateTableQrError =
+  RegenerateTableQrErrors[keyof RegenerateTableQrErrors];
+
+export type RegenerateTableQrResponses = {
+  /**
+   * OK
+   */
+  200: DiningTableAdmin;
+};
+
+export type RegenerateTableQrResponse =
+  RegenerateTableQrResponses[keyof RegenerateTableQrResponses];
+
+export type ConfirmTableSessionData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/confirm";
+};
+
+export type ConfirmTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type ConfirmTableSessionError =
+  ConfirmTableSessionErrors[keyof ConfirmTableSessionErrors];
+
+export type ConfirmTableSessionResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type ConfirmTableSessionResponse =
+  ConfirmTableSessionResponses[keyof ConfirmTableSessionResponses];
+
+export type RejectTableSessionData = {
+  body?: RejectRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/reject";
+};
+
+export type RejectTableSessionErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type RejectTableSessionError =
+  RejectTableSessionErrors[keyof RejectTableSessionErrors];
+
+export type RejectTableSessionResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type RejectTableSessionResponse =
+  RejectTableSessionResponses[keyof RejectTableSessionResponses];
+
+export type ConfirmGuestRoundData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+    roundId: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/pending-rounds/{roundId}/confirm";
+};
+
+export type ConfirmGuestRoundErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type ConfirmGuestRoundError =
+  ConfirmGuestRoundErrors[keyof ConfirmGuestRoundErrors];
+
+export type ConfirmGuestRoundResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type ConfirmGuestRoundResponse =
+  ConfirmGuestRoundResponses[keyof ConfirmGuestRoundResponses];
+
+export type RejectGuestRoundData = {
+  body?: RejectRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+    roundId: string;
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/pending-rounds/{roundId}/reject";
+};
+
+export type RejectGuestRoundErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type RejectGuestRoundError =
+  RejectGuestRoundErrors[keyof RejectGuestRoundErrors];
+
+export type RejectGuestRoundResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type RejectGuestRoundResponse =
+  RejectGuestRoundResponses[keyof RejectGuestRoundResponses];
+
+export type DecideTableGuestData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    id: string;
+    guestId: string;
+    action: "approve" | "reject" | "remove";
+  };
+  query?: never;
+  url: "/tables/sessions/{id}/guests/{guestId}/{action}";
+};
+
+export type DecideTableGuestErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type DecideTableGuestError =
+  DecideTableGuestErrors[keyof DecideTableGuestErrors];
+
+export type DecideTableGuestResponses = {
+  /**
+   * OK
+   */
+  200: TableSession;
+};
+
+export type DecideTableGuestResponse =
+  DecideTableGuestResponses[keyof DecideTableGuestResponses];
+
+export type GetGuestTableData = {
+  body?: never;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+  };
+  query?: never;
+  url: "/t/{code}";
+};
+
+export type GetGuestTableErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetGuestTableError = GetGuestTableErrors[keyof GetGuestTableErrors];
+
+export type GetGuestTableResponses = {
+  /**
+   * OK
+   */
+  200: GuestTable;
+};
+
+export type GetGuestTableResponse =
+  GetGuestTableResponses[keyof GetGuestTableResponses];
+
+export type JoinTableData = {
+  body: JoinTableRequest;
+  headers?: {
+    "Accept-Language"?: string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+  };
+  query?: never;
+  url: "/t/{code}/join";
+};
+
+export type JoinTableErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type JoinTableError = JoinTableErrors[keyof JoinTableErrors];
+
+export type JoinTableResponses = {
+  /**
+   * Joined, or waiting to be let in
+   */
+  201: JoinTableResult;
+};
+
+export type JoinTableResponse = JoinTableResponses[keyof JoinTableResponses];
+
+export type GetGuestViewData = {
+  body?: never;
+  headers: {
+    /**
+     * Device token returned when the guest joined
+     */
+    "X-Table-Guest": string;
+    "Accept-Language"?: string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+  };
+  query?: never;
+  url: "/t/{code}/me";
+};
+
+export type GetGuestViewErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetGuestViewError = GetGuestViewErrors[keyof GetGuestViewErrors];
+
+export type GetGuestViewResponses = {
+  /**
+   * OK
+   */
+  200: GuestView;
+};
+
+export type GetGuestViewResponse =
+  GetGuestViewResponses[keyof GetGuestViewResponses];
+
+export type SendGuestRoundData = {
+  body: AddRoundRequest;
+  headers: {
+    /**
+     * Device token returned when the guest joined
+     */
+    "X-Table-Guest": string;
+    "Accept-Language"?: string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+  };
+  query?: never;
+  url: "/t/{code}/rounds";
+};
+
+export type SendGuestRoundErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type SendGuestRoundError =
+  SendGuestRoundErrors[keyof SendGuestRoundErrors];
+
+export type SendGuestRoundResponses = {
+  /**
+   * Created
+   */
+  201: GuestView;
+};
+
+export type SendGuestRoundResponse =
+  SendGuestRoundResponses[keyof SendGuestRoundResponses];
+
+export type OwnerDecideGuestData = {
+  body?: never;
+  headers: {
+    /**
+     * Device token returned when the guest joined
+     */
+    "X-Table-Guest": string;
+    "Accept-Language"?: string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+    guestId: string;
+    action: "approve" | "reject";
+  };
+  query?: never;
+  url: "/t/{code}/guests/{guestId}/{action}";
+};
+
+export type OwnerDecideGuestErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type OwnerDecideGuestError =
+  OwnerDecideGuestErrors[keyof OwnerDecideGuestErrors];
+
+export type OwnerDecideGuestResponses = {
+  /**
+   * OK
+   */
+  200: GuestView;
+};
+
+export type OwnerDecideGuestResponse =
+  OwnerDecideGuestResponses[keyof OwnerDecideGuestResponses];
+
+export type StartGuestPaymentData = {
+  body: GuestPaymentRequest;
+  headers: {
+    /**
+     * Device token returned when the guest joined
+     */
+    "X-Table-Guest": string;
+    "Accept-Language"?: string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+  };
+  query?: never;
+  url: "/t/{code}/payments";
+};
+
+export type StartGuestPaymentErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type StartGuestPaymentError =
+  StartGuestPaymentErrors[keyof StartGuestPaymentErrors];
+
+export type StartGuestPaymentResponses = {
+  /**
+   * Payment started; complete it with the provider (wallet sheet)
+   */
+  201: PaymentIntent;
+};
+
+export type StartGuestPaymentResponse =
+  StartGuestPaymentResponses[keyof StartGuestPaymentResponses];
+
+export type StreamGuestEventsData = {
+  body?: never;
+  headers: {
+    /**
+     * Device token returned when the guest joined
+     */
+    "X-Table-Guest": string;
+  };
+  path: {
+    /**
+     * The table's QR code
+     */
+    code: string;
+  };
+  query?: never;
+  url: "/t/{code}/events";
+};
+
+export type StreamGuestEventsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type StreamGuestEventsError =
+  StreamGuestEventsErrors[keyof StreamGuestEventsErrors];
+
+export type StreamGuestEventsResponses = {
+  /**
+   * Event stream
+   */
+  200: TableEvent;
+};
+
+export type StreamGuestEventsResponse =
+  StreamGuestEventsResponses[keyof StreamGuestEventsResponses];
 
 export type StreamTableEventsData = {
   body?: never;

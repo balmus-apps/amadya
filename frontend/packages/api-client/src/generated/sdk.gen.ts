@@ -26,6 +26,12 @@ import type {
   CompleteOrderData,
   CompleteOrderErrors,
   CompleteOrderResponses,
+  ConfirmGuestRoundData,
+  ConfirmGuestRoundErrors,
+  ConfirmGuestRoundResponses,
+  ConfirmTableSessionData,
+  ConfirmTableSessionErrors,
+  ConfirmTableSessionResponses,
   CreateCategoryData,
   CreateCategoryErrors,
   CreateCategoryResponses,
@@ -79,6 +85,9 @@ import type {
   CreateWarehouseData,
   CreateWarehouseErrors,
   CreateWarehouseResponses,
+  DecideTableGuestData,
+  DecideTableGuestErrors,
+  DecideTableGuestResponses,
   DeleteCategoryData,
   DeleteCategoryErrors,
   DeleteCategoryResponses,
@@ -103,6 +112,12 @@ import type {
   GetFloorData,
   GetFloorErrors,
   GetFloorResponses,
+  GetGuestTableData,
+  GetGuestTableErrors,
+  GetGuestTableResponses,
+  GetGuestViewData,
+  GetGuestViewErrors,
+  GetGuestViewResponses,
   GetMenuData,
   GetMenuResponses,
   GetNirData,
@@ -142,6 +157,9 @@ import type {
   ImportEFacturaData,
   ImportEFacturaErrors,
   ImportEFacturaResponses,
+  JoinTableData,
+  JoinTableErrors,
+  JoinTableResponses,
   ListCategoriesData,
   ListCategoriesErrors,
   ListCategoriesResponses,
@@ -221,6 +239,9 @@ import type {
   OpenTableSessionData,
   OpenTableSessionErrors,
   OpenTableSessionResponses,
+  OwnerDecideGuestData,
+  OwnerDecideGuestErrors,
+  OwnerDecideGuestResponses,
   PostNirData,
   PostNirErrors,
   PostNirResponses,
@@ -236,9 +257,18 @@ import type {
   RefreshTokenData,
   RefreshTokenErrors,
   RefreshTokenResponses,
+  RegenerateTableQrData,
+  RegenerateTableQrErrors,
+  RegenerateTableQrResponses,
   RegisterPushSubscriptionData,
   RegisterPushSubscriptionErrors,
   RegisterPushSubscriptionResponses,
+  RejectGuestRoundData,
+  RejectGuestRoundErrors,
+  RejectGuestRoundResponses,
+  RejectTableSessionData,
+  RejectTableSessionErrors,
+  RejectTableSessionResponses,
   ReplaceOptionRecipeData,
   ReplaceOptionRecipeErrors,
   ReplaceOptionRecipeResponses,
@@ -248,12 +278,22 @@ import type {
   ReverseNirData,
   ReverseNirErrors,
   ReverseNirResponses,
+  SendGuestRoundData,
+  SendGuestRoundErrors,
+  SendGuestRoundResponses,
   SimulatePaymentCaptureData,
   SimulatePaymentCaptureErrors,
   SimulatePaymentCaptureResponses,
+  StartGuestPaymentData,
+  StartGuestPaymentErrors,
+  StartGuestPaymentResponses,
   StartKitchenTicketData,
   StartKitchenTicketErrors,
   StartKitchenTicketResponses,
+  StreamGuestEventsData,
+  StreamGuestEventsErrors,
+  StreamGuestEventsResponse,
+  StreamGuestEventsResponses,
   StreamKitchenEventsData,
   StreamKitchenEventsErrors,
   StreamKitchenEventsResponse,
@@ -1543,6 +1583,251 @@ export const printPreBill = <ThrowOnError extends boolean = false>(
     url: "/tables/sessions/{id}/pre-bill",
     ...options,
   });
+
+/**
+ * Give the table a new QR code; the old one stops working (ADMIN, MANAGER)
+ */
+export const regenerateTableQr = <ThrowOnError extends boolean = false>(
+  options: Options<RegenerateTableQrData, ThrowOnError>,
+): RequestResult<
+  RegenerateTableQrResponses,
+  RegenerateTableQrErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    RegenerateTableQrResponses,
+    RegenerateTableQrErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/tables/{id}/qr",
+    ...options,
+  });
+
+/**
+ * Confirm a table started by guests from the QR code
+ */
+export const confirmTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<ConfirmTableSessionData, ThrowOnError>,
+): RequestResult<
+  ConfirmTableSessionResponses,
+  ConfirmTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ConfirmTableSessionResponses,
+    ConfirmTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/confirm",
+    ...options,
+  });
+
+/**
+ * Refuse a table started by guests (e.g. nobody is sitting there); the table is freed
+ */
+export const rejectTableSession = <ThrowOnError extends boolean = false>(
+  options: Options<RejectTableSessionData, ThrowOnError>,
+): RequestResult<
+  RejectTableSessionResponses,
+  RejectTableSessionErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    RejectTableSessionResponses,
+    RejectTableSessionErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/reject",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Send a round ordered by a guest to the kitchen and bar
+ */
+export const confirmGuestRound = <ThrowOnError extends boolean = false>(
+  options: Options<ConfirmGuestRoundData, ThrowOnError>,
+): RequestResult<
+  ConfirmGuestRoundResponses,
+  ConfirmGuestRoundErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ConfirmGuestRoundResponses,
+    ConfirmGuestRoundErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/pending-rounds/{roundId}/confirm",
+    ...options,
+  });
+
+/**
+ * Refuse a round ordered by a guest, with a reason the guest sees
+ */
+export const rejectGuestRound = <ThrowOnError extends boolean = false>(
+  options: Options<RejectGuestRoundData, ThrowOnError>,
+): RequestResult<
+  RejectGuestRoundResponses,
+  RejectGuestRoundErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    RejectGuestRoundResponses,
+    RejectGuestRoundErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/pending-rounds/{roundId}/reject",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Let a guest join, refuse them, or remove a guest from the table
+ */
+export const decideTableGuest = <ThrowOnError extends boolean = false>(
+  options: Options<DecideTableGuestData, ThrowOnError>,
+): RequestResult<
+  DecideTableGuestResponses,
+  DecideTableGuestErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    DecideTableGuestResponses,
+    DecideTableGuestErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/tables/sessions/{id}/guests/{guestId}/{action}",
+    ...options,
+  });
+
+/**
+ * What the QR code points to (table, restaurant, whether QR ordering is on)
+ */
+export const getGuestTable = <ThrowOnError extends boolean = false>(
+  options: Options<GetGuestTableData, ThrowOnError>,
+): RequestResult<GetGuestTableResponses, GetGuestTableErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetGuestTableResponses,
+    GetGuestTableErrors,
+    ThrowOnError
+  >({ url: "/t/{code}", ...options });
+
+/**
+ * Join the table: start its session (free table), become owner (table seated by the waiter, no owner yet) or ask to join
+ */
+export const joinTable = <ThrowOnError extends boolean = false>(
+  options: Options<JoinTableData, ThrowOnError>,
+): RequestResult<JoinTableResponses, JoinTableErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    JoinTableResponses,
+    JoinTableErrors,
+    ThrowOnError
+  >({
+    url: "/t/{code}/join",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * The table as this guest sees it (bill without names, activity log, join requests for the owner)
+ */
+export const getGuestView = <ThrowOnError extends boolean = false>(
+  options: Options<GetGuestViewData, ThrowOnError>,
+): RequestResult<GetGuestViewResponses, GetGuestViewErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetGuestViewResponses,
+    GetGuestViewErrors,
+    ThrowOnError
+  >({ url: "/t/{code}/me", ...options });
+
+/**
+ * Order a round; it waits for the waiter's OK (confirmed automatically after the configured time)
+ */
+export const sendGuestRound = <ThrowOnError extends boolean = false>(
+  options: Options<SendGuestRoundData, ThrowOnError>,
+): RequestResult<SendGuestRoundResponses, SendGuestRoundErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    SendGuestRoundResponses,
+    SendGuestRoundErrors,
+    ThrowOnError
+  >({
+    url: "/t/{code}/rounds",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * The table owner lets someone join or refuses them
+ */
+export const ownerDecideGuest = <ThrowOnError extends boolean = false>(
+  options: Options<OwnerDecideGuestData, ThrowOnError>,
+): RequestResult<
+  OwnerDecideGuestResponses,
+  OwnerDecideGuestErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    OwnerDecideGuestResponses,
+    OwnerDecideGuestErrors,
+    ThrowOnError
+  >({ url: "/t/{code}/guests/{guestId}/{action}", ...options });
+
+/**
+ * Pay the whole rest or selected items from the phone; the items are reserved while the payment is pending
+ */
+export const startGuestPayment = <ThrowOnError extends boolean = false>(
+  options: Options<StartGuestPaymentData, ThrowOnError>,
+): RequestResult<
+  StartGuestPaymentResponses,
+  StartGuestPaymentErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    StartGuestPaymentResponses,
+    StartGuestPaymentErrors,
+    ThrowOnError
+  >({
+    url: "/t/{code}/payments",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Server-Sent Events for a guest: event `table` with TableEvent whenever the table changes
+ */
+export const streamGuestEvents = <ThrowOnError extends boolean = false>(
+  options: Options<
+    StreamGuestEventsData,
+    ThrowOnError,
+    StreamGuestEventsResponse
+  >,
+): Promise<ServerSentEventsResult<StreamGuestEventsResponses>> =>
+  (options.client ?? client).sse.get<
+    StreamGuestEventsResponses,
+    StreamGuestEventsErrors,
+    ThrowOnError
+  >({ url: "/t/{code}/events", ...options });
 
 /**
  * Server-Sent Events for the waiter app: event `table` with TableEvent whenever a session changes or a round is ready (WAITER, CASHIER, MANAGER, ADMIN)

@@ -1,4 +1,6 @@
 import {
+  getPublicSettings,
+  regenerateTableQr,
   createDiningTable,
   createFloorArea,
   listDiningTables,
@@ -11,8 +13,10 @@ import {
   type FloorAreaRequest,
 } from "@amadya/api-client";
 import { Button, Dialog, DialogContent, DialogTitle, Input, NativeSelect, Switch } from "@amadya/ui";
-import { PencilIcon, PlusIcon, UsersIcon } from "lucide-react";
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ExternalLinkIcon, PencilIcon, PlusIcon, PrinterIcon, RefreshCwIcon, UsersIcon } from "lucide-react";
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 import { ActiveBadge, Empty, emptyText, Field, LocalizedInputs, PageHeader } from "@/components/kit";
 import { useApi, useApiMutation } from "@/lib/data";
 import { lt } from "@/lib/format";
@@ -33,9 +37,16 @@ export function TablesPage() {
         title={t("tables.title")}
         description={t("tables.description")}
         actions={
-          <Button onClick={() => setArea("new")}>
-            <PlusIcon /> {t("tables.newArea")}
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/settings/tables/print">
+                <PrinterIcon /> {t("tables.print")}
+              </Link>
+            </Button>
+            <Button onClick={() => setArea("new")}>
+              <PlusIcon /> {t("tables.newArea")}
+            </Button>
+          </>
         }
       />
       {(areas.data ?? []).length === 0 ? (
@@ -154,10 +165,92 @@ function TableDialog({ table, areaId, areas, nextOrder, onClose }: { table?: Din
         <label className="flex items-center gap-2 text-sm font-medium">
           <Switch checked={form.active} onCheckedChange={(active) => setForm({ ...form, active })} /> {t("common.active")}
         </label>
+        {table?.qrCode && <TableQr table={table} />}
         <Button disabled={!form.label.trim() || form.seats < 1 || save.isPending} onClick={() => save.mutate(form)}>
           {t("common.save")}
         </Button>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Address in a table's QR code: the guest app at /t/<code>. */
+export function guestUrl(code: string) {
+  return `${window.location.origin}/t/${encodeURIComponent(code)}`;
+}
+
+/** QR as inline SVG, generated in the browser (no external service sees the codes). */
+export function QrSvg({ value, className }: { value: string; className?: string }) {
+  const [svg, setSvg] = useState("");
+  useEffect(() => {
+    void QRCode.toString(value, { type: "svg", margin: 1, errorCorrectionLevel: "M" }).then(setSvg);
+  }, [value]);
+  // The markup comes from the QR library for our own URL, not from user input.
+  return <div className={className} aria-hidden dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
+function TableQr({ table }: { table: DiningTableAdmin }) {
+  const t = useT();
+  const [code, setCode] = useState(table.qrCode!);
+  const regenerate = useApiMutation(() => regenerateTableQr({ path: { id: table.id } }), {
+    invalidate: [["dining-tables"]],
+    success: t("tables.regenerated"),
+    onSuccess: (updated) => setCode(updated.qrCode!),
+  });
+  return (
+    <section className="flex gap-4 rounded-xl border p-3">
+      <QrSvg value={guestUrl(code)} className="size-28 shrink-0 [&_svg]:size-full" />
+      <div className="min-w-0 space-y-2 text-sm">
+        <p className="font-semibold">{t("tables.qrTitle", { label: table.label })}</p>
+        <p className="text-xs text-muted-foreground">{t("tables.qrHint")}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <a href={guestUrl(code)} target="_blank" rel="noreferrer">
+              <ExternalLinkIcon /> {t("tables.openLink")}
+            </a>
+          </Button>
+          <Button variant="ghost" size="sm" disabled={regenerate.isPending} onClick={() => regenerate.mutate(undefined)}>
+            <RefreshCwIcon /> {t("tables.regenerate")}
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** One card per active table, to print and place on the tables. */
+export function TablesPrintPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const areas = useApi(["floor-areas"], () => listFloorAreas());
+  const tables = useApi(["dining-tables"], () => listDiningTables());
+  const settings = useApi(["public-settings"], () => getPublicSettings());
+  // Area by area, in the order the waiter app shows them.
+  const areaOrder = new Map((areas.data ?? []).map((a, i) => [a.id, i]));
+  const active = (tables.data ?? []).filter((tb) => tb.active && tb.qrCode).sort((a, b) => (areaOrder.get(a.areaId) ?? 99) - (areaOrder.get(b.areaId) ?? 99));
+  return (
+    <>
+      <div className="no-print">
+        <PageHeader
+          title={t("tables.print")}
+          actions={
+            <Button onClick={() => window.print()}>
+              <PrinterIcon /> {t("common.print")}
+            </Button>
+          }
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 print:grid-cols-3 print:gap-6">
+        {active.map((tb) => (
+          <article key={tb.id} className="flex break-inside-avoid flex-col items-center gap-2 rounded-2xl border-2 p-4 text-center">
+            <p className="text-sm font-semibold">{settings.data?.name}</p>
+            <p className="text-3xl font-black">{t("tables.edit", { label: tb.label })}</p>
+            <QrSvg value={guestUrl(tb.qrCode!)} className="w-full max-w-48 [&_svg]:h-auto [&_svg]:w-full" />
+            <p className="text-sm">{t("tables.scan")}</p>
+            <p className="text-xs text-muted-foreground">{lt((areas.data ?? []).find((a) => a.id === tb.areaId)?.name ?? { ro: "" }, locale)}</p>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }

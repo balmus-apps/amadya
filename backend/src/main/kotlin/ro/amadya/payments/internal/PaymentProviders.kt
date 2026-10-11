@@ -21,7 +21,8 @@ data class ProviderIntent(val providerRef: String, val clientSecret: String?)
 interface PaymentProvider {
     val name: String
     val publishableKey: String?
-    fun createIntent(payment: PaymentEntity, orderNumber: String): ProviderIntent
+    /** [label] describes the payment to the customer, e.g. "Order A-012" or "Table 5". */
+    fun createIntent(payment: PaymentEntity, label: String): ProviderIntent
     fun clientSecret(providerRef: String): String?
     fun refund(payment: PaymentEntity)
 }
@@ -33,9 +34,10 @@ class FakePaymentProvider : PaymentProvider {
     private val log = LoggerFactory.getLogger(javaClass)
     override val name = "fake"
     override val publishableKey: String? = null
-    override fun createIntent(payment: PaymentEntity, orderNumber: String) = ProviderIntent("fake_${payment.id}", null)
+    override fun createIntent(payment: PaymentEntity, label: String) = ProviderIntent("fake_${payment.id}", null)
     override fun clientSecret(providerRef: String): String? = null
-    override fun refund(payment: PaymentEntity) = log.info("[fake] refund {} {} for order {}", payment.amount, payment.currency, payment.orderId)
+    override fun refund(payment: PaymentEntity) =
+        log.info("[fake] refund {} {} for {}", payment.amount, payment.currency, payment.orderId?.let { "order $it" } ?: "table session ${payment.tableSessionId}")
 }
 
 /** Stripe PaymentIntents with automatic payment methods (card, Apple Pay, Google Pay). */
@@ -48,15 +50,16 @@ class StripePaymentProvider(private val props: PaymentsProperties) : PaymentProv
     override val name = "stripe"
     override val publishableKey: String? get() = props.stripe.publishableKey.ifBlank { null }
 
-    override fun createIntent(payment: PaymentEntity, orderNumber: String): ProviderIntent {
-        val params = PaymentIntentCreateParams.builder()
+    override fun createIntent(payment: PaymentEntity, label: String): ProviderIntent {
+        val builder = PaymentIntentCreateParams.builder()
             .setAmount(Money.toMinorUnits(payment.amount))
             .setCurrency(payment.currency.lowercase())
-            .setDescription("Order $orderNumber")
+            .setDescription(label)
             .setAutomaticPaymentMethods(PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build())
-            .putMetadata("orderId", payment.orderId.toString())
             .putMetadata("paymentId", payment.id.toString())
-            .build()
+        payment.orderId?.let { builder.putMetadata("orderId", it.toString()) }
+        payment.tableSessionId?.let { builder.putMetadata("tableSessionId", it.toString()) }
+        val params = builder.build()
         // The payment id is the idempotency key, so a retried request never creates a second charge.
         val intent = client.v1().paymentIntents().create(params, RequestOptions.builder().setIdempotencyKey(payment.id.toString()).build())
         return ProviderIntent(intent.id, intent.clientSecret)

@@ -1,0 +1,10 @@
+{
+  "name": "Comandă la masă",
+  "short_name": "Masa",
+  "start_url": "/t/",
+  "scope": "/t/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}

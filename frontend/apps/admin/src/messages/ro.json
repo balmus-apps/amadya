@@ -360,7 +360,8 @@
    "onlinePayments": "Plăți online",
    "kitchenDisplay": "Ecran bucătărie",
    "queueDisplay": "Ecran comenzi",
-   "invoiceOcr": "Scanare facturi"
+   "invoiceOcr": "Scanare facturi",
+   "qrOrdering": "Comandă din QR la masă"
   },
   "openingHours": "Program",
   "days": {
@@ -382,7 +383,9 @@
   "fiscalGroup": "Grupă fiscală",
   "stationsTitle": "Stații de preparare",
   "newStation": "Stație nouă",
-  "parallelSlots": "Comenzi în paralel"
+  "parallelSlots": "Comenzi în paralel",
+  "guestConfirmMinutes": "Minute până la confirmarea automată",
+  "guestConfirmHint": "Comenzile clienților din QR și mesele deschise de ei, la care nu răspunde niciun ospătar, se confirmă automat după acest timp. Măriți-l în zilele aglomerate."
  },
  "users": {
   "title": "Utilizatori",
@@ -415,6 +418,14 @@
   "labelHint": "Ce scrie pe masă, ex. 5 sau T2",
   "seats": "Locuri",
   "area": "Zonă",
-  "sortOrder": "Ordine"
+  "sortOrder": "Ordine",
+  "qr": "Cod QR",
+  "qrTitle": "Codul QR al mesei {label}",
+  "qrHint": "Clienții scanează codul ca să comande și să plătească de pe telefon. Dacă cineva a fotografiat codul, generați unul nou: cel vechi nu mai funcționează.",
+  "regenerate": "Generează cod nou",
+  "regenerated": "Codul a fost înlocuit; tipăriți-l din nou",
+  "print": "Tipărește codurile QR",
+  "scan": "Scanați pentru a comanda și plăti",
+  "openLink": "Deschide"
  }
 }

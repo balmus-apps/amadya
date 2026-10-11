@@ -25,7 +25,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Services: PostgreSQL 17, Caddy, the Core API (`https://localhost/api/v1`, or `http://localhost:8080/api/v1` directly) the customer menu (`https://localhost`) the admin (`https://localhost/admin`) the kitchen & bar display (`https://localhost/kitchen`) the waiter app (`https://localhost/waiter`, demo login `ospatar@amadya.local` / `Ospatar12345!`) and the queue display for the TV at the pickup counter (`https://localhost/queue`).
+Services: PostgreSQL 17, Caddy, the Core API (`https://localhost/api/v1`, or `http://localhost:8080/api/v1` directly) the customer menu (`https://localhost`) the admin (`https://localhost/admin`) the kitchen & bar display (`https://localhost/kitchen`) the waiter app (`https://localhost/waiter`, demo login `ospatar@amadya.local` / `Ospatar12345!`) the queue display for the TV at the pickup counter (`https://localhost/queue`) and the page guests reach from a table's QR code (`https://localhost/t/demo-5`).
 With `SPRING_PROFILES_ACTIVE=dev` the demo restaurant (BurRegescu) is loaded. Apps are added to `docker-compose.yml` as each phase lands.
 
 Production (amadya.alphatech.ro, behind the shared proxy, images from GHCR): see [docs/deploy.md](docs/deploy.md).
