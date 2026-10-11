@@ -99,6 +99,21 @@ Vite PWA served at `/waiter`, built for the waiters' phones. Demo login: `ospata
 
 Rules and bill arithmetic: [docs/domain/tables.md](../docs/domain/tables.md).
 
+## Queue display (`apps/queue-display`, Phase 5)
+
+The TV above the pickup counter, at `/queue`. Public: no login, and it shows order numbers only, never names.
+
+- **Two columns:** *Se pregătește / Preparing* and *Gata de ridicare / Ready for pickup*, in the restaurant's main language
+  with the other one underneath. Takeaway and counter orders of the day; dine-in rounds are served at the table.
+- **Ready numbers:** newest first and largest; a number that just became ready pulses for a minute. It leaves the screen
+  when the order is marked picked up (Admin → Comenzi) or, at the latest, after `QUEUE_READY_VISIBLE` (default 20 min).
+- **Announcements:** a chime and a spoken "Comanda B 12 este gata" for each new ready number. Browsers allow sound only
+  after a tap, so the screen shows "Atingeți pentru sunet" once; the choice is remembered on that TV.
+- **Branding:** the restaurant's name, logo and colours from the settings; promotions rotate along the bottom.
+- **Options in the URL:** `?sound=off`, `?voice=off`, `?lang=en`. Landscape or portrait; double-tap the header for full
+  screen. The screen keeps itself awake where the browser allows it.
+- **Live:** `/queue/events` (SSE), reloaded every 30 s as a safety net.
+
 `@amadya/staff-auth` holds the session shared by the staff apps (admin, kitchen, waiter).
 
 ## Checks

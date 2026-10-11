@@ -1,0 +1,39 @@
+@import "@amadya/ui/styles.css";
+
+@source "./";
+
+body {
+  background: #0b0b0c;
+  overflow: hidden;
+  cursor: none; /* a TV: no pointer floating over the numbers */
+}
+
+button {
+  cursor: pointer;
+}
+
+/* A number that just became ready pulses for its first minute on screen. */
+@keyframes queue-fresh {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 0.6vh rgba(74, 222, 128, 0.55); }
+}
+
+.queue-fresh {
+  animation: queue-fresh 1.4s ease-in-out infinite;
+}
+
+@keyframes queue-promo {
+  from { opacity: 0; transform: translateY(1vh); }
+  to { opacity: 1; transform: none; }
+}
+
+.queue-promo {
+  animation: queue-promo 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queue-fresh,
+  .queue-promo {
+    animation: none;
+  }
+}

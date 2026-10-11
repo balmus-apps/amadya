@@ -411,15 +411,29 @@ export type OrderStatusChanged = {
   at: string;
 };
 
+/**
+ * Takeaway and counter orders of the day for the queue display; dine-in rounds are served at the table.
+ */
 export type QueueBoard = {
   /**
-   * Order numbers (PLACED or PREPARING)
+   * Order numbers placed or being prepared, oldest first
    */
   preparing: Array<string>;
   /**
-   * Order numbers that are READY
+   * Order numbers ready for pickup, most recent first
    */
   ready: Array<string>;
+  /**
+   * The ready orders with the time they became ready, same order as `ready`
+   */
+  readyOrders: Array<{
+    number: string;
+    readyAt: string;
+  }>;
+  /**
+   * A ready order leaves the display after this long, even if nobody marked it picked up
+   */
+  readyVisibleSeconds: number;
 };
 
 export type KitchenTicketStatus = "QUEUED" | "IN_PROGRESS" | "READY";

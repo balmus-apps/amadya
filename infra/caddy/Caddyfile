@@ -43,7 +43,11 @@
 	handle_path /kitchen/* {
 		reverse_proxy kitchen:80
 	}
-	# handle_path /queue/*   { reverse_proxy queue-display:80 }
+	# The TV above the pickup counter (public, numbers only)
+	redir /queue /queue/
+	handle_path /queue/* {
+		reverse_proxy queue-display:80
+	}
 
 	# Customer menu is the default site
 	handle {
