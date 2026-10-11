@@ -22,6 +22,7 @@ import {
   UtensilsIcon,
   WarehouseIcon,
   ChefHatIcon,
+  ArmchairIcon,
   MenuIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -76,6 +77,7 @@ export function AppLayout() {
         { to: "/settings", label: t("nav.restaurant"), icon: StoreIcon, admin: true },
         { to: "/settings/vat", label: t("nav.vat"), icon: PercentIcon },
         { to: "/settings/stations", label: t("nav.stations"), icon: ChefHatIcon },
+        { to: "/settings/tables", label: t("nav.tables"), icon: ArmchairIcon },
         { to: "/users", label: t("nav.users"), icon: UsersIcon, admin: true },
       ],
     },

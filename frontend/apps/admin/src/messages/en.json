@@ -22,6 +22,7 @@
   "restaurant": "Restaurant",
   "vat": "VAT rates",
   "stations": "Kitchen stations",
+  "tables": "Tables",
   "users": "Users",
   "logout": "Sign out",
   "language": "Language"
@@ -399,5 +400,21 @@
   "password": "Password",
   "passwordHint": "at least 10 characters; leave empty to keep it",
   "locale": "Language"
+ },
+ "tables": {
+  "title": "Tables",
+  "description": "The restaurant's areas and their tables, as the waiter app shows them.",
+  "newArea": "New area",
+  "editArea": "Edit area",
+  "newTable": "New table",
+  "edit": "Table {label}",
+  "count": "{count, plural, one {# table} other {# tables}}",
+  "noAreas": "No areas yet. Add e.g. “Dining room” or “Terrace”.",
+  "noTables": "No tables in this area.",
+  "label": "Number / name",
+  "labelHint": "What is written on the table, e.g. 5 or T2",
+  "seats": "Seats",
+  "area": "Area",
+  "sortOrder": "Order"
  }
 }

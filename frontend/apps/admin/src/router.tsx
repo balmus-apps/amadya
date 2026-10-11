@@ -13,6 +13,7 @@ import { NirDetailPage, NirPrintPage, NirsPage } from "@/pages/procurement/nirs"
 import { SuppliersPage } from "@/pages/procurement/suppliers";
 import { StationsPage, UsersPage, VatPage } from "@/pages/settings/lists";
 import { RestaurantSettingsPage } from "@/pages/settings/restaurant";
+import { TablesPage } from "@/pages/settings/tables";
 import { BalancesPage } from "@/pages/stock/balances";
 import { DocumentsPage } from "@/pages/stock/documents";
 import { ItemsPage } from "@/pages/stock/items";
@@ -61,6 +62,7 @@ const routeTree = root.addChildren([
     page("/settings", RestaurantSettingsPage),
     page("/settings/vat", VatPage),
     page("/settings/stations", StationsPage),
+    page("/settings/tables", TablesPage),
     page("/users", UsersPage),
   ]),
 ]);

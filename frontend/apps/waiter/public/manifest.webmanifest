@@ -1,0 +1,10 @@
+{
+  "name": "Amadya – Ospătar",
+  "short_name": "Ospătar",
+  "start_url": "/waiter/",
+  "scope": "/waiter/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}

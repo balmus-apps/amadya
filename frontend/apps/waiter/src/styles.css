@@ -1,0 +1,37 @@
+@import "@amadya/ui/styles.css";
+
+@source "./";
+
+/*
+ * Same status colours as the kitchen display, so a round looks the same on both screens:
+ * pending light yellow, in preparation orange, ready green.
+ */
+:root {
+  --status-pending: #fef3c7;
+  --status-pending-strong: #b45309;
+  --status-progress: #fdba74;
+  --status-progress-strong: #c2410c;
+  --status-done: #bbf7d0;
+  --status-done-strong: #15803d;
+  --status-occupied: #ffedd5;
+}
+
+body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes ready-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.45); }
+}
+
+.ready-pulse {
+  animation: ready-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ready-pulse {
+    animation: none;
+  }
+}

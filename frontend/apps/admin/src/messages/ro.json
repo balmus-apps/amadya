@@ -22,6 +22,7 @@
   "restaurant": "Restaurant",
   "vat": "Cote TVA",
   "stations": "Stații bucătărie",
+  "tables": "Mese",
   "users": "Utilizatori",
   "logout": "Ieșire",
   "language": "Limba"
@@ -399,5 +400,21 @@
   "password": "Parolă",
   "passwordHint": "minim 10 caractere; lăsați gol pentru a nu o schimba",
   "locale": "Limbă"
+ },
+ "tables": {
+  "title": "Mese",
+  "description": "Zonele restaurantului și mesele lor, așa cum le vede aplicația ospătarului.",
+  "newArea": "Zonă nouă",
+  "editArea": "Editează zona",
+  "newTable": "Masă nouă",
+  "edit": "Masa {label}",
+  "count": "{count, plural, one {# masă} few {# mese} other {# de mese}}",
+  "noAreas": "Nicio zonă. Adăugați de ex. „Salon” sau „Terasă”.",
+  "noTables": "Nicio masă în această zonă.",
+  "label": "Număr / nume",
+  "labelHint": "Ce scrie pe masă, ex. 5 sau T2",
+  "seats": "Locuri",
+  "area": "Zonă",
+  "sortOrder": "Ordine"
  }
 }
