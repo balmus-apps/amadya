@@ -47,10 +47,15 @@ class SettingsService(
             kitchenDisplay = it["kitchenDisplay"] ?: true,
             queueDisplay = it["queueDisplay"] ?: true,
             invoiceOcr = it["invoiceOcr"] ?: false,
+            qrOrdering = it["qrOrdering"] ?: false,
         )
     }
 
     override fun orderNumberPrefix(): String = row().orderNumberPrefix
+
+    override fun guestConfirmMinutes(): Int = row().guestConfirmMinutes
+
+    override fun logoUrl(): String? = row().logoUrl
 
     override fun vatRate(id: UUID): VatRateInfo? =
         vatRates.findByIdOrNull(id)?.let { VatRateInfo(it.id, it.code, it.percent, it.fiscalGroup, it.active) }
@@ -99,10 +104,12 @@ class SettingsService(
             mutableMapOf(
                 "takeaway" to it.takeaway, "tables" to it.tables, "onlinePayments" to it.onlinePayments,
                 "kitchenDisplay" to it.kitchenDisplay, "queueDisplay" to it.queueDisplay, "invoiceOcr" to it.invoiceOcr,
+                "qrOrdering" to (it.qrOrdering ?: false),
             )
         }
         row.openingHours = req.openingHours.map { mapOf("dayOfWeek" to it.dayOfWeek, "opens" to it.opens, "closes" to it.closes) }.toMutableList()
         req.orderNumberPrefix?.takeIf { it.isNotBlank() }?.let { row.orderNumberPrefix = it.trim().uppercase() }
+        req.guestConfirmMinutes?.let { row.guestConfirmMinutes = it }
         return row.toDto()
     }
 
@@ -156,7 +163,7 @@ class SettingsService(
     // ---------------------------------------------------------------- mapping
     private fun percent(value: String) = BigDecimal(value).setScale(2, RoundingMode.HALF_UP)
 
-    private fun FeatureFlags.toDto() = Features(takeaway, tables, onlinePayments, kitchenDisplay, queueDisplay, invoiceOcr)
+    private fun FeatureFlags.toDto() = Features(takeaway, tables, onlinePayments, kitchenDisplay, queueDisplay, invoiceOcr, qrOrdering)
 
     private fun toOpeningHours(map: Map<String, Any>) =
         OpeningHours(dayOfWeek = (map["dayOfWeek"] as Number).toInt(), opens = map["opens"].toString(), closes = map["closes"].toString())
@@ -177,6 +184,7 @@ class SettingsService(
         email = email,
         logoUrl = logoUrl,
         orderNumberPrefix = orderNumberPrefix,
+        guestConfirmMinutes = guestConfirmMinutes,
     )
 
     private fun VatRateEntity.toDto() =

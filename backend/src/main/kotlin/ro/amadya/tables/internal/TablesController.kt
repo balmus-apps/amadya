@@ -15,6 +15,7 @@ import ro.amadya.contract.model.FloorAreaAdmin
 import ro.amadya.contract.model.FloorAreaRequest
 import ro.amadya.contract.model.MergeTableRequest
 import ro.amadya.contract.model.OpenTableSessionRequest
+import ro.amadya.contract.model.RejectRequest
 import ro.amadya.contract.model.TablePaymentRequest
 import ro.amadya.contract.model.TableSession
 import ro.amadya.contract.model.TransferTableRequest
@@ -89,4 +90,26 @@ class TablesController(private val service: TablesService) : TablesApi {
         service.preBill(id)
         return ResponseEntity.accepted().build()
     }
+
+    @PreAuthorize(MANAGERS)
+    override fun regenerateTableQr(id: UUID): ResponseEntity<DiningTableAdmin> = ResponseEntity.ok(service.regenerateQr(id))
+
+    @PreAuthorize(FLOOR_STAFF)
+    override fun confirmTableSession(id: UUID, acceptLanguage: String?): ResponseEntity<TableSession> = ResponseEntity.ok(service.confirm(id, locale()))
+
+    @PreAuthorize(FLOOR_STAFF)
+    override fun rejectTableSession(id: UUID, acceptLanguage: String?, rejectRequest: RejectRequest?): ResponseEntity<TableSession> =
+        ResponseEntity.ok(service.reject(id, rejectRequest?.reason, locale()))
+
+    @PreAuthorize(FLOOR_STAFF)
+    override fun confirmGuestRound(id: UUID, roundId: UUID, acceptLanguage: String?): ResponseEntity<TableSession> =
+        ResponseEntity.ok(service.confirmRound(id, roundId, locale()))
+
+    @PreAuthorize(FLOOR_STAFF)
+    override fun rejectGuestRound(id: UUID, roundId: UUID, acceptLanguage: String?, rejectRequest: RejectRequest?): ResponseEntity<TableSession> =
+        ResponseEntity.ok(service.rejectRound(id, roundId, rejectRequest?.reason, locale()))
+
+    @PreAuthorize(FLOOR_STAFF)
+    override fun decideTableGuest(id: UUID, guestId: UUID, action: String, acceptLanguage: String?): ResponseEntity<TableSession> =
+        ResponseEntity.ok(service.decideGuest(id, guestId, action, locale()))
 }

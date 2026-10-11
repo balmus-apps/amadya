@@ -57,4 +57,5 @@ interface PaymentRepository : JpaRepository<PaymentEntity, UUID> {
     fun findFirstByOrderIdAndStatusOrderByCreatedAtDesc(orderId: UUID, status: PaymentState): PaymentEntity?
     fun findByProviderAndProviderRef(provider: String, providerRef: String): PaymentEntity?
     fun findAllByTableSessionIdInOrderByCreatedAtAsc(sessionIds: Collection<UUID>): List<PaymentEntity>
+    fun findAllByStatusAndTableSessionIdIsNotNullAndCreatedAtBefore(status: PaymentState, before: java.time.Instant): List<PaymentEntity>
 }

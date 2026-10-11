@@ -18,8 +18,9 @@ class ApiClient(private val port: Int) {
         fun text(field: String): String = body.path(field).asString()
     }
 
-    fun get(path: String, token: String? = null, lang: String? = null) = send("GET", path, null, token, lang)
-    fun post(path: String, body: Any? = null, token: String? = null, lang: String? = null) = send("POST", path, body, token, lang)
+    fun get(path: String, token: String? = null, lang: String? = null, headers: Map<String, String> = emptyMap()) = send("GET", path, null, token, lang, headers)
+    fun post(path: String, body: Any? = null, token: String? = null, lang: String? = null, headers: Map<String, String> = emptyMap()) =
+        send("POST", path, body, token, lang, headers)
     fun put(path: String, body: Any, token: String? = null) = send("PUT", path, body, token, null)
     fun patch(path: String, body: Any, token: String? = null) = send("PATCH", path, body, token, null)
     fun delete(path: String, token: String? = null) = send("DELETE", path, null, token, null)
@@ -35,13 +36,14 @@ class ApiClient(private val port: Int) {
         return response.body().filter { it.isNotBlank() }.limit(count.toLong()).toList()
     }
 
-    private fun send(method: String, path: String, body: Any?, token: String?, lang: String?): Response {
+    private fun send(method: String, path: String, body: Any?, token: String?, lang: String?, headers: Map<String, String> = emptyMap()): Response {
         val builder = HttpRequest.newBuilder(URI("http://localhost:$port$path")).timeout(Duration.ofSeconds(20))
             .method(method, body?.let { HttpRequest.BodyPublishers.ofString(json.writeValueAsString(it)) } ?: HttpRequest.BodyPublishers.noBody())
             .header("Accept", "application/json, application/problem+json")
         if (body != null) builder.header("Content-Type", "application/json")
         token?.let { builder.header("Authorization", "Bearer $it") }
         lang?.let { builder.header("Accept-Language", it) }
+        headers.forEach { (name, value) -> builder.header(name, value) }
         val response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString())
         val parsed = response.body().takeIf { it.isNotBlank() }?.let { json.readTree(it) } ?: json.createObjectNode()
         return Response(response.statusCode(), parsed)

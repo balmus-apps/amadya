@@ -10,6 +10,9 @@ interface RestaurantSettingsApi {
     fun currency(): String
     fun features(): FeatureFlags
     fun orderNumberPrefix(): String
+    /** QR ordering: guest rounds and guest-started tables are confirmed automatically after this many minutes. */
+    fun guestConfirmMinutes(): Int
+    fun logoUrl(): String?
     fun vatRate(id: UUID): VatRateInfo?
     fun station(id: UUID): StationInfo?
     fun stations(): List<StationInfo>
@@ -22,6 +25,7 @@ data class FeatureFlags(
     val kitchenDisplay: Boolean,
     val queueDisplay: Boolean,
     val invoiceOcr: Boolean,
+    val qrOrdering: Boolean = false,
 )
 
 data class VatRateInfo(val id: UUID, val code: String, val percent: BigDecimal, val fiscalGroup: String, val active: Boolean)

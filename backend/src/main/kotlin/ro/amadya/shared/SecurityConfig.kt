@@ -78,12 +78,15 @@ class SecurityConfig(private val props: AmadyaProperties) {
                     HttpMethod.GET,
                     "/api/v1/settings/public", "/api/v1/menu", "/api/v1/queue", "/api/v1/queue/events",
                     "/api/v1/orders/*", "/api/v1/orders/*/events", "/api/v1/files/*",
+                    "/api/v1/t/*", "/api/v1/t/*/me", "/api/v1/t/*/events",
                 ).permitAll()
                 it.requestMatchers(
                     HttpMethod.POST,
                     "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout",
                     "/api/v1/orders", "/api/v1/orders/*/payment-intent", "/api/v1/orders/*/push-subscriptions",
                     "/api/v1/payments/webhooks/**", "/api/v1/payments/*/simulate-capture",
+                    // Guests at a table (QR): authorized by their device token in the service, not by a login.
+                    "/api/v1/t/*/join", "/api/v1/t/*/rounds", "/api/v1/t/*/payments", "/api/v1/t/*/guests/*/*",
                 ).permitAll()
                 it.requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
                 it.requestMatchers("/api/v1/admin/**").hasAnyRole(Roles.ADMIN, Roles.MANAGER)
