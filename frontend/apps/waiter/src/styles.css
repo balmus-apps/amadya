@@ -14,6 +14,9 @@
   --status-done: #bbf7d0;
   --status-done-strong: #15803d;
   --status-occupied: #ffedd5;
+  /* Guests from the QR code waiting for the waiter. */
+  --status-attention: #dbeafe;
+  --status-attention-strong: #1d4ed8;
 }
 
 body {
@@ -30,8 +33,18 @@ body {
   animation: ready-pulse 1.6s ease-in-out infinite;
 }
 
+@keyframes attention-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(29, 78, 216, 0.4); }
+}
+
+.attention-pulse {
+  animation: attention-pulse 1.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ready-pulse {
+  .ready-pulse,
+  .attention-pulse {
     animation: none;
   }
 }

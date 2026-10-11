@@ -15,7 +15,8 @@ export function PaymentSheet({ session: s, open, onClose }: { session: TableSess
   const t = useTranslations();
   const locale = useLocale() as "ro" | "en";
   const currency = s.remaining.currency;
-  const remainingCents = toCents(s.remaining.amount);
+  // What a guest is paying from their phone right now cannot be taken again.
+  const remainingCents = Math.max(0, toCents(s.remaining.amount) - toCents(s.pending.amount));
 
   const [mode, setMode] = useState<Mode>("full");
   const [method, setMethod] = useState<InPersonPaymentMethod>("CASH");

@@ -12,8 +12,9 @@ export function equalShareCents(remainingCents: number, people: number): number 
   return Math.floor(remainingCents / people);
 }
 
-export function unpaidUnits(line: Pick<TableRoundLine, "quantity" | "paidQuantity">): number {
-  return Math.max(0, line.quantity - line.paidQuantity);
+/** Units nobody has paid for, nor is paying for from their phone right now. */
+export function unpaidUnits(line: Pick<TableRoundLine, "quantity" | "paidQuantity"> & { reservedQuantity?: number }): number {
+  return Math.max(0, line.quantity - line.paidQuantity - (line.reservedQuantity ?? 0));
 }
 
 /**
@@ -26,7 +27,7 @@ export function itemsAmountCents(lines: TableRoundLine[], selection: Record<stri
     if (qty <= 0) return sum;
     const total = toCents(line.total.amount);
     const unpaid = unpaidUnits(line);
-    if (qty >= unpaid) return sum + total - Math.round((total * line.paidQuantity) / line.quantity);
+    if (qty >= unpaid && !line.reservedQuantity) return sum + total - Math.round((total * line.paidQuantity) / line.quantity);
     return sum + Math.round((total * qty) / line.quantity);
   }, 0);
 }
@@ -49,11 +50,14 @@ export function roundState(status: OrderStatus): RoundState {
   }
 }
 
-export type TableState = "free" | "occupied" | "ready";
+export type TableState = "free" | "occupied" | "ready" | "attention";
 
+/** "attention": guests from the QR code wait for the waiter (a new table, a round or someone asking to join). */
 export function tableState(table: FloorTable): TableState {
-  if (!table.session) return "free";
-  return table.session.roundsReady > 0 ? "ready" : "occupied";
+  const s = table.session;
+  if (!s) return "free";
+  if (s.awaitingConfirmation || s.pendingRounds > 0 || s.joinRequests > 0) return "attention";
+  return s.roundsReady > 0 ? "ready" : "occupied";
 }
 
 /** "12 min" since the guests sat down; "1h 05" past an hour. */

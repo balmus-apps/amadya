@@ -8,6 +8,7 @@ const line = (lineId: string, quantity: number, total: string, paidQuantity = 0)
   modifiers: [],
   quantity,
   paidQuantity,
+  reservedQuantity: 0,
   unitPrice: { amount: (Number(total) / quantity).toFixed(2), currency: "RON" },
   total: { amount: total, currency: "RON" },
 });
@@ -31,6 +32,7 @@ describe("pay by items", () => {
     // after one unit of "a" was paid (3.33), the other two cost 6.67
     expect(itemsAmountCents([line("a", 3, "10.00", 1)], { a: 2 })).toBe(667);
     expect(unpaidUnits(line("a", 3, "10.00", 1))).toBe(2);
+    expect(unpaidUnits({ ...line("a", 3, "10.00", 1), reservedQuantity: 1 })).toBe(1);
   });
 });
 
@@ -44,9 +46,11 @@ describe("states", () => {
 
   it("marks tables with a ready round", () => {
     expect(tableState({ id: "t", label: "1", seats: 4 })).toBe("free");
-    const session = { id: "s", guests: 2, openedAt: "", total: { amount: "0", currency: "RON" }, remaining: { amount: "0", currency: "RON" }, roundsInKitchen: 1, roundsReady: 0 };
+    const session = { id: "s", guests: 2, openedAt: "", total: { amount: "0", currency: "RON" }, remaining: { amount: "0", currency: "RON" }, roundsInKitchen: 1, roundsReady: 0, awaitingConfirmation: false, pendingRounds: 0, joinRequests: 0 };
     expect(tableState({ id: "t", label: "1", seats: 4, session })).toBe("occupied");
     expect(tableState({ id: "t", label: "1", seats: 4, session: { ...session, roundsReady: 1 } })).toBe("ready");
+    expect(tableState({ id: "t", label: "1", seats: 4, session: { ...session, pendingRounds: 1 } })).toBe("attention");
+    expect(tableState({ id: "t", label: "1", seats: 4, session: { ...session, awaitingConfirmation: true } })).toBe("attention");
   });
 
   it("formats time at the table", () => {

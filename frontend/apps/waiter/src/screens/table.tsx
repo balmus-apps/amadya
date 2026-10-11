@@ -1,4 +1,11 @@
 import {
+  confirmGuestRound,
+  confirmTableSession,
+  decideTableGuest,
+  rejectGuestRound,
+  rejectTableSession,
+  type PendingRound,
+  type TableActivity,
   cancelOrder,
   closeTableSession,
   completeOrder,
@@ -29,6 +36,8 @@ import {
   UsersIcon,
   WalletIcon,
   XIcon,
+  QrCodeIcon,
+  SmartphoneIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
@@ -110,11 +119,13 @@ export function TableScreen({ sessionId }: { sessionId: string }) {
       )}
 
       <main className="flex-1 space-y-3 p-3 pb-44">
+        {open && <QrGuests session={s} />}
         {rounds.length === 0 && <p className="py-12 text-center text-muted-foreground">{t("table.noRounds")}</p>}
         {rounds.map((round) => (
           <RoundCard key={round.orderId} round={round} index={s.rounds.indexOf(round) + 1} sessionId={s.id} canAct={open} onCancel={() => setCancelling(round)} />
         ))}
         {s.payments.length > 0 && <Payments session={s} canUndo={open} />}
+        {s.activity.length > 0 && <ActivityLog session={s} />}
       </main>
 
       <footer className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
@@ -165,6 +176,7 @@ function RoundCard({ round, index, sessionId, canAct, onCancel }: { round: Table
       <div className="flex items-center gap-2 px-3 py-2" style={{ background: style.bg }}>
         <span className="font-extrabold">{t("round.title", { index })}</span>
         <span className="font-mono text-sm">{round.number}</span>
+        {round.placedBy && <span className="rounded bg-[var(--status-attention)] px-1.5 text-xs font-semibold text-[var(--status-attention-strong)]">QR · {round.placedBy}</span>}
         {round.placedAt && <span className="text-xs">{formatTime(round.placedAt, locale)}</span>}
         <span className="ml-auto rounded-full bg-background/80 px-2 py-0.5 text-xs font-bold uppercase" style={{ color: style.fg }}>
           {t(`round.state.${state}`)}
@@ -220,7 +232,7 @@ function Payments({ session, canUndo }: { session: TableSession; canUndo: boolea
       <ul className="space-y-2">
         {session.payments.map((p) => (
           <li key={p.id} className={cn("flex items-center gap-2 text-sm", p.status === "VOIDED" && "text-muted-foreground line-through")}>
-            {p.method === "CASH" ? <WalletIcon className="size-4" /> : <CreditCardIcon className="size-4" />}
+            {p.method === "CASH" ? <WalletIcon className="size-4" /> : p.method === "ONLINE" ? <SmartphoneIcon className="size-4" /> : <CreditCardIcon className="size-4" />}
             <span>{t(`payments.method.${p.method}`)}</span>
             <span className="text-xs text-muted-foreground">{formatTime(p.createdAt, locale)}</span>
             {p.itemCount && <span className="text-xs text-muted-foreground">{t("payments.items", { count: p.itemCount })}</span>}
@@ -388,5 +400,152 @@ function TablePicker({ tables, empty, busy, onPick }: { tables: (FloorTable & { 
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Guests from the QR code: confirm their table and rounds before the time runs out, let people in, remove them. */
+function QrGuests({ session: s }: { session: TableSession }) {
+  const t = useTranslations();
+  const locale = useLocale() as "ro" | "en";
+  const now = useNow(1000);
+  const [refusing, setRefusing] = useState<{ round?: PendingRound } | null>(null);
+  const [reason, setReason] = useState("");
+  const confirmTable = useSessionMutation(() => confirmTableSession({ path: { id: s.id } }), () => toast.success(t("qr.tableConfirmed")));
+  const confirmRound = useSessionMutation((roundId: string) => confirmGuestRound({ path: { id: s.id, roundId } }), () => toast.success(t("qr.roundConfirmed")));
+  const refuse = useSessionMutation(
+    () =>
+      refusing?.round
+        ? rejectGuestRound({ path: { id: s.id, roundId: refusing.round.id }, body: { reason: reason.trim() || undefined } })
+        : rejectTableSession({ path: { id: s.id }, body: { reason: reason.trim() || undefined } }),
+    (updated) => {
+      setRefusing(null);
+      setReason("");
+      if (updated.status !== "OPEN") go({ name: "floor" });
+    },
+  );
+  const decide = useSessionMutation(({ guestId, action }: { guestId: string; action: "approve" | "reject" | "remove" }) => decideTableGuest({ path: { id: s.id, guestId, action } }));
+  const left = (iso: string) => {
+    const sec = Math.max(0, Math.round((Date.parse(iso) - now) / 1000));
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+  };
+  const guests = s.guestList.filter((g) => g.status === "ACTIVE" || g.status === "PENDING");
+  if (!s.awaitingConfirmation && s.pendingRounds.length === 0 && guests.length === 0) return null;
+
+  return (
+    <section className="space-y-3 rounded-2xl border-2 border-[var(--status-attention-strong)] bg-[var(--status-attention)] p-3">
+      <h2 className="flex items-center gap-2 font-extrabold text-[var(--status-attention-strong)]">
+        <QrCodeIcon className="size-5" /> {t("qr.title")}
+      </h2>
+
+      {s.awaitingConfirmation && (
+        <div className="space-y-2 rounded-xl bg-card p-3">
+          <p className="text-sm font-semibold">{t("qr.newTable")}</p>
+          {s.confirmDeadline && <p className="text-xs text-muted-foreground">{t("qr.autoIn", { time: left(s.confirmDeadline) })}</p>}
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setRefusing({})}>
+              <XIcon /> {t("qr.refuseTable")}
+            </Button>
+            <Button size="sm" className="ml-auto" disabled={confirmTable.isPending} onClick={() => confirmTable.mutate(undefined)}>
+              <CheckIcon /> {t("qr.confirmTable")}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {s.pendingRounds.map((r) => (
+        <article key={r.id} className="space-y-2 rounded-xl bg-card p-3">
+          <p className="flex items-center justify-between gap-2 text-sm font-bold">
+            <span>{t("qr.roundFrom", { name: r.guestName ?? "?" })}</span>
+            <span className="font-mono text-xs text-muted-foreground tabular-nums">{t("qr.autoIn", { time: left(r.deadline) })}</span>
+          </p>
+          <ul className="space-y-0.5 text-sm">
+            {r.lines.map((l, i) => (
+              <li key={i}>
+                <span className="font-black">{l.quantity}×</span> {l.productName}
+                {l.modifiers.length > 0 && <span className="text-muted-foreground"> + {l.modifiers.join(", ")}</span>}
+                {l.notes && <span className="block text-xs font-semibold text-amber-700">⚠ {l.notes}</span>}
+              </li>
+            ))}
+          </ul>
+          {r.notes && <p className="text-xs font-semibold text-amber-700">⚠ {r.notes}</p>}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-auto text-sm font-semibold tabular-nums">{formatMoney(r.total, locale)}</span>
+            <Button variant="ghost" size="sm" onClick={() => setRefusing({ round: r })}>
+              <XIcon /> {t("qr.refuse")}
+            </Button>
+            <Button size="sm" disabled={confirmRound.isPending} onClick={() => confirmRound.mutate(r.id)}>
+              <CheckIcon /> {t("qr.sendToKitchen")}
+            </Button>
+          </div>
+        </article>
+      ))}
+
+      {guests.length > 0 && (
+        <ul className="divide-y rounded-xl bg-card">
+          {guests.map((g) => (
+            <li key={g.id} className="flex items-center gap-2 p-2 pl-3 text-sm">
+              <span className="min-w-0 flex-1">
+                <span className="font-semibold">{g.name}</span>
+                <span className="text-xs text-muted-foreground"> · {t(g.status === "PENDING" ? "qr.asking" : g.role === "OWNER" ? "qr.owner" : "qr.member")}</span>
+              </span>
+              {g.status === "PENDING" ? (
+                <>
+                  <Button variant="ghost" size="sm" disabled={decide.isPending} onClick={() => decide.mutate({ guestId: g.id, action: "reject" })}>
+                    {t("qr.refuse")}
+                  </Button>
+                  <Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate({ guestId: g.id, action: "approve" })}>
+                    {t("qr.letIn")}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="ghost" size="sm" disabled={decide.isPending} onClick={() => decide.mutate({ guestId: g.id, action: "remove" })}>
+                  {t("qr.remove")}
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Dialog open={!!refusing} onOpenChange={(o) => !o && setRefusing(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle>{refusing?.round ? t("qr.refuseRoundTitle") : t("qr.refuseTableTitle")}</DialogTitle>
+          <DialogDescription>{refusing?.round ? t("qr.refuseRoundText") : t("qr.refuseTableText")}</DialogDescription>
+          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("round.reason")} maxLength={200} />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setRefusing(null)}>
+              {t("common.no")}
+            </Button>
+            <Button variant="destructive" disabled={refuse.isPending} onClick={() => refuse.mutate(undefined)}>
+              {t("qr.refuse")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
+function ActivityLog({ session: s }: { session: TableSession }) {
+  const t = useTranslations();
+  const locale = useLocale() as "ro" | "en";
+  const text = (a: TableActivity) => {
+    const items = (a.items ?? []).map((i) => `${i.quantity}× ${i.name}`).join(", ");
+    const actor = a.actor ?? t("activity.system");
+    const amount = a.amount ? formatMoney(a.amount, locale) : "";
+    return t(`activity.${a.kind}`, { actor, items, amount, method: a.method ? t(`payments.method.${a.method}`) : "", auto: a.automatic ? t("activity.auto") : "", reason: a.reason ?? "" });
+  };
+  return (
+    <details className="rounded-2xl border bg-card p-3 shadow-sm">
+      <summary className="cursor-pointer font-extrabold">{t("activity.title")}</summary>
+      <ol className="mt-2 space-y-1.5">
+        {[...s.activity].reverse().map((a, i) => (
+          <li key={i} className="flex gap-2 text-sm">
+            <time className="w-11 shrink-0 text-xs text-muted-foreground tabular-nums">{formatTime(a.at, locale)}</time>
+            <span>{text(a)}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }

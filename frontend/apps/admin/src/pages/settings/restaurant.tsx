@@ -95,6 +95,16 @@ export function RestaurantSettingsPage() {
                 <Switch checked={form.features[k]} onCheckedChange={(v) => set({ features: { ...form.features, [k]: v } })} /> {t(`settings.featureNames.${k}`)}
               </label>
             ))}
+            <Field label={t("settings.guestConfirmMinutes")} hint={t("settings.guestConfirmHint")}>
+              <Input
+                type="number"
+                min={1}
+                max={60}
+                value={form.guestConfirmMinutes ?? 5}
+                onChange={(e) => set({ guestConfirmMinutes: Math.max(1, Math.min(60, Number(e.target.value) || 5)) })}
+                className="w-28"
+              />
+            </Field>
             <Field label={t("settings.locales")}>
               <div className="flex gap-4">
                 {(["ro", "en"] as Locale[]).map((l) => (

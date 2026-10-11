@@ -13,6 +13,8 @@ import {
   cancelOrder,
   closeTableSession,
   completeOrder,
+  confirmGuestRound,
+  confirmTableSession,
   createCategory,
   createDiningTable,
   createFloorArea,
@@ -31,6 +33,7 @@ import {
   createUser,
   createVatRate,
   createWarehouse,
+  decideTableGuest,
   deleteCategory,
   deleteModifierGroup,
   deleteProduct,
@@ -39,6 +42,8 @@ import {
   getDashboard,
   getFile,
   getFloor,
+  getGuestTable,
+  getGuestView,
   getMenu,
   getNir,
   getOptionRecipe,
@@ -53,6 +58,7 @@ import {
   getStockItem,
   getTableSession,
   importEFactura,
+  joinTable,
   listCategories,
   listDiningTables,
   listFloorAreas,
@@ -81,16 +87,22 @@ import {
   mergeTableSession,
   openTableSession,
   type Options,
+  ownerDecideGuest,
   postNir,
   printPreBill,
   recallKitchenTicket,
   recordTablePayment,
   refreshToken,
+  regenerateTableQr,
   registerPushSubscription,
+  rejectGuestRound,
+  rejectTableSession,
   replaceOptionRecipe,
   replaceProductRecipe,
   reverseNir,
+  sendGuestRound,
   simulatePaymentCapture,
+  startGuestPayment,
   startKitchenTicket,
   stripeWebhook,
   transferTableSession,
@@ -128,6 +140,12 @@ import type {
   CompleteOrderData,
   CompleteOrderError,
   CompleteOrderResponse,
+  ConfirmGuestRoundData,
+  ConfirmGuestRoundError,
+  ConfirmGuestRoundResponse,
+  ConfirmTableSessionData,
+  ConfirmTableSessionError,
+  ConfirmTableSessionResponse,
   CreateCategoryData,
   CreateCategoryError,
   CreateCategoryResponse,
@@ -181,6 +199,9 @@ import type {
   CreateWarehouseData,
   CreateWarehouseError,
   CreateWarehouseResponse,
+  DecideTableGuestData,
+  DecideTableGuestError,
+  DecideTableGuestResponse,
   DeleteCategoryData,
   DeleteCategoryError,
   DeleteCategoryResponse,
@@ -205,6 +226,12 @@ import type {
   GetFloorData,
   GetFloorError,
   GetFloorResponse,
+  GetGuestTableData,
+  GetGuestTableError,
+  GetGuestTableResponse,
+  GetGuestViewData,
+  GetGuestViewError,
+  GetGuestViewResponse,
   GetMenuData,
   GetMenuResponse,
   GetNirData,
@@ -244,6 +271,9 @@ import type {
   ImportEFacturaData,
   ImportEFacturaError,
   ImportEFacturaResponse,
+  JoinTableData,
+  JoinTableError,
+  JoinTableResponse,
   ListCategoriesData,
   ListCategoriesError,
   ListCategoriesResponse,
@@ -323,6 +353,9 @@ import type {
   OpenTableSessionData,
   OpenTableSessionError,
   OpenTableSessionResponse,
+  OwnerDecideGuestData,
+  OwnerDecideGuestError,
+  OwnerDecideGuestResponse,
   PostNirData,
   PostNirError,
   PostNirResponse,
@@ -337,9 +370,18 @@ import type {
   RefreshTokenData,
   RefreshTokenError,
   RefreshTokenResponse,
+  RegenerateTableQrData,
+  RegenerateTableQrError,
+  RegenerateTableQrResponse,
   RegisterPushSubscriptionData,
   RegisterPushSubscriptionError,
   RegisterPushSubscriptionResponse,
+  RejectGuestRoundData,
+  RejectGuestRoundError,
+  RejectGuestRoundResponse,
+  RejectTableSessionData,
+  RejectTableSessionError,
+  RejectTableSessionResponse,
   ReplaceOptionRecipeData,
   ReplaceOptionRecipeError,
   ReplaceOptionRecipeResponse,
@@ -349,9 +391,15 @@ import type {
   ReverseNirData,
   ReverseNirError,
   ReverseNirResponse,
+  SendGuestRoundData,
+  SendGuestRoundError,
+  SendGuestRoundResponse,
   SimulatePaymentCaptureData,
   SimulatePaymentCaptureError,
   SimulatePaymentCaptureResponse,
+  StartGuestPaymentData,
+  StartGuestPaymentError,
+  StartGuestPaymentResponse,
   StartKitchenTicketData,
   StartKitchenTicketError,
   StartKitchenTicketResponse,
@@ -2036,6 +2084,326 @@ export const printPreBillMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await printPreBill({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Give the table a new QR code; the old one stops working (ADMIN, MANAGER)
+ */
+export const regenerateTableQrMutation = (
+  options?: Partial<Options<RegenerateTableQrData>>,
+): UseMutationOptions<
+  RegenerateTableQrResponse,
+  RegenerateTableQrError,
+  Options<RegenerateTableQrData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RegenerateTableQrResponse,
+    RegenerateTableQrError,
+    Options<RegenerateTableQrData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await regenerateTableQr({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Confirm a table started by guests from the QR code
+ */
+export const confirmTableSessionMutation = (
+  options?: Partial<Options<ConfirmTableSessionData>>,
+): UseMutationOptions<
+  ConfirmTableSessionResponse,
+  ConfirmTableSessionError,
+  Options<ConfirmTableSessionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ConfirmTableSessionResponse,
+    ConfirmTableSessionError,
+    Options<ConfirmTableSessionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await confirmTableSession({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Refuse a table started by guests (e.g. nobody is sitting there); the table is freed
+ */
+export const rejectTableSessionMutation = (
+  options?: Partial<Options<RejectTableSessionData>>,
+): UseMutationOptions<
+  RejectTableSessionResponse,
+  RejectTableSessionError,
+  Options<RejectTableSessionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RejectTableSessionResponse,
+    RejectTableSessionError,
+    Options<RejectTableSessionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await rejectTableSession({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Send a round ordered by a guest to the kitchen and bar
+ */
+export const confirmGuestRoundMutation = (
+  options?: Partial<Options<ConfirmGuestRoundData>>,
+): UseMutationOptions<
+  ConfirmGuestRoundResponse,
+  ConfirmGuestRoundError,
+  Options<ConfirmGuestRoundData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ConfirmGuestRoundResponse,
+    ConfirmGuestRoundError,
+    Options<ConfirmGuestRoundData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await confirmGuestRound({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Refuse a round ordered by a guest, with a reason the guest sees
+ */
+export const rejectGuestRoundMutation = (
+  options?: Partial<Options<RejectGuestRoundData>>,
+): UseMutationOptions<
+  RejectGuestRoundResponse,
+  RejectGuestRoundError,
+  Options<RejectGuestRoundData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RejectGuestRoundResponse,
+    RejectGuestRoundError,
+    Options<RejectGuestRoundData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await rejectGuestRound({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Let a guest join, refuse them, or remove a guest from the table
+ */
+export const decideTableGuestMutation = (
+  options?: Partial<Options<DecideTableGuestData>>,
+): UseMutationOptions<
+  DecideTableGuestResponse,
+  DecideTableGuestError,
+  Options<DecideTableGuestData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DecideTableGuestResponse,
+    DecideTableGuestError,
+    Options<DecideTableGuestData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await decideTableGuest({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getGuestTableQueryKey = (options: Options<GetGuestTableData>) =>
+  createQueryKey("getGuestTable", options);
+
+/**
+ * What the QR code points to (table, restaurant, whether QR ordering is on)
+ */
+export const getGuestTableOptions = (options: Options<GetGuestTableData>) =>
+  queryOptions<
+    GetGuestTableResponse,
+    GetGuestTableError,
+    GetGuestTableResponse,
+    ReturnType<typeof getGuestTableQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getGuestTable({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getGuestTableQueryKey(options),
+  });
+
+/**
+ * Join the table: start its session (free table), become owner (table seated by the waiter, no owner yet) or ask to join
+ */
+export const joinTableMutation = (
+  options?: Partial<Options<JoinTableData>>,
+): UseMutationOptions<
+  JoinTableResponse,
+  JoinTableError,
+  Options<JoinTableData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    JoinTableResponse,
+    JoinTableError,
+    Options<JoinTableData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await joinTable({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getGuestViewQueryKey = (options: Options<GetGuestViewData>) =>
+  createQueryKey("getGuestView", options);
+
+/**
+ * The table as this guest sees it (bill without names, activity log, join requests for the owner)
+ */
+export const getGuestViewOptions = (options: Options<GetGuestViewData>) =>
+  queryOptions<
+    GetGuestViewResponse,
+    GetGuestViewError,
+    GetGuestViewResponse,
+    ReturnType<typeof getGuestViewQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getGuestView({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getGuestViewQueryKey(options),
+  });
+
+/**
+ * Order a round; it waits for the waiter's OK (confirmed automatically after the configured time)
+ */
+export const sendGuestRoundMutation = (
+  options?: Partial<Options<SendGuestRoundData>>,
+): UseMutationOptions<
+  SendGuestRoundResponse,
+  SendGuestRoundError,
+  Options<SendGuestRoundData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    SendGuestRoundResponse,
+    SendGuestRoundError,
+    Options<SendGuestRoundData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await sendGuestRound({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * The table owner lets someone join or refuses them
+ */
+export const ownerDecideGuestMutation = (
+  options?: Partial<Options<OwnerDecideGuestData>>,
+): UseMutationOptions<
+  OwnerDecideGuestResponse,
+  OwnerDecideGuestError,
+  Options<OwnerDecideGuestData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    OwnerDecideGuestResponse,
+    OwnerDecideGuestError,
+    Options<OwnerDecideGuestData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await ownerDecideGuest({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Pay the whole rest or selected items from the phone; the items are reserved while the payment is pending
+ */
+export const startGuestPaymentMutation = (
+  options?: Partial<Options<StartGuestPaymentData>>,
+): UseMutationOptions<
+  StartGuestPaymentResponse,
+  StartGuestPaymentError,
+  Options<StartGuestPaymentData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    StartGuestPaymentResponse,
+    StartGuestPaymentError,
+    Options<StartGuestPaymentData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await startGuestPayment({
         ...options,
         ...fnOptions,
         throwOnError: true,
