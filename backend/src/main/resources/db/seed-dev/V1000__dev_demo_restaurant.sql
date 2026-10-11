@@ -1,9 +1,9 @@
--- DEV ONLY (loaded with the `dev` profile): demo restaurant based on the reference images in burregescu-img/.
+-- DEV ONLY (loaded with the `dev` profile): the Amadya demo restaurant, a street-food menu to try every app.
 -- Production installs start empty and are configured from the admin dashboard.
 
 UPDATE restaurant_settings
-SET name          = 'BurRegescu',
-    legal_name    = 'BurRegescu Fast Food (demo)',
+SET name          = 'Amadya',
+    legal_name    = 'Amadya Demo SRL',
     address       = 'Strada Principală 109, Șendreni',
     phone         = '+40756501239',
     theme         = '{"primary":"#FFC400","onPrimary":"#111111","secondary":"#111111","accent":"#D62828","background":"#FFFBEB","foreground":"#111111","radius":"14px","fontHeading":"Rubik","fontBody":"Inter"}',

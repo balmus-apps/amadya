@@ -1,4 +1,4 @@
--- DEV ONLY: promotions inspired by the reference posters in burregescu-img/.
+-- DEV ONLY: promotions for the Amadya demo menu.
 INSERT INTO promotion (id, title, subtitle, badge, product_id, sort_order)
 VALUES ('0190a000-0000-7000-8000-000000000501',
         '{"ro":"Mai mult gust!","en":"More flavour!"}',
