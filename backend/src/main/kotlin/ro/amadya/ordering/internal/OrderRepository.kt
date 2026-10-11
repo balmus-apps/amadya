@@ -25,6 +25,8 @@ interface OrderRepository : JpaRepository<OrderEntity, UUID> {
     ): List<OrderEntity>
 
     fun findAllByStatusAndCreatedAtBefore(status: OrderStatus, createdBefore: Instant): List<OrderEntity>
+
+    fun findAllByTableSessionIdInOrderByCreatedAtAsc(sessionIds: Collection<UUID>): List<OrderEntity>
 }
 
 /** Daily order numbers (B-001, B-002, ...) using an atomic upsert per business day. */

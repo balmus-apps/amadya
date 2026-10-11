@@ -3,6 +3,7 @@ package ro.amadya.ordering
 import ro.amadya.shared.LocalizedText
 import java.math.BigDecimal
 import java.time.Instant
+import java.util.Locale
 import java.util.UUID
 
 // ---------------------------------------------------------------- events published by the ordering module
@@ -41,6 +42,8 @@ data class OrderStatusChanged(
     val status: String,
     val estimatedReadyAt: Instant?,
     val at: Instant,
+    /** Set for dine-in rounds, so the waiter app can follow its tables. */
+    val tableSessionId: UUID? = null,
 )
 
 data class OrderCancelled(val orderId: UUID, val wasPaid: Boolean, val reason: String)
@@ -73,3 +76,38 @@ interface OrderQueries {
 }
 
 data class QueueBoardView(val preparing: List<String>, val ready: List<String>)
+
+/** Used by the tables module: each round sent from a table is a DINE_IN order of its session. */
+interface TableOrders {
+    /** Places a round for the kitchen and bar and returns the new order's id. */
+    fun placeRound(sessionId: UUID, tableLabel: String, lines: List<RoundLine>, notes: String?, locale: Locale): UUID
+    fun sessionOrders(sessionIds: Collection<UUID>): List<SessionOrder>
+    /** The bill is paid: every round that was not cancelled is marked paid and served. */
+    fun settle(sessionId: UUID)
+    /** Merging tables: the rounds of one session move to another. */
+    fun moveToSession(fromSessionId: UUID, toSessionId: UUID)
+}
+
+data class RoundLine(val productId: UUID, val quantity: Int, val modifierOptionIds: List<UUID>, val notes: String?)
+
+data class SessionOrder(
+    val orderId: UUID,
+    val sessionId: UUID,
+    val number: String,
+    val status: String,
+    val placedAt: Instant?,
+    val readyAt: Instant?,
+    val total: BigDecimal,
+    val currency: String,
+    val lines: List<SessionOrderLine>,
+)
+
+data class SessionOrderLine(
+    val lineId: UUID,
+    val productName: LocalizedText,
+    val modifiers: List<LocalizedText>,
+    val quantity: Int,
+    val unitPrice: BigDecimal,
+    val total: BigDecimal,
+    val notes: String?,
+)

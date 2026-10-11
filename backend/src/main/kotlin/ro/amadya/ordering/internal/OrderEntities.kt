@@ -37,7 +37,7 @@ class OrderEntity(
     @Column(name = "customer_email") var customerEmail: String? = null,
     @Column(name = "customer_user_id") var customerUserId: UUID? = null,
     @Column(name = "created_by_user_id") val createdByUserId: UUID? = null,
-    @Column(name = "table_session_id") val tableSessionId: UUID? = null,
+    @Column(name = "table_session_id") var tableSessionId: UUID? = null,
     @Column(name = "pickup_at") val pickupAt: Instant? = null,
     val notes: String? = null,
     val locale: String,

@@ -52,7 +52,7 @@ class PaymentService(
         if (payment.status == PaymentState.CAPTURED || payment.status == PaymentState.REFUNDED) return
         payment.status = PaymentState.CAPTURED
         payment.capturedAt = clock.instant()
-        orders.markPaid(payment.orderId)
+        orders.markPaid(requireNotNull(payment.orderId) { "online payment without an order" })
         log.info("Payment {} captured for order {}", payment.id, payment.orderId)
     }
 
