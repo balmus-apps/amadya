@@ -46,7 +46,5 @@ sequenceDiagram
   the fiscal printer (Phase 6), which will print it when the bill is paid.
 
 ## Not yet
-- A floor plan drawn to scale (tables are a grid per area).
-- Voiding a single item of a round (cancel the round and send a new one).
-- QR codes for guests to order from the table.
-- Tips.
+See [docs/todo/waiter.md](../todo/waiter.md): a floor plan drawn to scale, removing a single item, QR ordering, tips and the
+fiscal receipt.
