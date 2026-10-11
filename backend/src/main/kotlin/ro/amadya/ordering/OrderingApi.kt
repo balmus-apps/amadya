@@ -75,7 +75,9 @@ interface OrderQueries {
     fun queueBoard(): QueueBoardView
 }
 
-data class QueueBoardView(val preparing: List<String>, val ready: List<String>)
+data class QueueBoardView(val preparing: List<String>, val ready: List<ReadyOrder>, val readyVisible: java.time.Duration)
+
+data class ReadyOrder(val number: String, val readyAt: Instant)
 
 /** Used by the tables module: each round sent from a table is a DINE_IN order of its session. */
 interface TableOrders {

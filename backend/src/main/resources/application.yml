@@ -67,6 +67,8 @@ amadya:
     admin-password: ${AMADYA_ADMIN_PASSWORD:}
   ordering:
     payment-timeout: 15m
+    # a ready takeaway order leaves the queue display after this long if nobody marks it picked up
+    queue-ready-visible: ${QUEUE_READY_VISIBLE:20m}
   payments:
     provider: ${PAYMENT_PROVIDER:fake}
     stripe:

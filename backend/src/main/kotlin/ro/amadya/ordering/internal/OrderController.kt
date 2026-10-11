@@ -13,6 +13,8 @@ import ro.amadya.contract.model.CustomerContact
 import ro.amadya.contract.model.Order
 import ro.amadya.contract.model.OrderLine
 import ro.amadya.contract.model.QueueBoard
+import ro.amadya.contract.model.QueueBoardReadyOrdersInner
+import ro.amadya.ordering.QueueBoardView
 import ro.amadya.shared.localized
 import ro.amadya.shared.toMoney
 import java.time.Instant
@@ -58,8 +60,15 @@ class OrderController(private val service: OrderService) : OrderingApi {
         ResponseEntity.ok(service.cancel(orderId, cancelOrderRequest.reason).toDto(LocaleContextHolder.getLocale()))
 
     override fun getQueueBoard(): ResponseEntity<QueueBoard> =
-        service.queueBoard().let { ResponseEntity.ok(QueueBoard(it.preparing, it.ready)) }
+        ResponseEntity.ok(service.queueBoard().toQueueDto())
 }
+
+internal fun QueueBoardView.toQueueDto() = QueueBoard(
+    preparing = preparing,
+    ready = ready.map { it.number },
+    readyOrders = ready.map { QueueBoardReadyOrdersInner(it.number, it.readyAt.atOffset(ZoneOffset.UTC)) },
+    readyVisibleSeconds = readyVisible.toSeconds().toInt(),
+)
 
 internal fun Instant.toOffset(): OffsetDateTime = atOffset(ZoneOffset.UTC)
 
