@@ -1,6 +1,6 @@
 # ADR 0009 — RO e-Factura integration (ANAF SPV)
 
-**Status:** Proposed — 2026-10-11. It replaces "Phase 7: invoice scan" as the next phase. Phase 6 (printers and fiscal
+**Status:** Proposed — 2026-10-11, on hold until the open questions below are answered. It replaces "Phase 7: invoice scan" as the next phase. Phase 6 (printers and fiscal
 printer) moves after it, until the hardware is bought.
 
 ## Context
@@ -76,6 +76,8 @@ Add an **`efactura` module** in the backend, behind ports, as with payments and 
 
 1. **Invoices module (`invoicing`).**
    - Issue an invoice from a paid order or a table bill, with the customer's company data (CUI lookup fills in the rest).
+   - Guests paying from their phone at the table (QR ordering, [ADR 0010](0010-qr-table-ordering.md)) can ask for a
+     company invoice too: a "Factură pe firmă" option with the CUI in the guest app's payment sheet.
    - Series and yearly numbering, using the `document_counter` that NIRs already use.
    - VAT per line from the order snapshot. Credit notes for cancellations and refunds.
 2. **UBL CIUS-RO generator.** Each invoice is checked with `validare` first, so errors show before upload.
