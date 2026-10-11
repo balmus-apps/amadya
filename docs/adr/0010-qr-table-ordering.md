@@ -1,6 +1,6 @@
 # ADR 0010 — Guests order and pay from the table (QR)
 
-**Status:** Proposed — 2026-10-11. Decisions agreed with the owner; implementation on hold until approved.
+**Status:** Accepted — 2026-10-11. Implemented on branch `qr-table-ordering`.
 **Builds on:** table sessions, rounds and item payments (Phase 4, [tables.md](../domain/tables.md)), and online payments
 (ADR 0007).
 

@@ -17,12 +17,9 @@ by item; cash or card terminal), transfer, merge and pre-bill. The rules are in
       while the kitchen has not started, a manager after that.
 - [ ] The kitchen ticket must update live (the item crossed out), and the bill and stock consumption must follow.
 
-## 3. QR codes for guests to order from the table
-- [ ] Each table gets a QR code (printable from Admin → Mese). Scanning it opens the customer menu tied to that table.
-- [ ] Decide whether a guest's order goes straight to the kitchen or waits for the waiter to confirm it. Confirming is
-      safer against pranks.
-- [ ] The guest's orders appear as rounds of the table session, and the waiter sees them live.
-- [ ] Optional: guests pay their share online from their phone (needs Stripe, see [payments.md](payments.md)).
+## 3. QR codes for guests to order from the table ✅
+Done in [ADR 0010](../adr/0010-qr-table-ordering.md) (join, owner and approvals, waiter confirmation with automatic
+fallback, pay all or chosen items from the phone, activity log).
 
 ## 4. Tips
 - [ ] Record a tip with a payment (cash or card), separate from the bill.

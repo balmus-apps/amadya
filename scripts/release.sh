@@ -36,6 +36,7 @@ build admin    frontend frontend/apps/admin/Dockerfile
 build kitchen  frontend frontend/apps/kitchen/Dockerfile
 build waiter   frontend frontend/apps/waiter/Dockerfile
 build queue-display frontend frontend/apps/queue-display/Dockerfile
+build table    frontend frontend/apps/table/Dockerfile
 build menu-web frontend frontend/apps/menu-web/Dockerfile
 
 if [[ $PUSH == 1 ]]; then

@@ -99,6 +99,21 @@ Vite PWA served at `/waiter`, built for the waiters' phones. Demo login: `ospata
 
 Rules and bill arithmetic: [docs/domain/tables.md](../docs/domain/tables.md).
 
+## Guests at the table (`apps/table`, QR ordering)
+
+The page each table's QR code opens: `/t/<code>`. No login: a first name, then a device token for that table only.
+
+- **Join:** start a free table (owner), become owner of a table the waiter seated, or ask to join (the owner or a waiter
+  lets you in).
+- **Menu:** search, categories, sauces and extras; the round goes to the waiter, who confirms it (or it is confirmed
+  automatically after the configured minutes).
+- **Bill:** rounds and their state, without names; pay everything or only chosen items, with the takeaway payment flow
+  (wallet sheet; "Simulează plata" with the fake provider). Chosen items are reserved while paying.
+- **Activity:** who joined, ordered and paid. The owner sees join requests at the top.
+- **Live:** `/t/<code>/events` (SSE with the device token).
+
+Demo codes (dev seed): `demo-1` … `demo-6`, `demo-t1` … `demo-t4`, e.g. `http://localhost/t/demo-5`.
+
 ## Queue display (`apps/queue-display`, Phase 5)
 
 The TV above the pickup counter, at `/queue`. Public: no login, and it shows order numbers only, never names.

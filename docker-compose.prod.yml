@@ -10,7 +10,7 @@
 # This stack publishes no host port. The shared proxy owns 80/443 for the whole
 # server, terminates TLS, and reaches this project's own Caddy over the external
 # "web" network (alias amadya-web). That internal Caddy still splits /api,
-# /admin, /kitchen, /waiter, /queue and the customer menu - it simply speaks plain HTTP now.
+# /admin, /kitchen, /waiter, /queue, /t (table QR) and the customer menu - it simply speaks plain HTTP now.
 #
 # In .env: AMADYA_DOMAIN=amadya.alphatech.ro (bare host, no scheme), and real
 # values for POSTGRES_PASSWORD, JWT_SECRET and AMADYA_ADMIN_PASSWORD.
@@ -133,6 +133,16 @@ services:
 
   waiter:
     image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-waiter:${AMADYA_TAG:-latest}
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  table:
+    image: ${AMADYA_REGISTRY:-ghcr.io/balmus-apps}/amadya-table:${AMADYA_TAG:-latest}
     logging: *logging
     security_opt:
       - no-new-privileges:true

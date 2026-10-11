@@ -98,6 +98,12 @@ services:
       dockerfile: apps/waiter/Dockerfile
     restart: unless-stopped
 
+  table:
+    build:
+      context: ./frontend
+      dockerfile: apps/table/Dockerfile
+    restart: unless-stopped
+
   queue-display:
     build:
       context: ./frontend
