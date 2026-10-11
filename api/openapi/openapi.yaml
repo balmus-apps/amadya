@@ -2331,10 +2331,23 @@ components:
 
     QueueBoard:
       type: object
-      required: [preparing, ready]
+      required: [preparing, ready, readyOrders, readyVisibleSeconds]
+      description: Takeaway and counter orders of the day for the queue display; dine-in rounds are served at the table.
       properties:
-        preparing: { type: array, items: { type: string }, description: Order numbers (PLACED or PREPARING) }
-        ready: { type: array, items: { type: string }, description: Order numbers that are READY }
+        preparing: { type: array, items: { type: string }, description: "Order numbers placed or being prepared, oldest first" }
+        ready: { type: array, items: { type: string }, description: "Order numbers ready for pickup, most recent first" }
+        readyOrders:
+          type: array
+          description: The ready orders with the time they became ready, same order as `ready`
+          items:
+            type: object
+            required: [number, readyAt]
+            properties:
+              number: { type: string }
+              readyAt: { type: string, format: date-time }
+        readyVisibleSeconds:
+          type: integer
+          description: "A ready order leaves the display after this long, even if nobody marked it picked up"
 
     # ---------------------------------------------------------- kitchen
     KitchenTicketStatus:

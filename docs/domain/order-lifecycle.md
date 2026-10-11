@@ -51,7 +51,8 @@ stateDiagram-v2
 - On READY:
   - SSE event;
   - Expo push (mobile) or Web Push (if the customer allowed it);
-  - the queue display moves the order number to the "Ready" column.
+  - the queue display (`/queue`, takeaway and counter orders) moves the order number to the "Ready" column. It stays there
+    until the order is marked picked up, or at most `QUEUE_READY_VISIBLE` (default 20 min).
 - The pickup number is a daily sequence (e.g. `A-042`) shown on the order confirmation, the receipt and the queue screen.
 
 ## Payment & fiscal

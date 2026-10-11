@@ -20,6 +20,7 @@ import ro.amadya.ordering.OrderStatusChanged
 import ro.amadya.ordering.PayableOrder
 import ro.amadya.ordering.PlacedLine
 import ro.amadya.ordering.QueueBoardView
+import ro.amadya.ordering.ReadyOrder
 import ro.amadya.ordering.RoundLine
 import ro.amadya.ordering.SessionOrder
 import ro.amadya.ordering.SessionOrderLine
@@ -46,7 +47,11 @@ import java.util.Locale
 import java.util.UUID
 
 @ConfigurationProperties("amadya.ordering")
-data class OrderingProperties(val paymentTimeout: Duration = Duration.ofMinutes(15))
+data class OrderingProperties(
+    val paymentTimeout: Duration = Duration.ofMinutes(15),
+    /** How long a ready takeaway / counter order stays on the queue display when nobody marks it picked up. */
+    val queueReadyVisible: Duration = Duration.ofMinutes(20),
+)
 
 /** The created order together with the raw tracking token, which is only ever returned once. */
 data class CreatedOrder(val order: OrderEntity, val trackingToken: String)
@@ -243,9 +248,13 @@ class OrderService(
             listOf(OrderChannel.TAKEAWAY, OrderChannel.COUNTER),
             listOf(OrderStatus.PLACED, OrderStatus.PREPARING, OrderStatus.READY),
         )
+        val shownSince = clock.instant().minus(orderingProps.queueReadyVisible)
         return QueueBoardView(
             preparing = visible.filter { it.status != OrderStatus.READY }.map { it.number },
-            ready = visible.filter { it.status == OrderStatus.READY }.map { it.number },
+            ready = visible.filter { it.status == OrderStatus.READY && it.readyAt != null && it.readyAt!!.isAfter(shownSince) }
+                .sortedByDescending { it.readyAt }
+                .map { ReadyOrder(it.number, it.readyAt!!) },
+            readyVisible = orderingProps.queueReadyVisible,
         )
     }
 

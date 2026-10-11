@@ -57,6 +57,7 @@ services:
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       PRINTING_MODE: ${PRINTING_MODE:-log}
+      QUEUE_READY_VISIBLE: ${QUEUE_READY_VISIBLE:-20m}
       MEDIA_PROVIDER: ${MEDIA_PROVIDER:-filesystem}
       MEDIA_DIR: /var/lib/amadya/files
       S3_ENDPOINT: ${S3_ENDPOINT:-}
@@ -97,8 +98,11 @@ services:
       dockerfile: apps/waiter/Dockerfile
     restart: unless-stopped
 
-  # --- Added per phase ---
-  # queue-display:  (Phase 5)
+  queue-display:
+    build:
+      context: ./frontend
+      dockerfile: apps/queue-display/Dockerfile
+    restart: unless-stopped
 
 volumes:
   pgdata:

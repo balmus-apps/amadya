@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import ro.amadya.contract.model.QueueBoard
+import ro.amadya.contract.model.QueueBoardReadyOrdersInner
 import ro.amadya.ordering.OrderQueries
 import ro.amadya.ordering.OrderStatusChanged
+import ro.amadya.ordering.QueueBoardView
 import ro.amadya.shared.NotFoundException
 import java.time.ZoneOffset
 import java.util.UUID
@@ -28,8 +30,15 @@ class OrderNotifications(private val hub: SseHub, private val orders: OrderQueri
         // Phase 2: Expo / Web Push when status becomes READY (needs push tokens from the customer apps).
     }
 
-    fun board(): QueueBoard = orders.queueBoard().let { QueueBoard(it.preparing, it.ready) }
+    fun board(): QueueBoard = orders.queueBoard().toDto()
 }
+
+internal fun QueueBoardView.toDto() = QueueBoard(
+    preparing = preparing,
+    ready = ready.map { it.number },
+    readyOrders = ready.map { QueueBoardReadyOrdersInner(it.number, it.readyAt.atOffset(ZoneOffset.UTC)) },
+    readyVisibleSeconds = readyVisible.toSeconds().toInt(),
+)
 
 internal fun OrderStatusChanged.toDto() = OrderStatusChangedDto(
     orderId = orderId,
