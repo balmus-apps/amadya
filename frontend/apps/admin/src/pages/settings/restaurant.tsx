@@ -105,6 +105,16 @@ export function RestaurantSettingsPage() {
                 className="w-28"
               />
             </Field>
+            <Field label={t("settings.activityRetentionDays")} hint={t("settings.activityRetentionHint")}>
+              <Input
+                type="number"
+                min={1}
+                max={3650}
+                value={form.activityRetentionDays ?? 30}
+                onChange={(e) => set({ activityRetentionDays: Math.max(1, Math.min(3650, Number(e.target.value) || 30)) })}
+                className="w-28"
+              />
+            </Field>
             <Field label={t("settings.locales")}>
               <div className="flex gap-4">
                 {(["ro", "en"] as Locale[]).map((l) => (

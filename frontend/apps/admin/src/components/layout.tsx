@@ -1,6 +1,7 @@
 import { Button, cn } from "@amadya/ui";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
+  ActivityIcon,
   BarChart3Icon,
   BoxesIcon,
   ClipboardListIcon,
@@ -79,6 +80,7 @@ export function AppLayout() {
         { to: "/settings/stations", label: t("nav.stations"), icon: ChefHatIcon },
         { to: "/settings/tables", label: t("nav.tables"), icon: ArmchairIcon },
         { to: "/users", label: t("nav.users"), icon: UsersIcon, admin: true },
+        { to: "/activity", label: t("nav.activity"), icon: ActivityIcon },
       ],
     },
   ];

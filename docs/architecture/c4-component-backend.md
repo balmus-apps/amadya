@@ -18,6 +18,7 @@ Container_Boundary(api, "Core API") {
   Component(procurement, "procurement", "Suppliers, invoices, e-Factura import, OCR, NIR")
   Component(notifications, "notifications", "SSE, Expo push, Web push")
   Component(reporting, "reporting", "Sales, stock value, prep-time KPIs")
+  Component(audit, "audit", "Activity log of staff actions (ADR 0011)")
 }
 
 ContainerDb(db, "PostgreSQL")
@@ -34,6 +35,7 @@ Rel(fiscal, printing, "FiscalReceiptRequested")
 Rel(ordering, inventory, "OrderPaid → consume recipe")
 Rel(procurement, inventory, "NirPosted → stock receipt")
 Rel(reporting, db, "Read models / views")
+Rel(audit, db, "Append-only activity_log")
 ```
 
 ## Rules

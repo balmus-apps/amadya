@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ro.amadya.contract.model.TokenResponse
+import ro.amadya.shared.Activity
 import ro.amadya.shared.AmadyaProperties
 import ro.amadya.shared.UnauthorizedException
 import java.security.MessageDigest
@@ -34,6 +35,7 @@ class AuthService(
     @Transactional
     fun login(email: String, password: String): TokenResponse {
         val user = users.findByEmailIgnoreCase(email.trim())
+        if (user != null) Activity.actingAs(user.id, user.name, user.roles) else Activity.actingAs(null, email.trim().take(120), emptyList())
         val ok = if (user == null) {
             passwordEncoder.matches(password, dummyHash)
             false
@@ -66,7 +68,10 @@ class AuthService(
 
     @Transactional
     fun logout(rawToken: String) {
-        refreshTokens.findByTokenHash(hash(rawToken))?.let { if (it.revokedAt == null) it.revokedAt = clock.instant() }
+        refreshTokens.findByTokenHash(hash(rawToken))?.let { token ->
+            users.findById(token.userId).ifPresent { Activity.actingAs(it.id, it.name, it.roles) }
+            if (token.revokedAt == null) token.revokedAt = clock.instant()
+        }
     }
 
     @Transactional

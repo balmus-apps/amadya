@@ -2,6 +2,8 @@
 
 import {
   type DefaultError,
+  type InfiniteData,
+  infiniteQueryOptions,
   queryOptions,
   type UseMutationOptions,
 } from "@tanstack/react-query";
@@ -38,6 +40,7 @@ import {
   deleteModifierGroup,
   deleteProduct,
   deletePromotion,
+  getActivityFilters,
   getCurrentUser,
   getDashboard,
   getFile,
@@ -59,6 +62,7 @@ import {
   getTableSession,
   importEFactura,
   joinTable,
+  listActivity,
   listCategories,
   listDiningTables,
   listFloorAreas,
@@ -214,6 +218,9 @@ import type {
   DeletePromotionData,
   DeletePromotionError,
   DeletePromotionResponse,
+  GetActivityFiltersData,
+  GetActivityFiltersError,
+  GetActivityFiltersResponse,
   GetCurrentUserData,
   GetCurrentUserError,
   GetCurrentUserResponse,
@@ -274,6 +281,9 @@ import type {
   JoinTableData,
   JoinTableError,
   JoinTableResponse,
+  ListActivityData,
+  ListActivityError,
+  ListActivityResponse,
   ListCategoriesData,
   ListCategoriesError,
   ListCategoriesResponse,
@@ -3529,4 +3539,143 @@ export const getDashboardOptions = (options: Options<GetDashboardData>) =>
       return data;
     },
     queryKey: getDashboardQueryKey(options),
+  });
+
+export const listActivityQueryKey = (options?: Options<ListActivityData>) =>
+  createQueryKey("listActivity", options);
+
+/**
+ * Staff actions, newest first (ADMIN all; MANAGER only waiters, kitchen and cashiers)
+ */
+export const listActivityOptions = (options?: Options<ListActivityData>) =>
+  queryOptions<
+    ListActivityResponse,
+    ListActivityError,
+    ListActivityResponse,
+    ReturnType<typeof listActivityQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listActivity({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listActivityQueryKey(options),
+  });
+
+const createInfiniteParams = <
+  K extends Pick<QueryKey<Options>[0], "body" | "headers" | "path" | "query">,
+>(
+  queryKey: QueryKey<Options>,
+  page: K,
+) => {
+  const params = { ...queryKey[0] };
+  if (page.body) {
+    params.body = {
+      ...(queryKey[0].body as any),
+      ...(page.body as any),
+    };
+  }
+  if (page.headers) {
+    params.headers = {
+      ...queryKey[0].headers,
+      ...page.headers,
+    };
+  }
+  if (page.path) {
+    params.path = {
+      ...(queryKey[0].path as any),
+      ...(page.path as any),
+    };
+  }
+  if (page.query) {
+    params.query = {
+      ...(queryKey[0].query as any),
+      ...(page.query as any),
+    };
+  }
+  return params as unknown as typeof page;
+};
+
+export const listActivityInfiniteQueryKey = (
+  options?: Options<ListActivityData>,
+): QueryKey<Options<ListActivityData>> =>
+  createQueryKey("listActivity", options, true);
+
+/**
+ * Staff actions, newest first (ADMIN all; MANAGER only waiters, kitchen and cashiers)
+ */
+export const listActivityInfiniteOptions = (
+  options?: Options<ListActivityData>,
+) => {
+  const opts = infiniteQueryOptions<
+    ListActivityResponse,
+    ListActivityError,
+    InfiniteData<ListActivityResponse>,
+    QueryKey<Options<ListActivityData>>,
+    | string
+    | Pick<
+        QueryKey<Options<ListActivityData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListActivityData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  before: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await listActivity({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: listActivityInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+export const getActivityFiltersQueryKey = (
+  options?: Options<GetActivityFiltersData>,
+) => createQueryKey("getActivityFilters", options);
+
+/**
+ * People and actions present in the log the caller may see (for the filter lists)
+ */
+export const getActivityFiltersOptions = (
+  options?: Options<GetActivityFiltersData>,
+) =>
+  queryOptions<
+    GetActivityFiltersResponse,
+    GetActivityFiltersError,
+    GetActivityFiltersResponse,
+    ReturnType<typeof getActivityFiltersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getActivityFilters({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getActivityFiltersQueryKey(options),
   });

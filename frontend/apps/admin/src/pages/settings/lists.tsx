@@ -17,7 +17,8 @@ import {
   type VatRateRequest,
 } from "@amadya/api-client";
 import { Badge, Button, Checkbox, Dialog, DialogContent, DialogTitle, Input, NativeSelect, Switch, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@amadya/ui";
-import { PlusIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ActivityIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "zustand";
 import { ActiveBadge, emptyText, Field, LocalizedInputs, PageHeader } from "@/components/kit";
@@ -212,6 +213,7 @@ export function UsersPage() {
             <TableHead>{t("procurement.email")}</TableHead>
             <TableHead>{t("users.roles")}</TableHead>
             <TableHead>{t("common.status")}</TableHead>
+            <TableHead />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -228,6 +230,13 @@ export function UsersPage() {
               </TableCell>
               <TableCell>
                 <ActiveBadge active={u.active} />
+              </TableCell>
+              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/activity" search={{ actorId: u.id }}>
+                    <ActivityIcon /> {t("users.activity")}
+                  </Link>
+                </Button>
               </TableCell>
             </TableRow>
           ))}

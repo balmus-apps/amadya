@@ -21,7 +21,7 @@ class ApiClient(private val port: Int) {
     fun get(path: String, token: String? = null, lang: String? = null, headers: Map<String, String> = emptyMap()) = send("GET", path, null, token, lang, headers)
     fun post(path: String, body: Any? = null, token: String? = null, lang: String? = null, headers: Map<String, String> = emptyMap()) =
         send("POST", path, body, token, lang, headers)
-    fun put(path: String, body: Any, token: String? = null) = send("PUT", path, body, token, null)
+    fun put(path: String, body: Any, token: String? = null, headers: Map<String, String> = emptyMap()) = send("PUT", path, body, token, null, headers)
     fun patch(path: String, body: Any, token: String? = null) = send("PATCH", path, body, token, null)
     fun delete(path: String, token: String? = null) = send("DELETE", path, null, token, null)
 

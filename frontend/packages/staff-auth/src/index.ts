@@ -79,7 +79,7 @@ export function currentLocale() {
 }
 
 /** Wires the generated API client to this session; call once at app start. */
-export function initStaffApi(options: { storageKey: string; baseUrl?: string }) {
+export function initStaffApi(options: { storageKey: string; app: "admin" | "waiter" | "kitchen"; baseUrl?: string }) {
   storageKey = options.storageKey;
-  configureApi({ baseUrl: options.baseUrl ?? "/api/v1", getAccessToken: accessToken, getLocale: () => locale });
+  configureApi({ baseUrl: options.baseUrl ?? "/api/v1", getAccessToken: accessToken, getLocale: () => locale, app: options.app });
 }

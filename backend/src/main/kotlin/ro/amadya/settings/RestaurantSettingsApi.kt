@@ -12,6 +12,8 @@ interface RestaurantSettingsApi {
     fun orderNumberPrefix(): String
     /** QR ordering: guest rounds and guest-started tables are confirmed automatically after this many minutes. */
     fun guestConfirmMinutes(): Int
+    /** The activity log deletes staff actions older than this many days. */
+    fun activityRetentionDays(): Int
     fun logoUrl(): String?
     fun vatRate(id: UUID): VatRateInfo?
     fun station(id: UUID): StationInfo?

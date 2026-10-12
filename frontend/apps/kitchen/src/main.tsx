@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import "./styles.css";
 
-initStaffApi({ storageKey: "amadya-kitchen-refresh" });
+initStaffApi({ storageKey: "amadya-kitchen-refresh", app: "kitchen" });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

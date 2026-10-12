@@ -55,6 +55,8 @@ class SettingsService(
 
     override fun guestConfirmMinutes(): Int = row().guestConfirmMinutes
 
+    override fun activityRetentionDays(): Int = row().activityRetentionDays
+
     override fun logoUrl(): String? = row().logoUrl
 
     override fun vatRate(id: UUID): VatRateInfo? =
@@ -110,6 +112,7 @@ class SettingsService(
         row.openingHours = req.openingHours.map { mapOf("dayOfWeek" to it.dayOfWeek, "opens" to it.opens, "closes" to it.closes) }.toMutableList()
         req.orderNumberPrefix?.takeIf { it.isNotBlank() }?.let { row.orderNumberPrefix = it.trim().uppercase() }
         req.guestConfirmMinutes?.let { row.guestConfirmMinutes = it }
+        req.activityRetentionDays?.let { row.activityRetentionDays = it }
         return row.toDto()
     }
 
@@ -185,6 +188,7 @@ class SettingsService(
         logoUrl = logoUrl,
         orderNumberPrefix = orderNumberPrefix,
         guestConfirmMinutes = guestConfirmMinutes,
+        activityRetentionDays = activityRetentionDays,
     )
 
     private fun VatRateEntity.toDto() =
