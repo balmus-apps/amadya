@@ -11,6 +11,9 @@ RUN cd backend && ./gradlew --no-daemon -q bootJar -x test
 
 FROM eclipse-temurin:25-jre
 RUN groupadd --system amadya && useradd --system --gid amadya amadya
+# Media storage (MEDIA_DIR): owned by the app user, so a new volume mounted here is writable (Docker copies this
+# ownership into an empty named volume on first use).
+RUN mkdir -p /var/lib/amadya/files && chown amadya:amadya /var/lib/amadya/files
 WORKDIR /app
 COPY --from=build /src/backend/build/libs/*.jar app.jar
 USER amadya
