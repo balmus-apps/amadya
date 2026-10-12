@@ -70,7 +70,7 @@ class ApiIntegrationTests {
 
         val menu = api.get("/api/v1/menu", lang = "en")
         val categories = menu["categories"]
-        assertEquals("Burgers", categories[0].path("name").asString())
+        assertEquals("Starters", categories[0].path("name").asString())
         val pita = categories.flatMap { it.path("products") }.first { it.path("id").asString() == chickenPita }
         assertEquals("Chicken pita", pita.path("name").asString())
         assertEquals("20.00", pita.path("price").path("amount").asString())
@@ -81,7 +81,8 @@ class ApiIntegrationTests {
         assertEquals(chickenPita, menu["promotions"][0].path("productId").asString())
 
         val ro = api.get("/api/v1/menu", lang = "ro")
-        assertEquals("Burgeri", ro["categories"][0].path("name").asString())
+        assertEquals("Aperitive", ro["categories"][0].path("name").asString())
+        assertTrue(ro["categories"].any { it.path("name").asString() == "Pizza" && it.path("products").size() == 6 })
     }
 
     // ---------------------------------------------------------------- identity
