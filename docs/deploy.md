@@ -5,10 +5,15 @@ The server has 1 vCPU and 2 GB of RAM, which is too small to compile Amadya. So 
 pushed to **GitHub Container Registry** (`ghcr.io/balmus-apps/amadya-*`, private) and only pulled on the server.
 
 ```
-Mac: scripts/release.sh ──push──▶ ghcr.io/balmus-apps/amadya-{api,menu-web,admin,kitchen,waiter,queue-display,table}:<sha>, :latest
+GitHub Actions / Mac: release ──push──▶ ghcr.io/balmus-apps/amadya-{api,menu-web,admin,kitchen,waiter,queue-display,table}:<sha>, :latest
                                           │ pull
 Server: proxy (80/443, TLS) ──web network──▶ amadya-web (internal Caddy) ─▶ api, menu-web, admin, kitchen, waiter, queue-display, table, postgres
 ```
+
+## Release on GitHub (recommended)
+Actions → **Release** → **Run workflow** (branch `main`). `.github/workflows/main.yml` builds the same images as
+`scripts/release.sh` and pushes them with the built-in `GITHUB_TOKEN`, so nothing needs setting up. It takes about
+10–15 minutes the first time, and less afterwards thanks to the build cache.
 
 ## Release (on the Mac)
 1. One-time setup: `gh auth token | docker login ghcr.io -u <github-user> --password-stdin`. The gh token needs `write:packages`.
