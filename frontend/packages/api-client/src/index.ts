@@ -11,12 +11,14 @@ export interface ApiConfig {
   getAccessToken?: () => string | undefined | Promise<string | undefined>;
   /** Locale sent as Accept-Language so the API localizes names and error messages. */
   getLocale?: () => string;
+  /** Staff apps name themselves (admin, waiter, kitchen) so the activity log can tell where an action came from. */
+  app?: string;
 }
 
 let currentBaseUrl = "/api/v1";
 
 /** Configures the shared generated client once per app (or per request on the server). */
-export function configureApi({ baseUrl, getAccessToken, getLocale }: ApiConfig) {
+export function configureApi({ baseUrl, getAccessToken, getLocale, app }: ApiConfig) {
   currentBaseUrl = baseUrl.replace(/\/$/, "");
   client.setConfig({
     baseUrl: currentBaseUrl,
@@ -25,6 +27,12 @@ export function configureApi({ baseUrl, getAccessToken, getLocale }: ApiConfig) 
   if (getLocale) {
     client.interceptors.request.use((request) => {
       if (!request.headers.has("Accept-Language")) request.headers.set("Accept-Language", getLocale());
+      return request;
+    });
+  }
+  if (app) {
+    client.interceptors.request.use((request) => {
+      request.headers.set("X-Amadya-App", app);
       return request;
     });
   }

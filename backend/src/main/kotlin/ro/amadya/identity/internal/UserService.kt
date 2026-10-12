@@ -8,6 +8,7 @@ import ro.amadya.contract.model.CreateUserRequest
 import ro.amadya.contract.model.Role
 import ro.amadya.contract.model.UpdateUserRequest
 import ro.amadya.contract.model.User
+import ro.amadya.shared.Activity
 import ro.amadya.shared.ConflictException
 import ro.amadya.shared.NotFoundException
 import java.util.UUID
@@ -43,6 +44,7 @@ class UserService(
     @Transactional
     fun update(id: UUID, req: UpdateUserRequest): User {
         val user = users.findByIdOrNull(id) ?: throw NotFoundException("User")
+        describeChanges(user, req)
         req.name?.let { user.name = it.trim() }
         req.phone?.let { user.phone = it }
         req.locale?.let { user.locale = it.value }
@@ -53,6 +55,16 @@ class UserService(
         // Role, password or deactivation changes force a fresh login on every device.
         if (revoke) authService.revokeAll(user)
         return user.toDto()
+    }
+
+    /** Role, access and password changes are what an admin looks for in the activity log. */
+    private fun describeChanges(user: UserEntity, req: UpdateUserRequest) {
+        val changes = buildList {
+            req.roles?.map(Role::value)?.distinct()?.takeIf { it.toSet() != user.roles.toSet() }?.let { add("Roles ${user.roles.joinToString(", ")} → ${it.joinToString(", ")}") }
+            req.active?.takeIf { it != user.active }?.let { add(if (it) "Activated" else "Deactivated") }
+            if (req.password != null) add("Password changed")
+        }
+        Activity.describe(target = user.name, detail = changes.joinToString("; ").ifBlank { null })
     }
 
     private fun UserEntity.toDto() = User(

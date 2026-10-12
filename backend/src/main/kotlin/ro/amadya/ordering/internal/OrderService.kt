@@ -26,6 +26,7 @@ import ro.amadya.ordering.SessionOrder
 import ro.amadya.ordering.SessionOrderLine
 import ro.amadya.ordering.TableOrders
 import ro.amadya.settings.RestaurantSettingsApi
+import ro.amadya.shared.Activity
 import ro.amadya.shared.Actor
 import ro.amadya.shared.AmadyaProperties
 import ro.amadya.shared.ConflictException
@@ -271,6 +272,7 @@ class OrderService(
     @Transactional
     fun cancel(orderId: UUID, reason: String): OrderEntity {
         val order = load(orderId)
+        Activity.describe(target = order.number, detail = reason.trim().ifBlank { null })
         if (order.status in setOf(OrderStatus.PREPARING, OrderStatus.READY) && Actor.current()?.hasAny(Roles.ADMIN, Roles.MANAGER) != true) {
             throw ForbiddenException("order.cancel_requires_manager")
         }

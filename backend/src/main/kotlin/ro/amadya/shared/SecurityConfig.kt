@@ -105,7 +105,7 @@ class SecurityConfig(private val props: AmadyaProperties) {
         val config = CorsConfiguration().apply {
             allowedOrigins = props.cors.allowedOrigins.filter { it.isNotBlank() }
             allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-            allowedHeaders = listOf("Authorization", "Content-Type", "Accept", "Accept-Language", "Idempotency-Key", "Cache-Control", "Last-Event-ID", "X-Requested-With")
+            allowedHeaders = listOf("Authorization", "Content-Type", "Accept", "Accept-Language", "Idempotency-Key", "Cache-Control", "Last-Event-ID", "X-Requested-With", "X-Amadya-App")
             maxAge = 3600
         }
         return UrlBasedCorsConfigurationSource().apply { registerCorsConfiguration("/api/**", config) }

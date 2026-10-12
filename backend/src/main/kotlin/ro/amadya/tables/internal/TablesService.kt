@@ -26,6 +26,7 @@ import ro.amadya.payments.SessionPaymentCaptured
 import ro.amadya.payments.SessionPaymentEnded
 import ro.amadya.payments.SessionPayments
 import ro.amadya.settings.RestaurantSettingsApi
+import ro.amadya.shared.Activity
 import ro.amadya.shared.Actor
 import ro.amadya.shared.ConflictException
 import ro.amadya.shared.LocalizedText
@@ -202,6 +203,7 @@ class TablesService(
         if (tendered != null && tendered < amount) throw UnprocessableException("tables.tendered_too_low", amount.toPlainString())
 
         payments.record(session.id, method, amount, settings.currency(), tendered, allocations)
+        Activity.describe(detail = "${amount.toPlainString()} ${settings.currency()} · ${method.name}")
         log.paid(session.id, Actor.current()?.name, ActorKind.WAITER, method.name, amount, settings.currency(), items(bill, allocations.associate { it.orderLineId to it.quantity }))
         if ((bill.remaining - amount).signum() == 0) close(session) else changed(session)
         return views.staff(session, locale)

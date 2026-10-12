@@ -100,6 +100,9 @@ import type {
   DeletePromotionData,
   DeletePromotionErrors,
   DeletePromotionResponses,
+  GetActivityFiltersData,
+  GetActivityFiltersErrors,
+  GetActivityFiltersResponses,
   GetCurrentUserData,
   GetCurrentUserErrors,
   GetCurrentUserResponses,
@@ -160,6 +163,9 @@ import type {
   JoinTableData,
   JoinTableErrors,
   JoinTableResponses,
+  ListActivityData,
+  ListActivityErrors,
+  ListActivityResponses,
   ListCategoriesData,
   ListCategoriesErrors,
   ListCategoriesResponses,
@@ -2680,5 +2686,41 @@ export const getDashboard = <ThrowOnError extends boolean = false>(
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/admin/reports/dashboard",
+    ...options,
+  });
+
+/**
+ * Staff actions, newest first (ADMIN all; MANAGER only waiters, kitchen and cashiers)
+ */
+export const listActivity = <ThrowOnError extends boolean = false>(
+  options?: Options<ListActivityData, ThrowOnError>,
+): RequestResult<ListActivityResponses, ListActivityErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListActivityResponses,
+    ListActivityErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/activity",
+    ...options,
+  });
+
+/**
+ * People and actions present in the log the caller may see (for the filter lists)
+ */
+export const getActivityFilters = <ThrowOnError extends boolean = false>(
+  options?: Options<GetActivityFiltersData, ThrowOnError>,
+): RequestResult<
+  GetActivityFiltersResponses,
+  GetActivityFiltersErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    GetActivityFiltersResponses,
+    GetActivityFiltersErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/activity/filters",
     ...options,
   });

@@ -46,6 +46,7 @@ With the `dev` profile:
 | `payments` | — | `PaymentProvider` port: `fake` (dev, simulated capture) and `stripe` (PaymentIntents + webhook); refund on cancel |
 | `notifications` | — | SSE: `/orders/{id}/events` (tracking token) and `/queue/events` |
 | `printing` | — | `PRINTING_MODE=log`: kitchen tickets rendered to the log / `PRINTING_OUT_DIR` (hardware TBD, ADR 0003) |
+| `audit` | — | activity log: every staff write action (any app), admin/manager view, retention from settings (ADR 0011) |
 
 Modules talk through events persisted in the Modulith event publication table (outbox). Listeners run after commit,
 asynchronously, and are re-published on restart if they had not completed.

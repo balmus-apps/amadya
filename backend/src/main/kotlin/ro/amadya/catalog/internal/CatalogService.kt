@@ -23,6 +23,7 @@ import ro.amadya.contract.model.ProductRequest
 import ro.amadya.contract.model.Promotion
 import ro.amadya.contract.model.PromotionRequest
 import ro.amadya.settings.RestaurantSettingsApi
+import ro.amadya.shared.Activity
 import ro.amadya.shared.ConflictException
 import ro.amadya.shared.LocalizedText
 import ro.amadya.shared.Money
@@ -152,6 +153,7 @@ class CatalogService(
     @Transactional
     fun deleteCategory(id: UUID) {
         val category = categories.findByIdOrNull(id) ?: throw NotFoundException("Category")
+        Activity.describe(target = category.name["ro"])
         if (products.existsByCategoryId(id)) throw ConflictException("catalog.category_not_empty")
         categories.delete(category)
     }
@@ -180,13 +182,16 @@ class CatalogService(
     @Transactional
     fun updateProduct(id: UUID, req: ProductRequest): Product {
         val product = products.findByIdOrNull(id) ?: throw NotFoundException("Product")
+        val oldPrice = product.price
         apply(product, req)
+        if (oldPrice.compareTo(product.price) != 0) Activity.describe(detail = "Price ${oldPrice.toPlainString()} → ${product.price.toPlainString()}")
         return product.toDto(settings.currency())
     }
 
     @Transactional
     fun archiveProduct(id: UUID) {
         val product = products.findByIdOrNull(id) ?: throw NotFoundException("Product")
+        Activity.describe(target = product.name["ro"])
         product.archived = true
         product.available = false
     }
@@ -236,6 +241,7 @@ class CatalogService(
     @Transactional
     fun deleteModifierGroup(id: UUID) {
         val group = groups.findByIdOrNull(id) ?: throw NotFoundException("Modifier group")
+        Activity.describe(target = group.name["ro"])
         if (products.isModifierGroupUsed(id)) throw ConflictException("catalog.modifier_group_in_use")
         groups.delete(group)
     }
@@ -273,7 +279,11 @@ class CatalogService(
     }
 
     @Transactional
-    fun deletePromotion(id: UUID) = promotions.delete(promotions.findByIdOrNull(id) ?: throw NotFoundException("Promotion"))
+    fun deletePromotion(id: UUID) {
+        val promo = promotions.findByIdOrNull(id) ?: throw NotFoundException("Promotion")
+        Activity.describe(target = promo.title["ro"])
+        promotions.delete(promo)
+    }
 
     private fun applyPromotion(p: PromotionEntity, req: PromotionRequest) {
         req.productId?.let { products.findByIdOrNull(it) ?: throw UnprocessableException("catalog.invalid_reference", "Product") }

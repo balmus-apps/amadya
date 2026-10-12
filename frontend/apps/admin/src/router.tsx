@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter, Outlet, redirect } from "@tanstack/react-router";
 import { AppLayout } from "@/components/layout";
 import { accessToken, hasStoredSession, session } from "@/lib/session";
+import { ActivityPage, validateActivitySearch } from "@/pages/activity";
 import { CategoriesPage } from "@/pages/catalog/categories";
 import { ModifiersPage } from "@/pages/catalog/modifiers";
 import { ProductsPage } from "@/pages/catalog/products";
@@ -65,6 +66,7 @@ const routeTree = root.addChildren([
     page("/settings/tables", TablesPage),
     page("/settings/tables/print", TablesPrintPage),
     page("/users", UsersPage),
+    createRoute({ getParentRoute: () => app, path: "/activity", component: ActivityPage, validateSearch: validateActivitySearch }),
   ]),
 ]);
 

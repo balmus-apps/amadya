@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import "./styles.css";
 
-initStaffApi({ storageKey: "amadya-waiter-refresh" });
+initStaffApi({ storageKey: "amadya-waiter-refresh", app: "waiter" });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -100,6 +100,10 @@ export type RestaurantSettings = {
    * QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long
    */
   guestConfirmMinutes?: number;
+  /**
+   * The activity log keeps staff actions for this many days, then deletes them
+   */
+  activityRetentionDays?: number;
 };
 
 export type VatRate = {
@@ -1349,6 +1353,73 @@ export type GuestPaymentRequest = {
     lineId: string;
     quantity: number;
   }>;
+};
+
+/**
+ * The app the action came from (sent by the staff apps in `X-Amadya-App`, otherwise inferred from the endpoint)
+ */
+export type ActivityApp = "ADMIN" | "WAITER" | "KITCHEN" | "OTHER";
+
+/**
+ * OK: done; DENIED: not allowed or wrong credentials (401/403); FAILED: refused or failed (other errors)
+ */
+export type ActivityOutcome = "OK" | "DENIED" | "FAILED";
+
+export type ActivityActor = {
+  /**
+   * Missing for a login attempt with an unknown email
+   */
+  id?: string;
+  name: string;
+  roles: Array<Role>;
+};
+
+export type ActivityEntry = {
+  id: string;
+  at: string;
+  actor: ActivityActor;
+  app: ActivityApp;
+  /**
+   * The operationId
+   */
+  action: string;
+  method: string;
+  path: string;
+  /**
+   * HTTP status of the response
+   */
+  status: number;
+  outcome: ActivityOutcome;
+  /**
+   * Id of the record acted on
+   */
+  targetId?: string;
+  /**
+   * What was acted on, readable: a product name, an order or table number
+   */
+  target?: string;
+  /**
+   * What changed, when the action describes it
+   */
+  detail?: string;
+  /**
+   * Problem code of a refused or failed action
+   */
+  error?: string;
+  ip?: string;
+};
+
+export type ActivityPage = {
+  items: Array<ActivityEntry>;
+  /**
+   * Pass as `before` to get older entries; missing on the last page
+   */
+  nextCursor?: string;
+};
+
+export type ActivityFilters = {
+  actors: Array<ActivityActor>;
+  actions: Array<string>;
 };
 
 export type AcceptLanguage = string;
@@ -4794,3 +4865,78 @@ export type GetDashboardResponses = {
 
 export type GetDashboardResponse =
   GetDashboardResponses[keyof GetDashboardResponses];
+
+export type ListActivityData = {
+  body?: never;
+  path?: never;
+  query?: {
+    actorId?: string;
+    role?: Role;
+    app?: ActivityApp;
+    /**
+     * An operationId of this API, e.g. `cancelOrder`
+     */
+    action?: string;
+    outcome?: ActivityOutcome;
+    /**
+     * First business day included (restaurant time zone)
+     */
+    from?: string;
+    /**
+     * Last business day included (restaurant time zone)
+     */
+    to?: string;
+    /**
+     * Cursor; the `nextCursor` of the previous page
+     */
+    before?: string;
+    limit?: number;
+  };
+  url: "/admin/activity";
+};
+
+export type ListActivityErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type ListActivityError = ListActivityErrors[keyof ListActivityErrors];
+
+export type ListActivityResponses = {
+  /**
+   * OK
+   */
+  200: ActivityPage;
+};
+
+export type ListActivityResponse =
+  ListActivityResponses[keyof ListActivityResponses];
+
+export type GetActivityFiltersData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/activity/filters";
+};
+
+export type GetActivityFiltersErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetActivityFiltersError =
+  GetActivityFiltersErrors[keyof GetActivityFiltersErrors];
+
+export type GetActivityFiltersResponses = {
+  /**
+   * OK
+   */
+  200: ActivityFilters;
+};
+
+export type GetActivityFiltersResponse =
+  GetActivityFiltersResponses[keyof GetActivityFiltersResponses];

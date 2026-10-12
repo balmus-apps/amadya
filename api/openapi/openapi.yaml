@@ -41,6 +41,8 @@ tags:
     description: Image upload and public file serving
   - name: reporting
     description: Dashboard KPIs
+  - name: activity
+    description: "Activity log: every write action staff take, in any app (ADMIN sees all; MANAGER sees the staff below them)"
   - name: tables
     description: Floor areas, dining tables, table sessions, rounds, bill and in-person payments (waiter app)
   - name: table-guest
@@ -2082,6 +2084,65 @@ paths:
               schema: { $ref: "#/components/schemas/Dashboard" }
         "403": { $ref: "#/components/responses/Problem" }
 
+  # ---------------------------------------------------------------- activity
+  /admin/activity:
+    get:
+      tags: [activity]
+      operationId: listActivity
+      summary: Staff actions, newest first (ADMIN all; MANAGER only waiters, kitchen and cashiers)
+      parameters:
+        - name: actorId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: role
+          in: query
+          schema: { $ref: "#/components/schemas/Role" }
+        - name: app
+          in: query
+          schema: { $ref: "#/components/schemas/ActivityApp" }
+        - name: action
+          in: query
+          description: An operationId of this API, e.g. `cancelOrder`
+          schema: { type: string, maxLength: 80 }
+        - name: outcome
+          in: query
+          schema: { $ref: "#/components/schemas/ActivityOutcome" }
+        - name: from
+          in: query
+          description: First business day included (restaurant time zone)
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          description: Last business day included (restaurant time zone)
+          schema: { type: string, format: date }
+        - name: before
+          in: query
+          description: Cursor; the `nextCursor` of the previous page
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityPage" }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  /admin/activity/filters:
+    get:
+      tags: [activity]
+      operationId: getActivityFilters
+      summary: People and actions present in the log the caller may see (for the filter lists)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityFilters" }
+        "403": { $ref: "#/components/responses/Problem" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2243,6 +2304,12 @@ components:
           maximum: 60
           default: 5
           description: "QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long"
+        activityRetentionDays:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          default: 30
+          description: The activity log keeps staff actions for this many days, then deletes them
 
     VatRate:
       type: object
@@ -3538,3 +3605,55 @@ components:
             properties:
               lineId: { type: string, format: uuid }
               quantity: { type: integer, minimum: 1 }
+
+    # ---------------------------------------------------------- activity
+    ActivityApp:
+      type: string
+      description: The app the action came from (sent by the staff apps in `X-Amadya-App`, otherwise inferred from the endpoint)
+      enum: [ADMIN, WAITER, KITCHEN, OTHER]
+
+    ActivityOutcome:
+      type: string
+      description: "OK: done; DENIED: not allowed or wrong credentials (401/403); FAILED: refused or failed (other errors)"
+      enum: [OK, DENIED, FAILED]
+
+    ActivityActor:
+      type: object
+      required: [name, roles]
+      properties:
+        id: { type: string, format: uuid, description: Missing for a login attempt with an unknown email }
+        name: { type: string }
+        roles: { type: array, items: { $ref: "#/components/schemas/Role" } }
+
+    ActivityEntry:
+      type: object
+      required: [id, at, actor, app, action, method, path, status, outcome]
+      properties:
+        id: { type: string, format: uuid }
+        at: { type: string, format: date-time }
+        actor: { $ref: "#/components/schemas/ActivityActor" }
+        app: { $ref: "#/components/schemas/ActivityApp" }
+        action: { type: string, description: The operationId, e.g. `updateProduct`, examples: [updateProduct] }
+        method: { type: string, examples: [PUT] }
+        path: { type: string, examples: [/api/v1/admin/products/0190a000-0000-7000-8000-000000000441] }
+        status: { type: integer, description: HTTP status of the response }
+        outcome: { $ref: "#/components/schemas/ActivityOutcome" }
+        targetId: { type: string, description: Id of the record acted on, when known }
+        target: { type: string, description: "What was acted on, readable: a product name, an order or table number", examples: [Pizza Margherita] }
+        detail: { type: string, description: "What changed, when the action describes it", examples: ["Price 32.00 → 35.00"] }
+        error: { type: string, description: Problem code of a refused or failed action, examples: [order.cannot_cancel] }
+        ip: { type: string }
+
+    ActivityPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/ActivityEntry" } }
+        nextCursor: { type: string, format: uuid, description: Pass as `before` to get older entries; missing on the last page }
+
+    ActivityFilters:
+      type: object
+      required: [actors, actions]
+      properties:
+        actors: { type: array, items: { $ref: "#/components/schemas/ActivityActor" } }
+        actions: { type: array, items: { type: string } }
