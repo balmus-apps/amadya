@@ -18,3 +18,9 @@ Paper or PDF invoices and delivery notes still exist.
 ## Consequences
 - OCR never writes stock directly; a human always reviews it.
 - The OCR feature can be turned off per install with a feature flag.
+
+## Amendment (proposed, 2026-10-13) — `openspec/changes/invoice-scan-import`
+- **Name matching:** "fuzzy name match" is replaced by **owner-maintained keyword rules** (`product_name_rule`), which
+  run before the supplier mappings.
+- **Warehouses:** lines carry a warehouse. Saving creates **one draft NIR per warehouse**.
+- **Manual entry:** the full manual entry form shares the same page and review flow as the scan.
