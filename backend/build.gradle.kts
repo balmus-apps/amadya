@@ -85,6 +85,11 @@ val openApiGenerate by tasks.existing(GenerateTask::class) {
 
 sourceSets["main"].kotlin.srcDir(generatedDir.map { it.dir("src/main/kotlin") })
 
+// The running server serves the exact contract it was built from (GET /api/v1/admin/openapi.yaml, admin API docs).
+tasks.processResources {
+    from(rootProject.file("../api/openapi/openapi.yaml")) { into("openapi") }
+}
+
 tasks.named("compileKotlin") { dependsOn(openApiGenerate) }
 
 kotlin {

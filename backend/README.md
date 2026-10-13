@@ -19,6 +19,13 @@ With the `dev` profile:
 - CORS allows the local dev servers;
 - the JWT secret may be generated (tokens then reset on restart).
 
+## API
+
+Base URL `/api/v1` on the same host as the apps; most endpoints need `Authorization: Bearer <accessToken>` from
+`POST /api/v1/auth/login`. Admins can browse every endpoint and try it with their own session in the admin app at
+[`/admin/api-docs`](http://localhost/admin/api-docs) (Settings → API), which reads the contract built into the running
+server (`GET /api/v1/admin/openapi.yaml`, admin only).
+
 ## Test
 
 ```bash
@@ -47,6 +54,7 @@ With the `dev` profile:
 | `notifications` | — | SSE: `/orders/{id}/events` (tracking token) and `/queue/events` |
 | `printing` | — | `PRINTING_MODE=log`: kitchen tickets rendered to the log / `PRINTING_OUT_DIR` (hardware TBD, ADR 0003) |
 | `audit` | — | activity log: every staff write action (any app), admin/manager view, retention from settings (ADR 0011) |
+| `docs` | — | serves the OpenAPI document built into the jar to admins (API docs page) |
 
 Modules talk through events persisted in the Modulith event publication table (outbox). Listeners run after commit,
 asynchronously, and are re-published on restart if they had not completed.

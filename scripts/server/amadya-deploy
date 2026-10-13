@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# The only command the GitHub deploy key can run on the server (forced command; setup in docs/deploy.md, ADR 0012).
+# Installed once, as root, OUTSIDE the git checkout so a pushed commit cannot change what the key may do:
+#   install -m 755 -o root -g root scripts/server/amadya-deploy /usr/local/sbin/amadya-deploy
+#
+# Accepts exactly "deploy <commit sha>" (7-40 hex characters, a commit on main) in SSH_ORIGINAL_COMMAND, moves the
+# server checkout to that commit (its compose files match its images) and runs the deploy scripts of the newest main,
+# so a rollback to any release, even one older than these scripts, uses the current deploy logic.
+# Runs under sudo, which resets the environment except SSH_ORIGINAL_COMMAND: nothing else can be injected.
+set -euo pipefail
+
+REPO=/root/repo/amadya
+[[ $(id -u) == 0 ]] || REPO=${AMADYA_REPO:-$REPO}   # tests only; under sudo the environment is reset anyway
+
+request=${SSH_ORIGINAL_COMMAND:-}
+if [[ ! $request =~ ^deploy\ ([0-9a-f]{7,40})$ ]]; then
+  echo "refused: only 'deploy <commit sha>' is allowed" >&2
+  logger -t amadya-deploy "refused request: ${request:0:120}" 2>/dev/null || true
+  exit 1
+fi
+ref=${BASH_REMATCH[1]}
+
+cd "$REPO"
+git fetch --quiet origin
+sha=$(git rev-parse --verify --quiet "$ref^{commit}") || { echo "refused: unknown commit $ref" >&2; exit 1; }
+git merge-base --is-ancestor "$sha" origin/main || { echo "refused: $ref is not on main" >&2; exit 1; }
+
+if [[ ${DRY_RUN:-0} == 1 && $(id -u) != 0 ]]; then
+  echo "dry run: would deploy ${sha:0:7}"
+  exit 0
+fi
+logger -t amadya-deploy "deploying ${sha:0:7}" 2>/dev/null || true
+tools=/run/amadya-deploy-tools
+install -d -m 700 "$tools"
+for script in deploy.sh backup.sh; do
+  git show "origin/main:scripts/$script" > "$tools/$script"
+  chmod 700 "$tools/$script"
+done
+git checkout --quiet --detach "$sha"
+AMADYA_ROOT=$REPO exec "$tools/deploy.sh" "${sha:0:7}"

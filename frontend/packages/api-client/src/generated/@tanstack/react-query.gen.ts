@@ -49,6 +49,7 @@ import {
   getGuestView,
   getMenu,
   getNir,
+  getOpenApiSpec,
   getOptionRecipe,
   getOrder,
   getProduct,
@@ -244,6 +245,9 @@ import type {
   GetNirData,
   GetNirError,
   GetNirResponse,
+  GetOpenApiSpecData,
+  GetOpenApiSpecError,
+  GetOpenApiSpecResponse,
   GetOptionRecipeData,
   GetOptionRecipeError,
   GetOptionRecipeResponse,
@@ -3651,6 +3655,31 @@ export const listActivityInfiniteOptions = (
   );
   return opts as Omit<typeof opts, "initialData">;
 };
+
+export const getOpenApiSpecQueryKey = (options?: Options<GetOpenApiSpecData>) =>
+  createQueryKey("getOpenApiSpec", options);
+
+/**
+ * The OpenAPI document of the running server (ADMIN)
+ */
+export const getOpenApiSpecOptions = (options?: Options<GetOpenApiSpecData>) =>
+  queryOptions<
+    GetOpenApiSpecResponse,
+    GetOpenApiSpecError,
+    GetOpenApiSpecResponse,
+    ReturnType<typeof getOpenApiSpecQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getOpenApiSpec({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getOpenApiSpecQueryKey(options),
+  });
 
 export const getActivityFiltersQueryKey = (
   options?: Options<GetActivityFiltersData>,

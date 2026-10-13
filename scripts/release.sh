@@ -12,7 +12,8 @@ cd "$(dirname "$0")/.."
 
 REGISTRY=${AMADYA_REGISTRY:-ghcr.io/balmus-apps}
 PLATFORM=${PLATFORM:-linux/amd64}
-TAG=$(git rev-parse --short HEAD)
+# Exactly 7 characters, as the Release workflow tags: `git rev-parse --short` can print more on some clones.
+TAG=$(git rev-parse HEAD | cut -c1-7)
 PUSH=${PUSH:-1}
 
 if [[ $PUSH == 1 && -n $(git status --porcelain) ]]; then
@@ -40,7 +41,5 @@ build table    frontend frontend/apps/table/Dockerfile
 build menu-web frontend frontend/apps/menu-web/Dockerfile
 
 if [[ $PUSH == 1 ]]; then
-  echo "Pushed $TAG. On the server: AMADYA_TAG=$TAG (or latest) in .env, then"
-  echo "  docker compose -f docker-compose.yml -f docker-compose.prod.yml pull"
-  echo "  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build"
+  echo "Pushed $TAG. Deploy it: Actions → Release → Run workflow with tag $TAG (docs/deploy.md)."
 fi

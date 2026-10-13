@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, Outlet, redirect } from "@t
 import { AppLayout } from "@/components/layout";
 import { accessToken, hasStoredSession, session } from "@/lib/session";
 import { ActivityPage, validateActivitySearch } from "@/pages/activity";
+import { ApiDocsPage } from "@/pages/api-docs";
 import { CategoriesPage } from "@/pages/catalog/categories";
 import { ModifiersPage } from "@/pages/catalog/modifiers";
 import { ProductsPage } from "@/pages/catalog/products";
@@ -67,6 +68,7 @@ const routeTree = root.addChildren([
     page("/settings/tables/print", TablesPrintPage),
     page("/users", UsersPage),
     createRoute({ getParentRoute: () => app, path: "/activity", component: ActivityPage, validateSearch: validateActivitySearch }),
+    page("/api-docs", ApiDocsPage),
   ]),
 ]);
 

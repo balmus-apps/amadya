@@ -68,11 +68,16 @@ about five lines of shell.
 - `/usr/local/sbin/amadya-deploy` is root-owned and copied once from `scripts/server/amadya-deploy` in the repo. It
   accepts exactly `deploy <7–40 hex chars>`; anything else exits 1. It then:
   1. `git fetch`es in `/root/repo/amadya`
-  2. checks out that commit (detached)
-  3. `exec`s that commit's `scripts/deploy.sh`
+  2. refuses a commit that is not on `main`
+  3. copies `scripts/deploy.sh` and `scripts/backup.sh` **from the newest `origin/main`** to `/run/amadya-deploy-tools`
+  4. checks out the target commit (detached), for its compose files, which match its images
+  5. runs the copied `deploy.sh` with `AMADYA_ROOT` pointing at the checkout
 
-  The gate lives outside the git checkout, so a pushed commit cannot widen what the key may do. The deploy logic
-  itself comes from the commit being deployed.
+  The gate lives outside the git checkout, so a pushed commit cannot widen what the key may do.
+
+  *Revised during implementation:* the first version ran the *target* commit's own `deploy.sh`. A test showed that
+  a rollback to a release older than these scripts then fails, because there is no script to run. It would also mean
+  every rollback runs that release's old deploy logic. Taking the scripts from the newest `main` fixes both.
 
 *Alternatives considered:*
 - `root` login with the GitHub key: simplest, but one leaked secret means full control of a host shared by three
