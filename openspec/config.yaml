@@ -1,0 +1,49 @@
+schema: spec-driven
+
+context: |
+  Amadya: single-restaurant HoReCa platform. Kotlin/Spring Modulith backend, React/Next frontends, Postgres.
+  Architecture decisions live in docs/adr/ (one ADR per significant decision); OpenSpec changes link to them
+  instead of repeating them. The REST contract is api/openapi/openapi.yaml (contract-first, ADR 0002): an API
+  change is a spec change first, then both sides regenerate.
+  Staff-facing text ships in Romanian and English (ro is the default locale).
+  Production is one shared VPS (1 vCPU, 2 GB RAM) also hosting other apps; it never builds images, it only
+  pulls them from GHCR. Anything running there must stay within that budget and not disturb the other apps.
+  Workflow: plans are reviewed before any code is written; implementation starts only on an explicit go.
+
+rules:
+  proposal:
+    - State what is out of scope
+    - List decisions that need the owner's answer, each with the recommended option
+  tasks:
+    - Include verification steps (tests, a run against the local stack) next to the work they verify
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
