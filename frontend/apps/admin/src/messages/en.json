@@ -27,7 +27,7 @@
   "logout": "Sign out",
   "language": "Language",
   "activity": "Activity",
-  "apiDocs": "API"
+  "apiDocs": "Apps & API"
  },
  "common": {
   "save": "Save",
@@ -551,10 +551,11 @@
   }
  },
  "apiDocs": {
-  "title": "API",
+  "title": "Apps & API",
   "description": "Every endpoint of this server's API, as built into the running version.",
+  "linksDescription": "The addresses of this restaurant's apps, to open on a tablet, phone or TV.",
   "warning": "Requests sent with \"Try it out\" are real: they use your administrator session, change this restaurant's data, and are recorded in the activity log.",
-  "notAllowed": "Only administrators can see the API documentation.",
+  "notAllowed": "Only administrators and managers can open this page.",
   "links": {
    "title": "Apps of this restaurant",
    "copy": "Copy the address",

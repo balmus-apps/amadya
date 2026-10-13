@@ -1,9 +1,9 @@
 ## 1. Admin app
 
-- [ ] 1.1 In `components/layout.tsx`, show the API nav item to MANAGER as well (remove `admin: true`). In ro/en messages,
+- [x] 1.1 In `components/layout.tsx`, show the API nav item to MANAGER as well (remove `admin: true`). In ro/en messages,
       rename `nav.apiDocs` to "Aplicații și API" / "Apps & API". Verify with `pnpm --filter @amadya/admin typecheck` and
       the messages parity test (`pnpm --filter @amadya/admin test`).
-- [ ] 1.2 In `pages/api-docs/index.tsx`:
+- [x] 1.2 In `pages/api-docs/index.tsx`:
       - allow ADMIN and MANAGER;
       - render `AppLinks` for both;
       - render the warning and the lazy `ApiDocsViewer` only for ADMIN;
@@ -21,5 +21,5 @@
         `/api/v1/admin/openapi.yaml` and no Swagger chunk.
 
       Then, as ADMIN, check that the links, the warning and the documentation all appear as before.
-- [ ] 2.2 Confirm the server is unchanged for managers: `GET /api/v1/admin/openapi.yaml` with a MANAGER token returns
+- [x] 2.2 Confirm the server is unchanged for managers: `GET /api/v1/admin/openapi.yaml` with a MANAGER token returns
       403. This is already covered by `ApiDocsIntegrationTests`; run `./gradlew test --tests '*ApiDocs*'`.
