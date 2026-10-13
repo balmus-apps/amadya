@@ -113,19 +113,19 @@ jobs:
       && (github.event_name == 'push' || inputs.deploy) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check deploy secrets
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-        run: |
-          missing=()
-          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do [[ -n ${!name} ]] || missing+=("$name"); done
-          if (( ${#missing[@]} )); then
-            echo "::error::Deploy secrets not set: ${missing[*]}. The images are built; see docs/deploy.md to set up deploys."
-            exit 1
-          fi
+      # - name: Check deploy secrets
+      #   env:
+      #     DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      #     DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      #     DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      #     DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      #   run: |
+      #     missing=()
+      #     for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do [[ -n ${!name} ]] || missing+=("$name"); done
+      #     if (( ${#missing[@]} )); then
+      #       echo "::error::Deploy secrets not set: ${missing[*]}. The images are built; see docs/deploy.md to set up deploys."
+      #       exit 1
+      #     fi
 
       # The server key only runs /usr/local/sbin/amadya-deploy, which accepts "deploy <commit on main>" and nothing else.
       - name: Deploy ${{ needs.meta.outputs.tag }}

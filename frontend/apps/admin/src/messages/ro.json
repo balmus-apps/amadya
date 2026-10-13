@@ -27,7 +27,7 @@
   "logout": "Ieșire",
   "language": "Limba",
   "activity": "Activitate",
-  "apiDocs": "API"
+  "apiDocs": "Aplicații și API"
  },
  "common": {
   "save": "Salvează",
@@ -551,10 +551,11 @@
   }
  },
  "apiDocs": {
-  "title": "API",
+  "title": "Aplicații și API",
   "description": "Toate operațiile API-ului acestui server, exact cum sunt în versiunea care rulează.",
+  "linksDescription": "Adresele aplicațiilor restaurantului, de deschis pe o tabletă, un telefon sau un televizor.",
   "warning": "Cererile trimise cu „Try it out” sunt reale: folosesc sesiunea dumneavoastră de administrator, modifică datele acestui restaurant și apar în jurnalul de activitate.",
-  "notAllowed": "Doar administratorii pot vedea documentația API.",
+  "notAllowed": "Doar administratorii și managerii pot deschide această pagină.",
   "links": {
    "title": "Aplicațiile restaurantului",
    "copy": "Copiază adresa",
