@@ -49,3 +49,7 @@
       +860 ml (2 BU × 430 ml), cucumbers +2 buc. A rescan reuses the names and flags the duplicate. Still open: a visual
       pass in a browser (blocked in this session), and one scan with a real `ANTHROPIC_API_KEY`.
 - [ ] 4.3 Run `./gradlew test` and the frontend build in CI; both must be green. Open the PR. Do not merge to main.
+      CI (`main.yml`) only runs on pushes to `main`, which also deploys, so the PR has no checks. The same checks ran
+      locally on this branch and are green: `./gradlew test` (63 tests), `pnpm typecheck` (15 packages),
+      `pnpm --filter admin build`, `pnpm check:api` and `openspec validate --strict`. The PR is open; tick this box after
+      the merge run.
