@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import ro.amadya.contract.api.MediaApi
 import ro.amadya.contract.model.UploadedFile
+import ro.amadya.media.PrivateFiles
+import ro.amadya.media.StoredFile
 import ro.amadya.shared.Ids
 import ro.amadya.shared.NotFoundException
 import ro.amadya.shared.UnprocessableException
@@ -90,7 +92,7 @@ class S3Storage(private val props: MediaProperties) : FileStorage {
 }
 
 @Service
-class MediaService(private val props: MediaProperties, private val storage: FileStorage) {
+class MediaService(private val props: MediaProperties, private val storage: FileStorage) : PrivateFiles {
 
     fun store(file: MultipartFile): UploadedFile {
         if (file.isEmpty || file.size > props.maxBytes) throw UnprocessableException("media.invalid_size", props.maxBytes / 1024 / 1024)
@@ -102,18 +104,36 @@ class MediaService(private val props: MediaProperties, private val storage: File
         return UploadedFile(key = key, url = "/api/v1/files/$key", contentType = type, bytes = bytes.size.toLong())
     }
 
-    fun open(key: String): Pair<String, InputStream> {
+    /** Public files only: private keys are answered as missing. */
+    fun openPublic(key: String): Pair<String, InputStream> {
+        if (key.startsWith(PRIVATE_PREFIX)) throw NotFoundException("File")
         val type = types[key.substringAfterLast('.', "")] ?: throw NotFoundException("File")
         return type to (storage.get(key) ?: throw NotFoundException("File"))
     }
 
+    override fun store(bytes: ByteArray): StoredFile {
+        if (bytes.isEmpty()) throw UnprocessableException("media.invalid_size", props.maxBytes / 1024 / 1024)
+        val (type, ext) = sniff(bytes) ?: throw UnprocessableException("media.unsupported_type")
+        val key = "$PRIVATE_PREFIX${Ids.newId()}.$ext"
+        storage.put(key, bytes, type)
+        return StoredFile(key, type)
+    }
+
+    override fun open(key: String): Pair<String, InputStream>? {
+        if (!key.startsWith(PRIVATE_PREFIX)) return null
+        val type = types[key.substringAfterLast('.', "")] ?: return null
+        return storage.get(key)?.let { type to it }
+    }
+
     companion object {
-        private val types = mapOf("jpg" to "image/jpeg", "png" to "image/png", "webp" to "image/webp")
+        const val PRIVATE_PREFIX = "private-"
+        private val types = mapOf("jpg" to "image/jpeg", "png" to "image/png", "webp" to "image/webp", "pdf" to "application/pdf")
 
         fun sniff(b: ByteArray): Pair<String, String>? = when {
             b.size > 3 && b[0] == 0xFF.toByte() && b[1] == 0xD8.toByte() && b[2] == 0xFF.toByte() -> "image/jpeg" to "jpg"
             b.size > 8 && b.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)) -> "image/png" to "png"
             b.size > 12 && String(b, 0, 4) == "RIFF" && String(b, 8, 4) == "WEBP" -> "image/webp" to "webp"
+            b.size > 5 && String(b, 0, 5, Charsets.US_ASCII) == "%PDF-" -> "application/pdf" to "pdf"
             else -> null
         }
     }
@@ -126,7 +146,7 @@ class MediaController(private val media: MediaService) : MediaApi {
     override fun uploadFile(file: MultipartFile): ResponseEntity<UploadedFile> = ResponseEntity.status(HttpStatus.CREATED).body(media.store(file))
 
     override fun getFile(key: String): ResponseEntity<Resource> {
-        val (type, stream) = media.open(key)
+        val (type, stream) = media.openPublic(key)
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(type))
             .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())

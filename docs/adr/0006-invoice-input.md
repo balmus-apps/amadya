@@ -19,8 +19,15 @@ Paper or PDF invoices and delivery notes still exist.
 - OCR never writes stock directly; a human always reviews it.
 - The OCR feature can be turned off per install with a feature flag.
 
-## Amendment (proposed, 2026-10-13) — `openspec/changes/invoice-scan-import`
+## Amendment (2026-10-13) — `openspec/changes/invoice-scan-import`
 - **Name matching:** "fuzzy name match" is replaced by **owner-maintained keyword rules** (`product_name_rule`), which
   run before the supplier mappings.
 - **Warehouses:** lines carry a warehouse. Saving creates **one draft NIR per warehouse**.
 - **Manual entry:** the full manual entry form shares the same page and review flow as the scan.
+- **Extraction:** Claude (`claude-sonnet-5-5` by default, `INVOICE_SCAN_MODEL`) uses **structured outputs**, a JSON
+  schema in `output_config.format`, rather than a forced tool call, which current models reject. Server-side refusal
+  fallbacks are on.
+- **Feature flag:** the flag is `INVOICE_SCAN_ENABLED`, off by default.
+- **Draft:** a scan returns an unsaved draft. Only the original file is stored, under a private key that the public
+  `/files` endpoint refuses. Staff open it through `GET /admin/invoices/{id}/file`.
+

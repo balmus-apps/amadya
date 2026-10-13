@@ -16,9 +16,9 @@
 {$AMADYA_DOMAIN}, {$AMADYA_LAN_SITE} {
 	encode zstd gzip
 
-	# Largest legitimate body is an image or an e-Factura upload (api limit 7 MB).
+	# Largest legitimate body is a scanned invoice photo or PDF (api limit 11 MB per request).
 	request_body {
-		max_size 8MB
+		max_size 12MB
 	}
 
 	# Core API (Phase 1): REST, WebSocket (/api/ws), SSE

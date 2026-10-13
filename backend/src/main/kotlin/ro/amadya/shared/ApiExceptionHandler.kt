@@ -10,6 +10,7 @@ import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.security.access.AccessDeniedException
+import jakarta.validation.ConstraintViolationException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -34,6 +35,11 @@ class ApiExceptionHandler(private val messages: MessageSource) : ResponseEntityE
     @ExceptionHandler(ObjectOptimisticLockingFailureException::class)
     fun handleOptimisticLock(ex: ObjectOptimisticLockingFailureException): ResponseEntity<ProblemDetail> =
         problem(HttpStatus.CONFLICT, "error.conflict", message("error.conflict"))
+
+    /** Path or query parameters that break their pattern (e.g. a malformed file key) are a bad request, not a crash. */
+    @ExceptionHandler(ConstraintViolationException::class)
+    fun handleConstraintViolation(ex: ConstraintViolationException): ResponseEntity<Any> =
+        validationProblem(ex.constraintViolations.map { mapOf("field" to it.propertyPath.toString().substringAfterLast('.'), "message" to it.message) })
 
     @ExceptionHandler(Exception::class)
     fun handleUnexpected(ex: Exception): ResponseEntity<ProblemDetail> {

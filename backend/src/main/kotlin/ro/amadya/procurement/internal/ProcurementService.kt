@@ -17,6 +17,8 @@ import ro.amadya.contract.model.SupplierRequest
 import ro.amadya.inventory.Receipt
 import ro.amadya.inventory.StockCatalog
 import ro.amadya.inventory.StockLedger
+import ro.amadya.media.PrivateFiles
+import tools.jackson.databind.json.JsonMapper
 import ro.amadya.settings.RestaurantSettingsApi
 import ro.amadya.shared.Actor
 import ro.amadya.shared.AmadyaProperties
@@ -27,9 +29,13 @@ import ro.amadya.shared.UnprocessableException
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
+import java.io.InputStream
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneOffset
 import java.util.UUID
+import ro.amadya.contract.model.InvoiceDocType as InvoiceDocTypeDto
+import ro.amadya.contract.model.InvoicePaymentMethod as InvoicePaymentMethodDto
 import ro.amadya.contract.model.InvoiceSource as InvoiceSourceDto
 import ro.amadya.contract.model.NirStatus as NirStatusDto
 
@@ -46,6 +52,8 @@ class ProcurementService(
     private val settings: RestaurantSettingsApi,
     private val props: AmadyaProperties,
     private val clock: Clock,
+    private val files: PrivateFiles,
+    private val json: JsonMapper,
 ) {
     // ---------------------------------------------------------------- suppliers
     fun listSuppliers(): List<Supplier> = suppliers.findAllByOrderByNameAsc().map { it.toDto() }
@@ -82,28 +90,123 @@ class ProcurementService(
 
     fun getInvoice(id: UUID): PurchaseInvoice = loadInvoice(id).toDto()
 
+    /**
+     * Saves a typed or reviewed-scan invoice. In one transaction: finds or creates the supplier, creates the stock items
+     * and secondary units (packagings) the lines ask for, remembers supplier mappings and, with `createNirs`, creates one
+     * draft NIR per line warehouse. Nothing is posted to stock.
+     */
     @Transactional
     fun createInvoice(req: PurchaseInvoiceRequest): PurchaseInvoice {
-        val supplier = suppliers.findByIdOrNull(req.supplierId) ?: throw UnprocessableException("catalog.invalid_reference", "Supplier")
-        if (invoices.exists(supplier.id, req.series, req.number)) throw ConflictException("procurement.invoice_exists", req.number)
+        val supplier = supplierFor(req)
+        val number = req.number.trim()
+        if (invoices.exists(supplier.id, req.series?.ifBlank { null }, number)) throw ConflictException("procurement.invoice_exists", number)
+        val fileKey = req.fileKey?.ifBlank { null }?.also { key -> files.open(key)?.second?.close() ?: throw UnprocessableException("catalog.invalid_reference", "File") }
         val invoice = PurchaseInvoiceEntity(
-            supplierId = supplier.id, series = req.series, number = req.number.trim(), issueDate = req.issueDate, dueDate = req.dueDate,
-            currency = req.currency ?: "RON", source = InvoiceSource.MANUAL,
+            supplierId = supplier.id, series = req.series?.ifBlank { null }, number = number, issueDate = req.issueDate, dueDate = req.dueDate,
+            currency = req.currency ?: "RON", source = if (fileKey != null) InvoiceSource.SCAN else InvoiceSource.MANUAL,
         )
+        applyHeader(invoice, req, fileKey)
+        val createNirs = req.createNirs == true
         req.lines.forEachIndexed { i, l ->
+            val position = i + 1
+            val warehouseId = l.warehouseId?.also { stock.warehouse(it) ?: throw UnprocessableException("catalog.invalid_reference", "Warehouse") }
+            if (createNirs && warehouseId == null) throw UnprocessableException("procurement.warehouse_required", position)
+            val unitId = l.unitId ?: l.unitCode?.takeIf { it.isNotBlank() }?.let { stock.resolveUnit(it).id }
+            val stockItemId = l.stockItemId?.also { stock.item(it) ?: throw UnprocessableException("catalog.invalid_reference", "Stock item") }
+                ?: l.newStockItem?.let { n ->
+                    stock.findItemByName(n.name)?.id
+                        ?: stock.createItem(n.name, n.unitId, n.type?.value, warehouseId).id
+                }
+            if (createNirs && stockItemId == null) throw UnprocessableException("procurement.line_needs_item", position)
+            val packagingId = l.newPackaging?.let { p ->
+                stockItemId ?: throw UnprocessableException("procurement.line_needs_item", position)
+                stock.addPackaging(stockItemId, p.name, BigDecimal(p.qtyInBase))
+            } ?: l.packagingId
             val qty = BigDecimal(l.quantity)
             val price = BigDecimal(l.unitPrice)
-            val unitId = l.unitId ?: l.unitCode?.let { stock.resolveUnit(it).id }
+            val vatPercent = BigDecimal(l.vatPercent)
+            val net = (qty * price).setScale(2, RoundingMode.HALF_UP)
             invoice.lines += InvoiceLineEntity(
-                position = i + 1, supplierCode = l.supplierCode, description = l.description.trim(), quantity = qty,
-                unitCode = l.unitCode ?: unitId?.let { stock.unitCode(it, null) }, unitId = unitId, packagingId = l.packagingId,
-                unitPrice = price, vatPercent = BigDecimal(l.vatPercent), lineNet = (qty * price).setScale(2, RoundingMode.HALF_UP),
-                stockItemId = l.stockItemId,
+                position = position, supplierCode = l.supplierCode?.ifBlank { null }, description = l.description.trim(), quantity = qty,
+                unitCode = l.unitCode?.ifBlank { null } ?: unitId?.let { stock.unitCode(it, null) }, unitId = unitId, packagingId = packagingId,
+                unitPrice = price, vatPercent = vatPercent, lineNet = net, stockItemId = stockItemId,
+                originalDescription = l.originalDescription?.trim()?.ifEmpty { null }, lot = l.lot?.trim()?.ifEmpty { null }, warehouseId = warehouseId,
+                lineVat = vat(net, vatPercent), lineGross = net + vat(net, vatPercent),
             )
         }
         autoMatch(supplier.id, invoice)
         totals(invoice)
-        return invoices.save(invoice).toDto()
+        invoice.lines.filter { it.stockItemId != null && stock.isConvertible(it.stockItemId!!, it.unitId, it.packagingId) }.forEach { remember(supplier.id, it) }
+        val saved = invoices.save(invoice)
+        if (createNirs) createNirsPerWarehouse(saved)
+        return saved.toDto()
+    }
+
+    /** One draft NIR per warehouse, lines in invoice order. Every line must have a convertible unit. */
+    private fun createNirsPerWarehouse(invoice: PurchaseInvoiceEntity) {
+        val unconvertible = invoice.lines.firstOrNull { !stock.isConvertible(it.stockItemId!!, it.unitId, it.packagingId) }
+        if (unconvertible != null) {
+            throw UnprocessableException("inventory.unit_not_convertible", unconvertible.unitCode ?: "?", stock.item(unconvertible.stockItemId!!)?.sku ?: unconvertible.description)
+        }
+        val today = LocalDate.now(clock.withZone(props.timezone))
+        val ref = invoiceRef(invoice)
+        invoice.lines.groupBy { it.warehouseId!! }.forEach { (warehouseId, lines) ->
+            val nir = NirEntity(date = today, warehouseId = warehouseId, supplierId = invoice.supplierId, invoiceId = invoice.id, invoiceRef = ref)
+            if (invoice.docType == DocType.AVIZ) nir.deliveryNoteRef = ref
+            lines.forEachIndexed { i, l ->
+                nir.lines += NirLineEntity(
+                    position = i + 1, stockItemId = l.stockItemId!!, unitId = l.unitId, packagingId = l.packagingId,
+                    qtyDocument = l.quantity, qtyReceived = l.quantity, unitPrice = l.unitPrice, vatPercent = l.vatPercent, discrepancyReason = null,
+                )
+            }
+            nirs.save(nir)
+        }
+    }
+
+    private fun invoiceRef(invoice: PurchaseInvoiceEntity) =
+        listOfNotNull(invoice.series?.takeIf { !invoice.number.startsWith(it) }, invoice.number).joinToString(" ") + " / " + invoice.issueDate
+
+    /** By id; otherwise by fiscal code, then exact name; otherwise created from the request. */
+    private fun supplierFor(req: PurchaseInvoiceRequest): SupplierEntity {
+        req.supplierId?.let { return suppliers.findByIdOrNull(it) ?: throw UnprocessableException("catalog.invalid_reference", "Supplier") }
+        val data = req.supplier?.takeIf { it.name.isNotBlank() } ?: throw UnprocessableException("procurement.supplier_required")
+        val cui = data.cui?.takeIf { it.isNotBlank() }?.let(EFacturaParser::normalizeCui)
+        val existing = cui?.let { suppliers.findByCui(it) } ?: suppliers.findFirstByNameIgnoreCase(data.name.trim())?.takeIf { cui == null || it.cui == null }
+        if (existing != null) {
+            if (existing.cui == null && cui != null) existing.cui = cui
+            existing.regCom = existing.regCom ?: data.regCom?.ifBlank { null }
+            existing.address = existing.address ?: data.address?.ifBlank { null }
+            existing.iban = existing.iban ?: data.iban?.replace(" ", "")?.uppercase()?.ifBlank { null }
+            existing.phone = existing.phone ?: data.phone?.ifBlank { null }
+            return existing
+        }
+        return suppliers.save(SupplierEntity(name = data.name.trim()).also { apply(it, data, cui) })
+    }
+
+    private fun applyHeader(invoice: PurchaseInvoiceEntity, req: PurchaseInvoiceRequest, fileKey: String?) {
+        invoice.docType = req.docType?.let { DocType.valueOf(it.value) } ?: DocType.FACTURA
+        invoice.issueTime = req.issueTime?.ifBlank { null }?.let { runCatching { LocalTime.parse(it) }.getOrElse { throw UnprocessableException("procurement.invalid_time") } }
+        invoice.supplierBranch = req.supplierBranch?.trim()?.ifEmpty { null }
+        invoice.clientNo = req.clientNo?.trim()?.ifEmpty { null }
+        invoice.cardNo = req.cardNo?.trim()?.ifEmpty { null }
+        invoice.registerNo = req.registerNo?.trim()?.ifEmpty { null }
+        invoice.cashierNo = req.cashierNo?.trim()?.ifEmpty { null }
+        invoice.buyerName = req.buyerName?.trim()?.ifEmpty { null }
+        invoice.buyerCui = req.buyerCui?.trim()?.ifEmpty { null }
+        invoice.buyerPerson = req.buyerPerson?.trim()?.ifEmpty { null }
+        invoice.paymentMethod = req.paymentMethod?.let { PaymentMethod.valueOf(it.value) }
+        invoice.paidAmount = req.paidAmount?.ifBlank { null }?.let(::BigDecimal)
+        invoice.discountTotal = req.discountTotal?.ifBlank { null }?.let(::BigDecimal)
+        invoice.fileKey = fileKey
+        invoice.rawExtraction = req.rawExtraction?.ifBlank { null }?.let { raw ->
+            runCatching { json.readTree(raw) }.getOrNull()?.toString() ?: json.writeValueAsString(mapOf("text" to raw))
+        }
+    }
+
+    /** The stored original photo or PDF of a scanned invoice. */
+    fun invoiceFile(id: UUID): Pair<String, InputStream> {
+        val key = loadInvoice(id).fileKey ?: throw NotFoundException("File")
+        return files.open(key) ?: throw NotFoundException("File")
     }
 
     /** Imports an e-Factura XML: finds or creates the supplier by CUI, resolves units and matches lines from remembered mappings. */
@@ -146,7 +249,7 @@ class ProcurementService(
     private fun autoMatch(supplierId: UUID, invoice: PurchaseInvoiceEntity) {
         for (line in invoice.lines.filter { it.stockItemId == null }) {
             val known = line.supplierCode?.let { supplierItems.findBySupplierIdAndSupplierCode(supplierId, it) }
-                ?: supplierItems.findFirstBySupplierIdAndDescriptionIgnoreCase(supplierId, line.description)
+                ?: supplierItems.findFirstBySupplierIdAndDescriptionIgnoreCase(supplierId, line.originalDescription ?: line.description)
             if (known != null) {
                 line.stockItemId = known.stockItemId
                 line.packagingId = known.packagingId
@@ -158,9 +261,10 @@ class ProcurementService(
     }
 
     private fun remember(supplierId: UUID, line: InvoiceLineEntity) {
+        val printed = line.originalDescription ?: line.description
         val existing = line.supplierCode?.let { supplierItems.findBySupplierIdAndSupplierCode(supplierId, it) }
-            ?: supplierItems.findFirstBySupplierIdAndDescriptionIgnoreCase(supplierId, line.description)
-        val mapping = existing ?: SupplierItemEntity(supplierId = supplierId, supplierCode = line.supplierCode, description = line.description, stockItemId = line.stockItemId!!, unitId = line.unitId, packagingId = line.packagingId)
+            ?: supplierItems.findFirstBySupplierIdAndDescriptionIgnoreCase(supplierId, printed)
+        val mapping = existing ?: SupplierItemEntity(supplierId = supplierId, supplierCode = line.supplierCode, description = printed, stockItemId = line.stockItemId!!, unitId = line.unitId, packagingId = line.packagingId)
         mapping.stockItemId = line.stockItemId!!
         mapping.unitId = line.unitId
         mapping.packagingId = line.packagingId
@@ -193,7 +297,7 @@ class ProcurementService(
             val unmatched = invoice.lines.filter { it.stockItemId == null || !stock.isConvertible(it.stockItemId!!, it.unitId, it.packagingId) }
             if (unmatched.isNotEmpty()) throw UnprocessableException("procurement.invoice_unmatched", unmatched.joinToString { it.description })
             nir.supplierId = invoice.supplierId
-            nir.invoiceRef = nir.invoiceRef ?: listOfNotNull(invoice.series?.takeIf { !invoice.number.startsWith(it) }, invoice.number).joinToString(" ") + " / " + invoice.issueDate
+            nir.invoiceRef = nir.invoiceRef ?: invoiceRef(invoice)
             invoice.lines.forEach { l ->
                 nir.lines += NirLineEntity(
                     position = l.position, stockItemId = l.stockItemId!!, unitId = l.unitId, packagingId = l.packagingId,
@@ -297,6 +401,7 @@ class ProcurementService(
 
     private fun PurchaseInvoiceEntity.toDto(): PurchaseInvoice {
         val supplier = suppliers.findByIdOrNull(supplierId)
+        val nirIds = nirs.findAllByInvoiceIdAndReversalOfIdIsNullOrderByCreatedAtAsc(id).map { it.id }
         return PurchaseInvoice(
             id = id, supplierId = supplierId, supplierName = supplier?.name ?: "?", number = number, issueDate = issueDate, currency = currency,
             totalNet = money(totalNet), totalVat = money(totalVat), totalGross = money(totalGross), source = InvoiceSourceDto.forValue(source.name),
@@ -306,9 +411,15 @@ class ProcurementService(
                     unitCode = l.unitCode ?: "", unitPrice = l.unitPrice.stripTrailingZeros().toPlainString(), vatPercent = l.vatPercent.toPlainString(),
                     lineNet = money(l.lineNet), supplierCode = l.supplierCode, unitId = l.unitId, packagingId = l.packagingId, stockItemId = l.stockItemId,
                     matched = l.stockItemId != null && stock.isConvertible(l.stockItemId!!, l.unitId, l.packagingId),
+                    originalDescription = l.originalDescription, lot = l.lot, warehouseId = l.warehouseId,
+                    lineVat = money(l.lineVat ?: vat(l.lineNet, l.vatPercent)), lineGross = money(l.lineGross ?: (l.lineNet + vat(l.lineNet, l.vatPercent))),
                 )
             },
-            series = series, dueDate = dueDate, nirId = nirs.findFirstByInvoiceIdAndReversalOfIdIsNull(id)?.id,
+            series = series, dueDate = dueDate, nirId = nirIds.firstOrNull(), nirIds = nirIds,
+            docType = InvoiceDocTypeDto.forValue(docType.name), issueTime = issueTime?.let { "%02d:%02d".format(it.hour, it.minute) },
+            supplierBranch = supplierBranch, clientNo = clientNo, cardNo = cardNo, registerNo = registerNo, cashierNo = cashierNo,
+            buyerName = buyerName, buyerCui = buyerCui, buyerPerson = buyerPerson, paymentMethod = paymentMethod?.let { InvoicePaymentMethodDto.forValue(it.name) },
+            paidAmount = paidAmount?.let(::money), discountTotal = discountTotal?.let(::money), hasFile = fileKey != null,
         )
     }
 

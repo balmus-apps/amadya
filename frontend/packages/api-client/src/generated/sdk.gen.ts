@@ -60,6 +60,9 @@ import type {
   CreatePaymentIntentResponses,
   CreateProductData,
   CreateProductErrors,
+  CreateProductNameRuleData,
+  CreateProductNameRuleErrors,
+  CreateProductNameRuleResponses,
   CreateProductResponses,
   CreatePromotionData,
   CreatePromotionErrors,
@@ -99,6 +102,9 @@ import type {
   DeleteModifierGroupResponses,
   DeleteProductData,
   DeleteProductErrors,
+  DeleteProductNameRuleData,
+  DeleteProductNameRuleErrors,
+  DeleteProductNameRuleResponses,
   DeleteProductResponses,
   DeletePromotionData,
   DeletePromotionErrors,
@@ -124,6 +130,8 @@ import type {
   GetGuestViewData,
   GetGuestViewErrors,
   GetGuestViewResponses,
+  GetInvoiceScanStatusData,
+  GetInvoiceScanStatusResponses,
   GetMenuData,
   GetMenuResponses,
   GetNirData,
@@ -148,6 +156,9 @@ import type {
   GetPublicSettingsResponses,
   GetPurchaseInvoiceData,
   GetPurchaseInvoiceErrors,
+  GetPurchaseInvoiceFileData,
+  GetPurchaseInvoiceFileErrors,
+  GetPurchaseInvoiceFileResponses,
   GetPurchaseInvoiceResponses,
   GetQueueBoardData,
   GetQueueBoardResponses,
@@ -197,6 +208,8 @@ import type {
   ListOrdersData,
   ListOrdersErrors,
   ListOrdersResponses,
+  ListProductNameRulesData,
+  ListProductNameRulesResponses,
   ListProductsData,
   ListProductsErrors,
   ListProductsResponses,
@@ -293,6 +306,9 @@ import type {
   ReverseNirData,
   ReverseNirErrors,
   ReverseNirResponses,
+  ScanPurchaseInvoiceData,
+  ScanPurchaseInvoiceErrors,
+  ScanPurchaseInvoiceResponses,
   SendGuestRoundData,
   SendGuestRoundErrors,
   SendGuestRoundResponses,
@@ -331,6 +347,8 @@ import type {
   StripeWebhookData,
   StripeWebhookErrors,
   StripeWebhookResponses,
+  TestProductNameRuleData,
+  TestProductNameRuleResponses,
   TransferTableSessionData,
   TransferTableSessionErrors,
   TransferTableSessionResponses,
@@ -354,6 +372,9 @@ import type {
   UpdateNirResponses,
   UpdateProductData,
   UpdateProductErrors,
+  UpdateProductNameRuleData,
+  UpdateProductNameRuleErrors,
+  UpdateProductNameRuleResponses,
   UpdateProductResponses,
   UpdatePromotionData,
   UpdatePromotionErrors,
@@ -2449,7 +2470,7 @@ export const listPurchaseInvoices = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Enter a purchase invoice manually
+ * Save a purchase invoice typed in or reviewed after a scan; can create the missing stock items and one draft NIR per warehouse
  */
 export const createPurchaseInvoice = <ThrowOnError extends boolean = false>(
   options: Options<CreatePurchaseInvoiceData, ThrowOnError>,
@@ -2468,6 +2489,47 @@ export const createPurchaseInvoice = <ThrowOnError extends boolean = false>(
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Whether reading invoices from a photo or PDF is turned on for this install
+ */
+export const getInvoiceScanStatus = <ThrowOnError extends boolean = false>(
+  options?: Options<GetInvoiceScanStatusData, ThrowOnError>,
+): RequestResult<GetInvoiceScanStatusResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetInvoiceScanStatusResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/invoices/scan",
+    ...options,
+  });
+
+/**
+ * Read a photo or PDF of a supplier document and return an unsaved draft (nothing is written except the stored original)
+ */
+export const scanPurchaseInvoice = <ThrowOnError extends boolean = false>(
+  options: Options<ScanPurchaseInvoiceData, ThrowOnError>,
+): RequestResult<
+  ScanPurchaseInvoiceResponses,
+  ScanPurchaseInvoiceErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ScanPurchaseInvoiceResponses,
+    ScanPurchaseInvoiceErrors,
+    ThrowOnError
+  >({
+    ...formDataBodySerializer,
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/invoices/scan",
+    ...options,
+    headers: {
+      "Content-Type": null,
       ...options.headers,
     },
   });
@@ -2510,6 +2572,130 @@ export const getPurchaseInvoice = <ThrowOnError extends boolean = false>(
     security: [{ scheme: "bearer", type: "http" }],
     url: "/admin/invoices/{id}",
     ...options,
+  });
+
+/**
+ * The original photo or PDF the invoice was read from (private, staff only)
+ */
+export const getPurchaseInvoiceFile = <ThrowOnError extends boolean = false>(
+  options: Options<GetPurchaseInvoiceFileData, ThrowOnError>,
+): RequestResult<
+  GetPurchaseInvoiceFileResponses,
+  GetPurchaseInvoiceFileErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetPurchaseInvoiceFileResponses,
+    GetPurchaseInvoiceFileErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/invoices/{id}/file",
+    ...options,
+  });
+
+/**
+ * Keyword rules that turn printed product names into our names, in the order they are tried
+ */
+export const listProductNameRules = <ThrowOnError extends boolean = false>(
+  options?: Options<ListProductNameRulesData, ThrowOnError>,
+): RequestResult<ListProductNameRulesResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListProductNameRulesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/product-name-rules",
+    ...options,
+  });
+
+/**
+ * Add a name rule
+ */
+export const createProductNameRule = <ThrowOnError extends boolean = false>(
+  options: Options<CreateProductNameRuleData, ThrowOnError>,
+): RequestResult<
+  CreateProductNameRuleResponses,
+  CreateProductNameRuleErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    CreateProductNameRuleResponses,
+    CreateProductNameRuleErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/product-name-rules",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Show what name the active rules give a printed product name
+ */
+export const testProductNameRule = <ThrowOnError extends boolean = false>(
+  options: Options<TestProductNameRuleData, ThrowOnError>,
+): RequestResult<TestProductNameRuleResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    TestProductNameRuleResponses,
+    unknown,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/product-name-rules/test",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete a name rule
+ */
+export const deleteProductNameRule = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteProductNameRuleData, ThrowOnError>,
+): RequestResult<
+  DeleteProductNameRuleResponses,
+  DeleteProductNameRuleErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    DeleteProductNameRuleResponses,
+    DeleteProductNameRuleErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/product-name-rules/{id}",
+    ...options,
+  });
+
+/**
+ * Change a name rule
+ */
+export const updateProductNameRule = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateProductNameRuleData, ThrowOnError>,
+): RequestResult<
+  UpdateProductNameRuleResponses,
+  UpdateProductNameRuleErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).put<
+    UpdateProductNameRuleResponses,
+    UpdateProductNameRuleErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/product-name-rules/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**
@@ -2721,7 +2907,7 @@ export const updatePromotion = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Upload an image (JPEG, PNG, WebP; max 5 MB) for products, promotions or the logo
+ * Upload an image (JPEG, PNG, WebP) or a PDF, max 5 MB, for products, promotions or the logo
  */
 export const uploadFile = <ThrowOnError extends boolean = false>(
   options: Options<UploadFileData, ThrowOnError>,

@@ -37,9 +37,13 @@ between the quantities on the supplier document and the quantities actually rece
    A reversal is only allowed while the lots it created are not yet consumed; otherwise it is posted as an adjustment.
 4. Differences are recorded on the NIR and reported per supplier; they never silently change the invoice.
 5. The NIR is printable in the legal layout, with the committee signature block (print view in the admin app; save as PDF from the browser).
-7. Invoice lines are matched to stock items by the supplier's item code, then by remembered description, then by exact name;
-   each manual match is remembered per supplier. Unknown units (e.g. `XBX`) become `UNMAPPED` units or are mapped to an item packaging.
 6. Allowed warehouse types for a NIR: all four (INGREDIENTS, FINISHED_GOODS, FIXED_ASSETS, CONSUMABLES).
+7. Invoice lines are matched to stock items by the owner's **product name rules** (keyword rules, see
+   Admin → Purchasing → Name rules), then by the supplier's item code, then by remembered description, then by exact name.
+   Each match is remembered per supplier, keyed on the name as printed. Unknown units (e.g. `XBX`) become `UNMAPPED`
+   units or are mapped to an item packaging.
+8. Every invoice line carries a warehouse. Saving an invoice from the "New invoice" page (typed or scanned) creates
+   **one draft NIR per warehouse**; there is at most one active NIR per invoice and warehouse.
 
 ## Valuation: FIFO
 Stock is valued **FIFO** (first in, first out); see `warehouses.md` § FIFO lots.

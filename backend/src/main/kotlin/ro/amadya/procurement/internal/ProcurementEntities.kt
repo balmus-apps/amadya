@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
+import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
@@ -21,9 +22,16 @@ import ro.amadya.shared.Ids
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 
 enum class InvoiceSource { MANUAL, EFACTURA_XML, SCAN }
+
+enum class DocType { FACTURA, AVIZ, BON }
+
+enum class PaymentMethod { CASH, CARD, TRANSFER, OTHER }
+
+enum class NameMatchType { CONTAINS, STARTS_WITH, REGEX }
 
 enum class NirStatus { DRAFT, POSTED, REVERSED }
 
@@ -71,7 +79,23 @@ class PurchaseInvoiceEntity(
     @JoinColumn(name = "invoice_id", nullable = false)
     @OrderBy("position ASC")
     val lines: MutableList<InvoiceLineEntity> = mutableListOf(),
-) : BaseEntity()
+) : BaseEntity() {
+    @Enumerated(EnumType.STRING) @Column(name = "doc_type") var docType: DocType = DocType.FACTURA
+    @Column(name = "issue_time") var issueTime: LocalTime? = null
+    @Column(name = "supplier_branch") var supplierBranch: String? = null
+    @Column(name = "client_no") var clientNo: String? = null
+    @Column(name = "card_no") var cardNo: String? = null
+    @Column(name = "register_no") var registerNo: String? = null
+    @Column(name = "cashier_no") var cashierNo: String? = null
+    @Column(name = "buyer_name") var buyerName: String? = null
+    @Column(name = "buyer_cui") var buyerCui: String? = null
+    @Column(name = "buyer_person") var buyerPerson: String? = null
+    @Enumerated(EnumType.STRING) @Column(name = "payment_method") var paymentMethod: PaymentMethod? = null
+    @Column(name = "paid_amount") var paidAmount: BigDecimal? = null
+    @Column(name = "discount_total") var discountTotal: BigDecimal? = null
+    @Column(name = "file_key") var fileKey: String? = null
+    @ColumnTransformer(write = "?::jsonb") @Column(name = "raw_extraction", columnDefinition = "jsonb") var rawExtraction: String? = null
+}
 
 @Entity
 @Table(name = "purchase_invoice_line")
@@ -88,7 +112,23 @@ class InvoiceLineEntity(
     @Column(name = "vat_percent") val vatPercent: BigDecimal,
     @Column(name = "line_net") val lineNet: BigDecimal,
     @Column(name = "stock_item_id") var stockItemId: UUID? = null,
+    @Column(name = "original_description") val originalDescription: String? = null,
+    val lot: String? = null,
+    @Column(name = "warehouse_id") var warehouseId: UUID? = null,
+    @Column(name = "line_vat") var lineVat: BigDecimal? = null,
+    @Column(name = "line_gross") var lineGross: BigDecimal? = null,
 )
+
+@Entity
+@Table(name = "product_name_rule")
+class ProductNameRuleEntity(
+    @Enumerated(EnumType.STRING) @Column(name = "match_type") var matchType: NameMatchType,
+    var pattern: String,
+    @Column(name = "target_name") var targetName: String,
+    @Column(name = "stock_item_id") var stockItemId: UUID? = null,
+    var priority: Int = 100,
+    var active: Boolean = true,
+) : BaseEntity()
 
 @Entity
 @Table(name = "nir")
@@ -134,6 +174,7 @@ class NirLineEntity(
 interface SupplierRepository : JpaRepository<SupplierEntity, UUID> {
     fun findAllByOrderByNameAsc(): List<SupplierEntity>
     fun findByCui(cui: String): SupplierEntity?
+    fun findFirstByNameIgnoreCase(name: String): SupplierEntity?
 }
 
 interface SupplierItemRepository : JpaRepository<SupplierItemEntity, UUID> {
@@ -154,5 +195,11 @@ interface NirRepository : JpaRepository<NirEntity, UUID> {
     fun search(status: NirStatus?, limit: Limit): List<NirEntity>
 
     fun findFirstByInvoiceIdAndReversalOfIdIsNull(invoiceId: UUID): NirEntity?
+    fun findAllByInvoiceIdAndReversalOfIdIsNullOrderByCreatedAtAsc(invoiceId: UUID): List<NirEntity>
     fun findFirstByReversalOfId(reversalOfId: UUID): NirEntity?
+}
+
+interface ProductNameRuleRepository : JpaRepository<ProductNameRuleEntity, UUID> {
+    fun findAllByOrderByPriorityAscCreatedAtAsc(): List<ProductNameRuleEntity>
+    fun findAllByActiveTrueOrderByPriorityAscCreatedAtAsc(): List<ProductNameRuleEntity>
 }

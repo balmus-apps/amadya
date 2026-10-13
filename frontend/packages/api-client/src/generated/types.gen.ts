@@ -830,6 +830,14 @@ export type PurchaseInvoiceLine = {
    * True when stock item and a convertible unit are known
    */
   matched?: boolean;
+  /**
+   * The product name as printed on the document
+   */
+  originalDescription?: string;
+  lot?: string;
+  warehouseId?: string;
+  lineVat?: string;
+  lineGross?: string;
 };
 
 export type PurchaseInvoice = {
@@ -849,7 +857,28 @@ export type PurchaseInvoice = {
    * NIR created from this invoice, if any
    */
   nirId?: string;
+  /**
+   * Every NIR of this invoice (one per warehouse)
+   */
+  nirIds?: Array<string>;
   lines: Array<PurchaseInvoiceLine>;
+  docType?: InvoiceDocType;
+  issueTime?: string;
+  supplierBranch?: string;
+  clientNo?: string;
+  cardNo?: string;
+  registerNo?: string;
+  cashierNo?: string;
+  buyerName?: string;
+  buyerCui?: string;
+  buyerPerson?: string;
+  paymentMethod?: InvoicePaymentMethod;
+  paidAmount?: string;
+  discountTotal?: string;
+  /**
+   * The original photo or PDF is stored
+   */
+  hasFile?: boolean;
 };
 
 export type PurchaseInvoiceLineRequest = {
@@ -862,16 +891,165 @@ export type PurchaseInvoiceLineRequest = {
   unitPrice: string;
   vatPercent: string;
   stockItemId?: string;
+  /**
+   * The name as printed; `description` is our normalised name
+   */
+  originalDescription?: string;
+  lot?: string;
+  /**
+   * Required when the invoice creates NIRs
+   */
+  warehouseId?: string;
+  newStockItem?: NewStockItemRequest;
+  newPackaging?: NewPackagingRequest;
 };
 
+/**
+ * Create the stock item for this line; the unit becomes its primary unit
+ */
+export type NewStockItemRequest = {
+  name: string;
+  /**
+   * Primary unit (must be a known unit: kg, l, buc...)
+   */
+  unitId: string;
+  type?: WarehouseType;
+};
+
+/**
+ * Secondary unit of the line's stock item, e.g. 1 BU = 430 g; the line then uses it
+ */
+export type NewPackagingRequest = {
+  name: string;
+  qtyInBase: Quantity;
+};
+
+/**
+ * Give `supplierId`, or `supplier` to find it by fiscal code or create it
+ */
 export type PurchaseInvoiceRequest = {
-  supplierId: string;
+  supplierId?: string;
+  supplier?: SupplierRequest;
   series?: string;
   number: string;
   issueDate: string;
   dueDate?: string;
   currency?: string;
   lines: Array<PurchaseInvoiceLineRequest>;
+  docType?: InvoiceDocType;
+  issueTime?: string;
+  supplierBranch?: string;
+  clientNo?: string;
+  cardNo?: string;
+  registerNo?: string;
+  cashierNo?: string;
+  buyerName?: string;
+  buyerCui?: string;
+  buyerPerson?: string;
+  paymentMethod?: InvoicePaymentMethod;
+  paidAmount?: string;
+  discountTotal?: string;
+  /**
+   * From the scan; the stored original
+   */
+  fileKey?: string;
+  /**
+   * From the scan; kept untouched for audit
+   */
+  rawExtraction?: string;
+  /**
+   * Also create one draft NIR per line warehouse
+   */
+  createNirs?: boolean;
+};
+
+export type InvoiceDocType = "FACTURA" | "AVIZ" | "BON";
+
+export type InvoicePaymentMethod = "CASH" | "CARD" | "TRANSFER" | "OTHER";
+
+export type InvoiceScanStatus = {
+  enabled: boolean;
+};
+
+export type InvoiceDraftWarning = {
+  code:
+    | "LINE_TOTAL"
+    | "VAT_TOTAL"
+    | "DOCUMENT_TOTAL"
+    | "CUI_INVALID"
+    | "DUPLICATE"
+    | "UNKNOWN_UNIT"
+    | "MISSING_FIELD";
+  message: string;
+  /**
+   * 1-based line number
+   */
+  line?: number;
+};
+
+/**
+ * Totals as printed on the document
+ */
+export type InvoiceDraftTotals = {
+  totalNet?: string;
+  totalVat?: string;
+  totalGross?: string;
+};
+
+export type InvoiceDraft = {
+  invoice: PurchaseInvoiceRequest;
+  printed: InvoiceDraftTotals;
+  warnings: Array<InvoiceDraftWarning>;
+  /**
+   * One entry per draft line, in the same order
+   */
+  lineInfo?: Array<{
+    /**
+     * The name rule that renamed this line
+     */
+    ruleId?: string;
+    /**
+     * The unit as printed
+     */
+    printedUnit?: string;
+  }>;
+};
+
+export type ProductNameMatchType = "CONTAINS" | "STARTS_WITH" | "REGEX";
+
+export type ProductNameRule = {
+  id: string;
+  matchType: ProductNameMatchType;
+  /**
+   * Words separated by | (any of them), or a regular expression
+   */
+  pattern: string;
+  targetName: string;
+  stockItemId?: string;
+  /**
+   * Lower is tried first
+   */
+  priority: number;
+  active: boolean;
+};
+
+export type ProductNameRuleRequest = {
+  matchType: ProductNameMatchType;
+  pattern: string;
+  targetName: string;
+  stockItemId?: string;
+  priority?: number;
+  active?: boolean;
+};
+
+export type ProductNameTestRequest = {
+  text: string;
+};
+
+export type ProductNameTestResult = {
+  name: string;
+  ruleId?: string;
+  stockItemId?: string;
 };
 
 export type InvoiceLineMatchRequest = {
@@ -4583,6 +4761,63 @@ export type CreatePurchaseInvoiceResponses = {
 export type CreatePurchaseInvoiceResponse =
   CreatePurchaseInvoiceResponses[keyof CreatePurchaseInvoiceResponses];
 
+export type GetInvoiceScanStatusData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/invoices/scan";
+};
+
+export type GetInvoiceScanStatusResponses = {
+  /**
+   * OK
+   */
+  200: InvoiceScanStatus;
+};
+
+export type GetInvoiceScanStatusResponse =
+  GetInvoiceScanStatusResponses[keyof GetInvoiceScanStatusResponses];
+
+export type ScanPurchaseInvoiceData = {
+  body: {
+    /**
+     * JPEG, PNG, WebP or PDF, max 10 MB
+     */
+    file: Blob | File;
+  };
+  path?: never;
+  query?: never;
+  url: "/admin/invoices/scan";
+};
+
+export type ScanPurchaseInvoiceErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  502: Problem;
+};
+
+export type ScanPurchaseInvoiceError =
+  ScanPurchaseInvoiceErrors[keyof ScanPurchaseInvoiceErrors];
+
+export type ScanPurchaseInvoiceResponses = {
+  /**
+   * Draft to review
+   */
+  200: InvoiceDraft;
+};
+
+export type ScanPurchaseInvoiceResponse =
+  ScanPurchaseInvoiceResponses[keyof ScanPurchaseInvoiceResponses];
+
 export type ImportEFacturaData = {
   body: string;
   path?: never;
@@ -4638,6 +4873,158 @@ export type GetPurchaseInvoiceResponses = {
 
 export type GetPurchaseInvoiceResponse =
   GetPurchaseInvoiceResponses[keyof GetPurchaseInvoiceResponses];
+
+export type GetPurchaseInvoiceFileData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/invoices/{id}/file";
+};
+
+export type GetPurchaseInvoiceFileErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type GetPurchaseInvoiceFileError =
+  GetPurchaseInvoiceFileErrors[keyof GetPurchaseInvoiceFileErrors];
+
+export type GetPurchaseInvoiceFileResponses = {
+  /**
+   * File content
+   */
+  200: Blob | File;
+};
+
+export type GetPurchaseInvoiceFileResponse =
+  GetPurchaseInvoiceFileResponses[keyof GetPurchaseInvoiceFileResponses];
+
+export type ListProductNameRulesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/product-name-rules";
+};
+
+export type ListProductNameRulesResponses = {
+  /**
+   * OK
+   */
+  200: Array<ProductNameRule>;
+};
+
+export type ListProductNameRulesResponse =
+  ListProductNameRulesResponses[keyof ListProductNameRulesResponses];
+
+export type CreateProductNameRuleData = {
+  body: ProductNameRuleRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/product-name-rules";
+};
+
+export type CreateProductNameRuleErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type CreateProductNameRuleError =
+  CreateProductNameRuleErrors[keyof CreateProductNameRuleErrors];
+
+export type CreateProductNameRuleResponses = {
+  /**
+   * Created
+   */
+  201: ProductNameRule;
+};
+
+export type CreateProductNameRuleResponse =
+  CreateProductNameRuleResponses[keyof CreateProductNameRuleResponses];
+
+export type TestProductNameRuleData = {
+  body: ProductNameTestRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/product-name-rules/test";
+};
+
+export type TestProductNameRuleResponses = {
+  /**
+   * OK
+   */
+  200: ProductNameTestResult;
+};
+
+export type TestProductNameRuleResponse =
+  TestProductNameRuleResponses[keyof TestProductNameRuleResponses];
+
+export type DeleteProductNameRuleData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/product-name-rules/{id}";
+};
+
+export type DeleteProductNameRuleErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+};
+
+export type DeleteProductNameRuleError =
+  DeleteProductNameRuleErrors[keyof DeleteProductNameRuleErrors];
+
+export type DeleteProductNameRuleResponses = {
+  /**
+   * Deleted
+   */
+  204: void;
+};
+
+export type DeleteProductNameRuleResponse =
+  DeleteProductNameRuleResponses[keyof DeleteProductNameRuleResponses];
+
+export type UpdateProductNameRuleData = {
+  body: ProductNameRuleRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/admin/product-name-rules/{id}";
+};
+
+export type UpdateProductNameRuleErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  404: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
+};
+
+export type UpdateProductNameRuleError =
+  UpdateProductNameRuleErrors[keyof UpdateProductNameRuleErrors];
+
+export type UpdateProductNameRuleResponses = {
+  /**
+   * OK
+   */
+  200: ProductNameRule;
+};
+
+export type UpdateProductNameRuleResponse =
+  UpdateProductNameRuleResponses[keyof UpdateProductNameRuleResponses];
 
 export type MatchInvoiceLineData = {
   body: InvoiceLineMatchRequest;

@@ -87,7 +87,9 @@ supplier by CUI. The supplier's head office goes on `supplier` and the store bra
 - **Port:** `InvoiceExtractor.extract(bytes, mediaType): ExtractedInvoice`, inside `procurement/internal`.
 - **Adapter:** `ClaudeInvoiceExtractor` calls the Anthropic Messages API with the official Java SDK.
   - **Input:** an image block for JPEG, PNG or WebP, or a document block for PDF.
-  - **Output:** a single forced tool call whose input schema is `ExtractedInvoice`:
+  - **Output:** structured outputs: `output_config.format` carries a strict JSON schema of `ExtractedInvoice`.
+    Sonnet 5.5 rejects a forced `tool_choice`, so no tool call is used. Server-side refusal fallbacks (`fallbacks: "default"`) are on.
+    The schema covers:
     - supplier: name, CUI, reg. com, address, branch, IBAN;
     - buyer;
     - doc type, number, date and time;
@@ -108,7 +110,9 @@ supplier by CUI. The supplier's head office goes on `supplier` and the store bra
   ```
 
   The bean exists only when `enabled=true` (`@ConditionalOnProperty`, the same as `S3Storage`). When it is off, the
-  endpoint returns 404 and the UI hides the button, using a flag in public admin settings.
+  scan endpoint returns 404, and `GET /admin/invoices/scan` reports `enabled: false` so the UI hides the button.
+  `INVOICE_SCAN_BASE_URL` can point at an HTTP proxy in front of the API. Photos are scaled down to a 2400 px longest edge
+  before sending.
 - **Validation after extraction** returns warnings and never errors:
   - line net = quantity × price, within ±0.02;
   - Σ lines = VAT breakdown = totals;
@@ -117,8 +121,10 @@ supplier by CUI. The supplier's head office goes on `supplier` and the store bra
 
 ## API (contract-first)
 
-- `POST /admin/invoices/scan`: multipart `file`. It stores the file through `media`, extracts, applies rules and
-  matching, and returns `InvoiceDraft` (header, lines, warnings, `fileKey`). **Nothing is persisted** except the file.
+- `POST /admin/invoices/scan`: multipart `file`. It stores the file through `media` under a private key that the
+  public `/files` endpoint refuses. It then extracts, applies rules and matching, and returns `InvoiceDraft` (header,
+  lines, warnings, `fileKey`). **Nothing is persisted** except the file; unknown units are not created yet.
+- `GET /admin/invoices/{id}/file`: the stored original, for staff only.
 - `POST /admin/invoices` (`createPurchaseInvoice`, extended): the request gains the new header fields, `fileKey`,
   `rawExtraction`, and per line `originalDescription`, `lot`, `warehouseId` and optional
   `newStockItem { name, unitId, defaultWarehouseId }` and `packaging { unitCode, qtyInBase }`.
@@ -158,6 +164,11 @@ supplier by CUI. The supplier's head office goes on `supplier` and the store bra
   - `page("/invoices/new")` is registered before `/invoices/$id`;
   - Procurement navigation gets "Name rules";
   - the invoices list gets a "New invoice" button.
+
+## Database note
+
+`ux_nir_invoice`, which allowed one active NIR per invoice, becomes `ux_nir_invoice_warehouse`, which allows one per
+invoice and warehouse.
 
 ## Risks
 

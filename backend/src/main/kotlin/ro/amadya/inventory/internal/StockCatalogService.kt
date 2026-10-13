@@ -56,7 +56,7 @@ class StockCatalogService(
         val trimmed = code.trim()
         val unit = units.findByCodeOrAlias(trimmed)
             ?: units.save(UnitEntity(code = trimmed, name = mutableMapOf("ro" to trimmed), dimension = null, factor = null, status = UnitStatus.UNMAPPED))
-        return UnitInfo(unit.id, unit.code, unit.status == UnitStatus.ACTIVE)
+        return UnitInfo(unit.id, unit.code, unit.status == UnitStatus.ACTIVE, unit.dimension?.name)
     }
 
     override fun unitCode(unitId: UUID?, packagingId: UUID?): String? = when {
@@ -66,6 +66,51 @@ class StockCatalogService(
     }
 
     override fun findItemByName(name: String): StockItemInfo? = items.findByName(name.trim())?.toInfo()
+
+    override fun findUnit(code: String): UnitInfo? =
+        units.findByCodeOrAlias(code.trim())?.let { UnitInfo(it.id, it.code, it.status == UnitStatus.ACTIVE, it.dimension?.name) }
+
+    override fun defaultWarehouse(stockItemId: UUID?): UUID? {
+        val item = stockItemId?.let { items.findByIdOrNull(it) }
+        return item?.defaultWarehouseId ?: warehouses.findFirstByTypeAndActiveTrueOrderByCodeAsc(item?.type ?: WarehouseType.INGREDIENTS)?.id
+    }
+
+    @Transactional
+    override fun createItem(name: String, unitId: UUID, type: String?, defaultWarehouseId: UUID?): StockItemInfo {
+        val unit = units.findByIdOrNull(unitId)?.takeIf { it.status == UnitStatus.ACTIVE && it.dimension != null }
+            ?: throw UnprocessableException("inventory.unit_not_convertible", unitCodeOf(unitId), name)
+        val base = units.findByDimensionAndIsReferenceTrue(unit.dimension!!) ?: throw UnprocessableException("inventory.no_reference_unit", unit.dimension!!.name)
+        val warehouse = defaultWarehouseId?.let { warehouses.findByIdOrNull(it) ?: throw UnprocessableException("catalog.invalid_reference", "Warehouse") }
+        val itemType = type?.let(WarehouseType::valueOf) ?: warehouse?.type ?: WarehouseType.INGREDIENTS
+        val item = StockItemEntity(uniqueSku(name), mutableMapOf("ro" to name.trim()), itemType, base.id)
+        item.displayUnitId = unit.id.takeIf { it != base.id }
+        item.defaultWarehouseId = warehouse?.id
+        return items.save(item).toInfo()
+    }
+
+    @Transactional
+    override fun addPackaging(stockItemId: UUID, name: String, qtyInBase: BigDecimal): UUID {
+        if (qtyInBase.signum() <= 0) throw UnprocessableException("inventory.quantity_positive")
+        val item = loadItem(stockItemId)
+        val existing = item.packagings.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
+        if (existing != null) {
+            existing.qtyInBase = qtyInBase
+            return existing.id
+        }
+        val packaging = PackagingEntity(name = name.trim(), qtyInBase = qtyInBase)
+        item.packagings.add(packaging)
+        return packaging.id
+    }
+
+    /** "Sos usturoi" → "SOS-USTUROI", then "SOS-USTUROI-2"... when taken. */
+    private fun uniqueSku(name: String): String {
+        val folded = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
+        val stem = folded.uppercase().replace(Regex("[^A-Z0-9]+"), "-").trim('-').take(32).ifEmpty { "ITEM" }
+        var sku = stem
+        var n = 2
+        while (items.existsBySkuIgnoreCase(sku)) sku = "$stem-${n++}"
+        return sku
+    }
 
     private fun factor(item: StockItemEntity, unitId: UUID?, packagingId: UUID?): BigDecimal? {
         if (packagingId != null) return item.packagings.firstOrNull { it.id == packagingId }?.qtyInBase
@@ -199,7 +244,7 @@ class StockCatalogService(
     fun unitCodeOf(unitId: UUID): String = units.findByIdOrNull(unitId)?.code ?: "?"
 
     // ---------------------------------------------------------------- mapping
-    private fun StockItemEntity.toInfo() = StockItemInfo(id, sku, LocalizedText.fromMap(name)!!, unitCodeOf(baseUnitId), type.name, defaultWarehouseId)
+    private fun StockItemEntity.toInfo() = StockItemInfo(id, sku, LocalizedText.fromMap(name)!!, unitCodeOf(baseUnitId), type.name, defaultWarehouseId, displayUnitId ?: baseUnitId)
 
     private fun UnitEntity.toDto() = MeasureUnit(
         id = id,
