@@ -10,8 +10,8 @@ info:
     Localized content is resolved using the `Accept-Language` header (`ro`, `en`; default from settings).
     Errors use RFC 9457 problem+json with a stable `code`.
 
-    Tags `streams` (Server-Sent Events) and `webhooks` (raw payloads) are implemented by hand on the server;
-    every other tag is implemented through the generated interfaces.
+    Tags `streams` (Server-Sent Events), `webhooks` (raw payloads) and `docs` (this document) are implemented by hand
+    on the server; every other tag is implemented through the generated interfaces.
 servers:
   - url: /api/v1
 tags:
@@ -51,6 +51,8 @@ tags:
     description: Server-Sent Events (hand-implemented)
   - name: webhooks
     description: Payment provider webhooks (hand-implemented)
+  - name: docs
+    description: "This API description, as built into the running server; browsable in the admin at /admin/api-docs (hand-implemented)"
 
 security:
   - bearerAuth: []
@@ -2128,6 +2130,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ActivityPage" }
+        "403": { $ref: "#/components/responses/Problem" }
+
+  # ---------------------------------------------------------------- docs
+  /admin/openapi.yaml:
+    get:
+      tags: [docs]
+      operationId: getOpenApiSpec
+      summary: The OpenAPI document of the running server (ADMIN)
+      responses:
+        "200":
+          description: OpenAPI 3.1 document
+          content:
+            application/yaml:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Problem" }
         "403": { $ref: "#/components/responses/Problem" }
 
   /admin/activity/filters:

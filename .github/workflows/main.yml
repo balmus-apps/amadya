@@ -1,21 +1,38 @@
-# Builds the Amadya images for the server (linux/amd64) and pushes them to GitHub Container Registry, the same as
-# scripts/release.sh. The server only pulls; it never builds (1 vCPU, 2 GB).
+# Release: builds the Amadya images (linux/amd64), pushes them to GitHub Container Registry and deploys them to the
+# server (ADR 0012, docs/deploy.md). The server only pulls; it never builds (1 vCPU, 2 GB).
 #
-# Run it from GitHub: Actions → Release → Run workflow (branch: main). Each image is tagged with the short commit sha
-# and "latest". Then on the server:
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+# - Every push to main builds and deploys that commit; documentation-only pushes do neither.
+# - Actions → Release → Run workflow:
+#     deploy = false   build and push only
+#     tag = 3598903    redeploy (or roll back to) an earlier release without building
+#
+# Images are tagged with the first 7 characters of the commit sha (as scripts/release.sh does) and "latest".
 name: Release
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "openspec/**"
+      - "**/*.md"
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy to the server after building
+        type: boolean
+        default: true
+      tag:
+        description: Redeploy this existing release (7-character tag) instead of building
+        type: string
+        default: ""
 
 permissions:
   contents: read
   # GITHUB_TOKEN may push to ghcr.io/balmus-apps: no secret to set up.
   packages: write
 
-# Two releases at once would race for the "latest" tags.
+# One release at a time: a second run waits (builds race for "latest", deploys must not overlap).
 concurrency:
   group: release
   cancel-in-progress: false
@@ -24,8 +41,30 @@ env:
   REGISTRY: ghcr.io/balmus-apps
 
 jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      ref: ${{ steps.tag.outputs.ref }}
+    steps:
+      # Inputs reach the shell only through env, never interpolated into the script.
+      - id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ -n $INPUT_TAG ]]; then
+            [[ $INPUT_TAG =~ ^[0-9a-f]{7}$ ]] || { echo "::error::tag must be 7 hex characters, got '$INPUT_TAG'"; exit 1; }
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+            echo "ref=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          fi
+
   image:
     name: ${{ matrix.name }}
+    needs: meta
+    if: ${{ !inputs.tag }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,10 +87,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Same tag as release.sh (git rev-parse --short HEAD), so AMADYA_TAG works with either.
-      - id: tag
-        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
       - uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
@@ -59,7 +94,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/amadya-${{ matrix.name }}:${{ steps.tag.outputs.sha }}
+            ${{ env.REGISTRY }}/amadya-${{ matrix.name }}:${{ needs.meta.outputs.tag }}
             ${{ env.REGISTRY }}/amadya-${{ matrix.name }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/balmus-apps/amadya
@@ -67,3 +102,41 @@ jobs:
           # Per-image build cache in GitHub Actions: later releases only rebuild what changed.
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy:
+    needs: [meta, image]
+    # After every image built (or, for a redeploy, when none had to), unless deploy was switched off.
+    if: >-
+      ${{ !cancelled() && needs.meta.result == 'success'
+      && (needs.image.result == 'success' || (needs.image.result == 'skipped' && inputs.tag != ''))
+      && (github.event_name == 'push' || inputs.deploy) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deploy secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=()
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do [[ -n ${!name} ]] || missing+=("$name"); done
+          if (( ${#missing[@]} )); then
+            echo "::error::Deploy secrets not set: ${missing[*]}. The images are built; see docs/deploy.md to set up deploys."
+            exit 1
+          fi
+
+      # The server key only runs /usr/local/sbin/amadya-deploy, which accepts "deploy <commit on main>" and nothing else.
+      - name: Deploy ${{ needs.meta.outputs.tag }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          REF: ${{ needs.meta.outputs.ref }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          (umask 077 && printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key)
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 "$DEPLOY_USER@$DEPLOY_HOST" "deploy $REF"

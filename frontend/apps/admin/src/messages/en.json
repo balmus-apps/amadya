@@ -26,7 +26,8 @@
   "users": "Users",
   "logout": "Sign out",
   "language": "Language",
-  "activity": "Activity"
+  "activity": "Activity",
+  "apiDocs": "API"
  },
  "common": {
   "save": "Save",
@@ -535,5 +536,11 @@
    "deletePromotion": "Deleted a promotion",
    "uploadFile": "Uploaded an image"
   }
+ },
+ "apiDocs": {
+  "title": "API",
+  "description": "Every endpoint of this server's API, as built into the running version.",
+  "warning": "Requests sent with \"Try it out\" are real: they use your administrator session, change this restaurant's data, and are recorded in the activity log.",
+  "notAllowed": "Only administrators can see the API documentation."
  }
 }

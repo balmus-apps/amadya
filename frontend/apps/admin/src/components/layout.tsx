@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
   ActivityIcon,
   BarChart3Icon,
+  BracesIcon,
   BoxesIcon,
   ClipboardListIcon,
   FileInputIcon,
@@ -81,6 +82,7 @@ export function AppLayout() {
         { to: "/settings/tables", label: t("nav.tables"), icon: ArmchairIcon },
         { to: "/users", label: t("nav.users"), icon: UsersIcon, admin: true },
         { to: "/activity", label: t("nav.activity"), icon: ActivityIcon },
+        { to: "/api-docs", label: t("nav.apiDocs"), icon: BracesIcon, admin: true },
       ],
     },
   ];

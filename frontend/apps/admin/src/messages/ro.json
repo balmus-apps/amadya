@@ -26,7 +26,8 @@
   "users": "Utilizatori",
   "logout": "Ieșire",
   "language": "Limba",
-  "activity": "Activitate"
+  "activity": "Activitate",
+  "apiDocs": "API"
  },
  "common": {
   "save": "Salvează",
@@ -535,5 +536,11 @@
    "deletePromotion": "A șters o promoție",
    "uploadFile": "A încărcat o imagine"
   }
+ },
+ "apiDocs": {
+  "title": "API",
+  "description": "Toate operațiile API-ului acestui server, exact cum sunt în versiunea care rulează.",
+  "warning": "Cererile trimise cu „Try it out” sunt reale: folosesc sesiunea dumneavoastră de administrator, modifică datele acestui restaurant și apar în jurnalul de activitate.",
+  "notAllowed": "Doar administratorii pot vedea documentația API."
  }
 }

@@ -126,6 +126,9 @@ import type {
   GetNirData,
   GetNirErrors,
   GetNirResponses,
+  GetOpenApiSpecData,
+  GetOpenApiSpecErrors,
+  GetOpenApiSpecResponses,
   GetOptionRecipeData,
   GetOptionRecipeErrors,
   GetOptionRecipeResponses,
@@ -2702,6 +2705,22 @@ export const listActivity = <ThrowOnError extends boolean = false>(
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/admin/activity",
+    ...options,
+  });
+
+/**
+ * The OpenAPI document of the running server (ADMIN)
+ */
+export const getOpenApiSpec = <ThrowOnError extends boolean = false>(
+  options?: Options<GetOpenApiSpecData, ThrowOnError>,
+): RequestResult<GetOpenApiSpecResponses, GetOpenApiSpecErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetOpenApiSpecResponses,
+    GetOpenApiSpecErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/openapi.yaml",
     ...options,
   });
 

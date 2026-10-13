@@ -4914,6 +4914,37 @@ export type ListActivityResponses = {
 export type ListActivityResponse =
   ListActivityResponses[keyof ListActivityResponses];
 
+export type GetOpenApiSpecData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/admin/openapi.yaml";
+};
+
+export type GetOpenApiSpecErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  401: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  403: Problem;
+};
+
+export type GetOpenApiSpecError =
+  GetOpenApiSpecErrors[keyof GetOpenApiSpecErrors];
+
+export type GetOpenApiSpecResponses = {
+  /**
+   * OpenAPI 3.1 document
+   */
+  200: string;
+};
+
+export type GetOpenApiSpecResponse =
+  GetOpenApiSpecResponses[keyof GetOpenApiSpecResponses];
+
 export type GetActivityFiltersData = {
   body?: never;
   path?: never;

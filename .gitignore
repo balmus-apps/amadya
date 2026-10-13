@@ -18,3 +18,6 @@ dist/
 .expo/
 coverage/
 playwright-report/
+
+# Server deploy state (scripts/deploy.sh)
+.deploy/
