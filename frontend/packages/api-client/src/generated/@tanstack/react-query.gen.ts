@@ -16,6 +16,7 @@ import {
   closeTableSession,
   completeOrder,
   confirmGuestRound,
+  confirmOrder,
   confirmTableSession,
   createCategory,
   createDiningTable,
@@ -98,6 +99,7 @@ import {
   recallKitchenTicket,
   recordTablePayment,
   refreshToken,
+  refuseOrder,
   regenerateTableQr,
   registerPushSubscription,
   rejectGuestRound,
@@ -148,6 +150,9 @@ import type {
   ConfirmGuestRoundData,
   ConfirmGuestRoundError,
   ConfirmGuestRoundResponse,
+  ConfirmOrderData,
+  ConfirmOrderError,
+  ConfirmOrderResponse,
   ConfirmTableSessionData,
   ConfirmTableSessionError,
   ConfirmTableSessionResponse,
@@ -384,6 +389,9 @@ import type {
   RefreshTokenData,
   RefreshTokenError,
   RefreshTokenResponse,
+  RefuseOrderData,
+  RefuseOrderError,
+  RefuseOrderResponse,
   RegenerateTableQrData,
   RegenerateTableQrError,
   RegenerateTableQrResponse,
@@ -1331,7 +1339,9 @@ export const listOrdersOptions = (options?: Options<ListOrdersData>) =>
 
 /**
  * Create an order. TAKEAWAY is public (guest checkout: name + phone required) and starts in PENDING_PAYMENT
- * when online payments are enabled, otherwise PLACED. COUNTER and DINE_IN require a staff role and start PLACED.
+ * when online payments are enabled; otherwise it waits in AWAITING_CONFIRMATION for the restaurant (PLACED when
+ * `takeawayConfirmMinutes` is 0). COUNTER and DINE_IN require a staff role and start PLACED. Staff may pay a
+ * COUNTER order when creating it (`payment`); it is then PAID.
  *
  */
 export const createOrderMutation = (
@@ -1403,6 +1413,60 @@ export const completeOrderMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await completeOrder({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Confirm a customer order AWAITING_CONFIRMATION; it goes to the kitchen (staff)
+ */
+export const confirmOrderMutation = (
+  options?: Partial<Options<ConfirmOrderData>>,
+): UseMutationOptions<
+  ConfirmOrderResponse,
+  ConfirmOrderError,
+  Options<ConfirmOrderData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ConfirmOrderResponse,
+    ConfirmOrderError,
+    Options<ConfirmOrderData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await confirmOrder({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Refuse a customer order AWAITING_CONFIRMATION with a reason the customer sees (staff)
+ */
+export const refuseOrderMutation = (
+  options?: Partial<Options<RefuseOrderData>>,
+): UseMutationOptions<
+  RefuseOrderResponse,
+  RefuseOrderError,
+  Options<RefuseOrderData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RefuseOrderResponse,
+    RefuseOrderError,
+    Options<RefuseOrderData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await refuseOrder({
         ...options,
         ...fnOptions,
         throwOnError: true,

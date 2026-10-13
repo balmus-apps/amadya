@@ -1,10 +1,12 @@
 # Order lifecycle, kitchen queue & notifications
 
 ## Channels
-- `TAKEAWAY`: customer orders from menu-web or menu-mobile and pays online (Apple/Google Pay).
+- `TAKEAWAY`: customer orders from menu-web or menu-mobile. With online payments on, they pay online (Apple/Google
+  Pay); otherwise they pay at pickup, and the order first waits for the cashier to confirm it (see below).
 - `DINE_IN`: waiter orders for a table session, in one or more rounds; the bill is paid at the end (see [tables.md](tables.md)).
   Only the tables module creates them; `POST /orders` refuses `DINE_IN`.
-- `COUNTER`: a staff member enters a walk-in order (later, POS).
+- `COUNTER`: the cashier enters a walk-in order in the cashier app (`/cashier`), usually taking Cash or Card at once
+  (`payment` on `POST /orders`), so it reaches the kitchen already paid. "Pay at pickup" is the exception.
 
 ## Customer identity (takeaway)
 - **Guest checkout is allowed.** Required: **name** and **phone** (E.164, validated; used to call the customer and as a fallback
@@ -17,9 +19,12 @@
 ## Status machine
 ```mermaid
 stateDiagram-v2
-  [*] --> PENDING_PAYMENT: takeaway checkout
+  [*] --> PENDING_PAYMENT: takeaway checkout, online payments on
   PENDING_PAYMENT --> PLACED: payment captured (webhook)
   PENDING_PAYMENT --> CANCELLED: payment failed / expired (15 min)
+  [*] --> AWAITING_CONFIRMATION: takeaway checkout, pay at pickup
+  AWAITING_CONFIRMATION --> PLACED: confirmed by the cashier, or automatically after N minutes
+  AWAITING_CONFIRMATION --> CANCELLED: refused by the cashier (with reason)
   [*] --> PLACED: dine-in round sent / counter
   PLACED --> PREPARING: first ticket started
   PREPARING --> READY: all tickets ready
@@ -27,6 +32,16 @@ stateDiagram-v2
   PLACED --> CANCELLED: by staff (with reason)
   PREPARING --> CANCELLED: by manager (with reason)
 ```
+
+## Confirming phone orders
+- A customer's to-go order paid at pickup waits in `AWAITING_CONFIRMATION`: no kitchen ticket, not on the queue
+  display, not counted as a sale. The cashier app lists it under "De confirmat" with a sound.
+- The cashier **confirms** it (`POST /orders/{id}/confirm`, it goes to the kitchen) or **refuses** it with a reason the
+  customer sees (`POST /orders/{id}/refuse`).
+- Nobody answers within `takeawayConfirmMinutes` (restaurant setting, 5 by default): a job running every minute confirms
+  it, so a busy counter never loses an order. 0 turns confirmation off: such orders are `PLACED` at once.
+- Orders paid online and orders entered by staff never wait for confirmation.
+- Staff screens follow every status change on `GET /orders/events` (SSE, staff only).
 
 ## Kitchen tickets
 - On `OrderPlaced`, lines are grouped by **station** (from `product.station_id`), giving one `kitchen_ticket` per station.

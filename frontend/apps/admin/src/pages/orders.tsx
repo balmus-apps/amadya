@@ -7,7 +7,7 @@ import { useApi, useApiMutation } from "@/lib/data";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useLocale, useT } from "@/lib/i18n";
 
-const statuses: OrderStatus[] = ["PENDING_PAYMENT", "PLACED", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
+const statuses: OrderStatus[] = ["PENDING_PAYMENT", "AWAITING_CONFIRMATION", "PLACED", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
 
 export function OrdersPage() {
   const t = useT();

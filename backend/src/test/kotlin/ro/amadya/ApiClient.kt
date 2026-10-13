@@ -29,11 +29,12 @@ class ApiClient(private val port: Int) {
         post("/api/v1/auth/login", mapOf("email" to email, "password" to password)).also { check(it.status == 200) { "login failed: ${it.body}" } }
             .text("accessToken")
 
-    /** Opens an SSE stream and returns the first `count` non-empty lines. */
-    fun sseLines(path: String, count: Int): List<String> {
-        val request = HttpRequest.newBuilder(URI("http://localhost:$port$path")).header("Accept", "text/event-stream").GET().build()
-        val response = http.send(request, HttpResponse.BodyHandlers.ofLines())
-        return response.body().filter { it.isNotBlank() }.limit(count.toLong()).toList()
+    /** Opens an SSE stream and returns the first `count` non-empty lines (heartbeat comments skipped). */
+    fun sseLines(path: String, count: Int, token: String? = null): List<String> {
+        val builder = HttpRequest.newBuilder(URI("http://localhost:$port$path")).header("Accept", "text/event-stream").GET()
+        token?.let { builder.header("Authorization", "Bearer $it") }
+        val response = http.send(builder.build(), HttpResponse.BodyHandlers.ofLines())
+        return response.body().filter { it.isNotBlank() && !it.startsWith(":") }.limit(count.toLong()).toList()
     }
 
     private fun send(method: String, path: String, body: Any?, token: String?, lang: String?, headers: Map<String, String> = emptyMap()): Response {

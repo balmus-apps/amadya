@@ -16,6 +16,7 @@ import ro.amadya.ordering.QueueBoardView
 import ro.amadya.shared.NotFoundException
 import java.time.ZoneOffset
 import java.util.UUID
+import ro.amadya.contract.model.OrderChannel as OrderChannelDto
 import ro.amadya.contract.model.OrderStatus as OrderStatusDto
 import ro.amadya.contract.model.OrderStatusChanged as OrderStatusChangedDto
 
@@ -26,6 +27,7 @@ class OrderNotifications(private val hub: SseHub, private val orders: OrderQueri
     @ApplicationModuleListener
     fun on(event: OrderStatusChanged) {
         hub.publishOrder(event.orderId, event.toDto())
+        hub.publishStaff(event.toDto())
         if (event.channel != "DINE_IN") hub.publishQueue(board())
         // Phase 2: Expo / Web Push when status becomes READY (needs push tokens from the customer apps).
     }
@@ -44,6 +46,7 @@ internal fun OrderStatusChanged.toDto() = OrderStatusChangedDto(
     orderId = orderId,
     number = number,
     status = OrderStatusDto.forValue(status),
+    channel = OrderChannelDto.forValue(channel),
     at = at.atOffset(ZoneOffset.UTC),
     estimatedReadyAt = estimatedReadyAt?.atOffset(ZoneOffset.UTC),
 )
@@ -59,6 +62,11 @@ class StreamsController(private val hub: SseHub, private val orders: OrderQuerie
         hub.send(emitter, SseHub.EVENT_ORDER, current.toDto())
         return ResponseEntity.ok().header("X-Accel-Buffering", "no").body(emitter)
     }
+
+    /** Staff only (SecurityConfig): the cashier app's live lists. */
+    @GetMapping("/orders/events", produces = ["text/event-stream"])
+    fun streamStaffOrderEvents(): ResponseEntity<SseEmitter> =
+        ResponseEntity.ok().header("X-Accel-Buffering", "no").body(hub.subscribeStaff())
 
     @GetMapping("/queue/events", produces = ["text/event-stream"])
     fun streamQueueEvents(): ResponseEntity<SseEmitter> {

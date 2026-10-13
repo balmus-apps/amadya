@@ -40,6 +40,14 @@ set_tag() {
     printf '\nAMADYA_TAG=%s\n' "$1" >> "$ENV_FILE"
   fi
 }
+# The Caddyfile is a single-file bind mount: a checkout replaces the file, the running container keeps the old one.
+# Restart Caddy (about a second) only when the routes changed, e.g. a new app.
+reload_caddy() {
+  if ! compose exec -T caddy cat /etc/caddy/Caddyfile 2>/dev/null | cmp -s - infra/caddy/Caddyfile; then
+    log "Caddyfile changed; restarting caddy"
+    compose restart caddy
+  fi
+}
 ready() { compose exec -T caddy wget -qO- http://api:8080/actuator/health/readiness 2>/dev/null | grep -q '"UP"'; }
 wait_ready() {
   local deadline=$((SECONDS + READY_TIMEOUT))
@@ -67,6 +75,7 @@ fi
 # 3. Switch and restart.
 set_tag "$tag"
 compose up -d --no-build --quiet-pull
+reload_caddy
 
 # 4. Ready, or put the previous release back.
 if wait_ready; then

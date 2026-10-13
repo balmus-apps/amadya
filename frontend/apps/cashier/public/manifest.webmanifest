@@ -1,0 +1,10 @@
+{
+  "name": "Amadya – Casă",
+  "short_name": "Casă",
+  "start_url": "/cashier/",
+  "scope": "/cashier/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}

@@ -127,6 +127,7 @@
   },
   "statuses": {
    "PENDING_PAYMENT": "Awaiting payment",
+   "AWAITING_CONFIRMATION": "To confirm",
    "PLACED": "Received",
    "PREPARING": "Preparing",
    "READY": "Ready",
@@ -397,6 +398,8 @@
   "parallelSlots": "Orders in parallel",
   "guestConfirmMinutes": "Minutes until automatic confirmation",
   "guestConfirmHint": "Orders from QR guests and tables they open, which no waiter answers, are confirmed automatically after this long. Raise it on busy days.",
+  "takeawayConfirmMinutes": "To-go confirmation (minutes, 0 = off)",
+  "takeawayConfirmHint": "A customer's to-go order paid at pickup waits this long for the cashier to confirm or refuse it, then goes to the kitchen anyway. 0 sends every order straight to the kitchen.",
   "activityRetentionDays": "Keep the activity log for (days)",
   "activityRetentionHint": "Older staff actions are deleted automatically. Raise it if you need a longer history and have the disk space."
  },
@@ -471,6 +474,7 @@
    "ADMIN": "Admin",
    "WAITER": "Waiter",
    "KITCHEN": "Kitchen",
+   "CASHIER": "Cashier",
    "OTHER": "Other"
   },
   "outcomes": {

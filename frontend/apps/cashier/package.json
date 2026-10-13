@@ -1,0 +1,37 @@
+{
+  "name": "@amadya/cashier",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5178",
+    "build": "tsc --noEmit -p . && vite build",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@amadya/api-client": "workspace:*",
+    "@amadya/customer-core": "workspace:*",
+    "@amadya/i18n": "workspace:*",
+    "@amadya/staff-auth": "workspace:*",
+    "@amadya/staff-pos": "workspace:*",
+    "@amadya/ui": "workspace:*",
+    "@tanstack/react-query": "5.104.1",
+    "lucide-react": "1.52.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "use-intl": "4.14.9",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@amadya/config": "workspace:*",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}

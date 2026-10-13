@@ -74,6 +74,9 @@ class SecurityConfig(private val props: AmadyaProperties) {
             .cors { }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
+                // Before the public "/orders/*" rule below, which would otherwise match "events".
+                it.requestMatchers(HttpMethod.GET, "/api/v1/orders/events")
+                    .hasAnyRole(Roles.ADMIN, Roles.MANAGER, Roles.WAITER, Roles.CASHIER)
                 it.requestMatchers(
                     HttpMethod.GET,
                     "/api/v1/settings/public", "/api/v1/menu", "/api/v1/queue", "/api/v1/queue/events",

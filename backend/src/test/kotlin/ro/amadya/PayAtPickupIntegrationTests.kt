@@ -38,6 +38,7 @@ class PayAtPickupIntegrationTests {
     fun setUp() {
         api = ApiClient(port)
         jdbc.onlinePayments(false)
+        jdbc.takeawayConfirmMinutes(0) // confirmation by the cashier is covered by TakeawayConfirmationIntegrationTests
     }
 
     private fun admin() = api.login("admin@test.local", "Admin12345!")

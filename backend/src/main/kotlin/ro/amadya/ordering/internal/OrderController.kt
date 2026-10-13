@@ -60,6 +60,14 @@ class OrderController(private val service: OrderService) : OrderingApi {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','WAITER','CASHIER')")
+    override fun confirmOrder(orderId: UUID): ResponseEntity<Order> =
+        ResponseEntity.ok(service.confirm(orderId).toDto(LocaleContextHolder.getLocale()))
+
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','WAITER','CASHIER')")
+    override fun refuseOrder(orderId: UUID, cancelOrderRequest: CancelOrderRequest): ResponseEntity<Order> =
+        ResponseEntity.ok(service.refuse(orderId, cancelOrderRequest.reason).toDto(LocaleContextHolder.getLocale()))
+
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','WAITER','CASHIER')")
     override fun cancelOrder(orderId: UUID, cancelOrderRequest: CancelOrderRequest): ResponseEntity<Order> =
         ResponseEntity.ok(service.cancel(orderId, cancelOrderRequest.reason).toDto(LocaleContextHolder.getLocale()))
 

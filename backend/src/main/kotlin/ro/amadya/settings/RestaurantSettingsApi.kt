@@ -12,6 +12,8 @@ interface RestaurantSettingsApi {
     fun orderNumberPrefix(): String
     /** QR ordering: guest rounds and guest-started tables are confirmed automatically after this many minutes. */
     fun guestConfirmMinutes(): Int
+    /** A customer's to-go order paid at pickup waits this many minutes for the cashier; 0 = no confirmation. */
+    fun takeawayConfirmMinutes(): Int
     /** The activity log deletes staff actions older than this many days. */
     fun activityRetentionDays(): Int
     fun logoUrl(): String?

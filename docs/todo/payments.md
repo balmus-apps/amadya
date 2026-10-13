@@ -13,6 +13,8 @@ is recorded.
   "Simulează plata" (simulate payment). Turn the switch off again afterwards.
 - **Keep it off on the public install** until a real provider is configured: with the `fake` provider anyone can mark
   an order paid through the simulate endpoint.
+- **At the counter** (cashier app, `/cashier`): the cashier takes Cash or Card when taking the order, so counter orders
+  reach the kitchen already paid. Phone orders paid at pickup first wait for the cashier to confirm them.
 - **Going live:** set `PAYMENT_PROVIDER` and the provider keys in the server `.env`, redeploy, then turn the switch on.
 
 ## What already exists

@@ -67,6 +67,7 @@ function TrackedOrder({ orderId, token }: { orderId: string; token: string }) {
           {order.pickupAt && order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
             <p className="text-sm">{t("pickupAt", { time: formatTime(order.pickupAt, locale) })}</p>
           )}
+          {order.status === "CANCELLED" && order.cancelReason && <p className="font-semibold">{t("cancelReason", { reason: order.cancelReason })}</p>}
           {order.paymentStatus === "REFUNDED" && <Badge variant="secondary">{t("refunded")}</Badge>}
         </CardContent>
       </Card>

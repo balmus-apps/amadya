@@ -99,6 +99,11 @@ function TrackedOrder({ orderId, token }: { orderId: string; token: string }) {
             {t("eta", { time: formatTime(order.estimatedReadyAt, locale) })}
           </Text>
         )}
+        {order.status === "CANCELLED" && order.cancelReason && (
+          <Text variant="label" style={{ textAlign: "center", marginTop: 6 }}>
+            {t("cancelReason", { reason: order.cancelReason })}
+          </Text>
+        )}
         {order.paymentStatus === "REFUNDED" && <Badge label={t("refunded")} />}
       </Card>
 
