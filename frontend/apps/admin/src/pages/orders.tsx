@@ -1,5 +1,5 @@
-import { cancelOrder, completeOrder, listOrders, type Order, type OrderStatus } from "@amadya/api-client";
-import { Button, NativeSelect, Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@amadya/ui";
+import { cancelOrder, completeOrder, listOrders, type CompleteOrderRequest, type InPersonPaymentMethod, type Order, type OrderStatus } from "@amadya/api-client";
+import { Button, Input, NativeSelect, RadioGroup, RadioGroupItem, Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@amadya/ui";
 import { useState } from "react";
 import { Empty, Field, PageHeader } from "@/components/kit";
 import { OrderStatusBadge } from "@/components/status";
@@ -63,7 +63,7 @@ export function OrdersPage() {
           </TableBody>
         </Table>
       )}
-      <OrderSheet order={selected} onClose={() => setSelected(null)} />
+      <OrderSheet key={selected?.id} order={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
@@ -72,10 +72,23 @@ function OrderSheet({ order, onClose }: { order: Order | null; onClose: () => vo
   const t = useT();
   const { locale } = useLocale();
   const [reason, setReason] = useState("");
-  const complete = useApiMutation((id: string) => completeOrder({ path: { orderId: id } }), { invalidate: [["orders"]], onSuccess: onClose })
+  const [method, setMethod] = useState<InPersonPaymentMethod>("CASH");
+  const [tendered, setTendered] = useState("");
+  const complete = useApiMutation(
+    ({ id, body }: { id: string; body?: CompleteOrderRequest }) => completeOrder({ path: { orderId: id }, body }),
+    { invalidate: [["orders"]], onSuccess: onClose },
+  );
   const cancel = useApiMutation((id: string) => cancelOrder({ path: { orderId: id }, body: { reason } }), { invalidate: [["orders"]], onSuccess: onClose });
   if (!order) return <Sheet open={false} />;
   const open = !["COMPLETED", "CANCELLED"].includes(order.status);
+  // Unpaid takeaway / counter orders are paid when picked up; table rounds are settled on the table bill.
+  const settle = order.status === "READY" && order.paymentStatus === "UNPAID" && order.channel !== "DINE_IN";
+  const totalCents = toCents(order.total.amount);
+  const tenderedCents = method === "CASH" && tendered ? toCents(tendered) : 0;
+  const tenderedOk = tenderedCents === 0 || tenderedCents >= totalCents;
+  const body: CompleteOrderRequest | undefined = settle
+    ? { method, ...(tenderedCents > 0 ? { tendered: (tenderedCents / 100).toFixed(2) } : {}) }
+    : undefined;
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent>
@@ -111,6 +124,31 @@ function OrderSheet({ order, onClose }: { order: Order | null; onClose: () => vo
           </p>
           {order.notes && <p className="text-sm text-muted-foreground">{order.notes}</p>}
           {order.cancelReason && <p className="text-sm text-destructive">{order.cancelReason}</p>}
+          {settle && (
+            <div className="space-y-3 rounded-xl border p-3">
+              <p className="text-sm font-semibold">{t("orders.pickupPayment")}</p>
+              <RadioGroup value={method} onValueChange={(v) => setMethod(v as InPersonPaymentMethod)} className="flex gap-6">
+                {(["CASH", "CARD_POS"] as const).map((m) => (
+                  <label key={m} className="flex items-center gap-2 text-sm">
+                    <RadioGroupItem value={m} /> {t(`orders.methods.${m}`)}
+                  </label>
+                ))}
+              </RadioGroup>
+              {method === "CASH" && (
+                <Field label={t("orders.tendered")}>
+                  <Input inputMode="decimal" placeholder={order.total.amount} value={tendered} onChange={(e) => setTendered(e.target.value.replace(/[^\d.,]/g, ""))} />
+                </Field>
+              )}
+              {tenderedCents > 0 &&
+                (tenderedOk ? (
+                  <p className="font-bold">{t("orders.change", { amount: formatMoney({ amount: ((tenderedCents - totalCents) / 100).toFixed(2), currency: order.total.currency }, locale) })}</p>
+                ) : (
+                  <p role="alert" className="text-sm font-semibold text-destructive">
+                    {t("orders.tenderedTooLow")}
+                  </p>
+                ))}
+            </div>
+          )}
           {open && (
             <Field label={t("orders.cancelReason")}>
               <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
@@ -122,12 +160,17 @@ function OrderSheet({ order, onClose }: { order: Order | null; onClose: () => vo
             <Button variant="outline" className="flex-1" disabled={reason.trim().length < 3 || cancel.isPending} onClick={() => cancel.mutate(order.id)}>
               {t("orders.cancel")}
             </Button>
-            <Button className="flex-1" disabled={order.status !== "READY" || complete.isPending} onClick={() => complete.mutate(order.id)}>
-              {t("orders.complete")}
+            <Button className="flex-1" disabled={order.status !== "READY" || !tenderedOk || complete.isPending} onClick={() => complete.mutate({ id: order.id, body })}>
+              {settle ? t("orders.completePaid") : t("orders.complete")}
             </Button>
           </SheetFooter>
         )}
       </SheetContent>
     </Sheet>
   );
+}
+
+function toCents(amount: string): number {
+  const n = Number(amount.replace(",", "."));
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
 }

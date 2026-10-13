@@ -23,7 +23,7 @@ enum class PaymentState { PENDING, CAPTURED, FAILED, REFUNDED, VOIDED }
 @Entity
 @Table(name = "payment")
 class PaymentEntity(
-    /** The online order paid; null for payments taken at a table. */
+    /** The order paid (online, or at pickup); null for payments taken at a table. */
     @Column(name = "order_id") val orderId: UUID?,
     @Enumerated(EnumType.STRING) val method: PaymentMethod,
     val provider: String,

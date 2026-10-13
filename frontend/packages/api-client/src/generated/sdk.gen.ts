@@ -998,7 +998,10 @@ export const getOrder = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Mark a READY order as picked up / served (staff)
+ * Mark a READY order as picked up / served (staff). An unpaid takeaway or counter order is paid at pickup:
+ * the body with the payment method is then required (422 `order.payment_required` without it), and the
+ * payment is recorded. Paid orders and table rounds complete without a body.
+ *
  */
 export const completeOrder = <ThrowOnError extends boolean = false>(
   options: Options<CompleteOrderData, ThrowOnError>,
@@ -1011,6 +1014,10 @@ export const completeOrder = <ThrowOnError extends boolean = false>(
     security: [{ scheme: "bearer", type: "http" }],
     url: "/orders/{orderId}/complete",
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**

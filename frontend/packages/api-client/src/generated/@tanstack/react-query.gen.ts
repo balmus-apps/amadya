@@ -1384,7 +1384,10 @@ export const getOrderOptions = (options: Options<GetOrderData>) =>
   });
 
 /**
- * Mark a READY order as picked up / served (staff)
+ * Mark a READY order as picked up / served (staff). An unpaid takeaway or counter order is paid at pickup:
+ * the body with the payment method is then required (422 `order.payment_required` without it), and the
+ * payment is recorded. Paid orders and table rounds complete without a body.
+ *
  */
 export const completeOrderMutation = (
   options?: Partial<Options<CompleteOrderData>>,

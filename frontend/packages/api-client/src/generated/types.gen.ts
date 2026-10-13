@@ -411,6 +411,17 @@ export type Order = {
   createdAt: string;
 };
 
+/**
+ * How an unpaid takeaway or counter order was paid at pickup
+ */
+export type CompleteOrderRequest = {
+  method: InPersonPaymentMethod;
+  /**
+   * Cash handed over (CASH only); must cover the total
+   */
+  tendered?: string;
+};
+
 export type CancelOrderRequest = {
   reason: string;
 };
@@ -2332,7 +2343,7 @@ export type GetOrderResponses = {
 export type GetOrderResponse = GetOrderResponses[keyof GetOrderResponses];
 
 export type CompleteOrderData = {
-  body?: never;
+  body?: CompleteOrderRequest;
   path: {
     orderId: string;
   };
@@ -2345,6 +2356,10 @@ export type CompleteOrderErrors = {
    * Error (RFC 9457)
    */
   409: Problem;
+  /**
+   * Error (RFC 9457)
+   */
+  422: Problem;
 };
 
 export type CompleteOrderError = CompleteOrderErrors[keyof CompleteOrderErrors];

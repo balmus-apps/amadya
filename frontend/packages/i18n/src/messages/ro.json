@@ -60,6 +60,8 @@
     "notes": "Observații (opțional)",
     "summary": "Rezumat",
     "vatIncluded": "TVA inclus",
+    "payAtPickup": "Plătești la ridicarea comenzii (numerar sau card).",
+    "payOnline": "Plătești online imediat după ce trimiți comanda.",
     "placeOrder": "Plasează comanda · {total}",
     "placing": "Se trimite…",
     "invalidName": "Introdu numele (minim 2 caractere).",

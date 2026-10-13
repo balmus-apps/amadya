@@ -4,7 +4,7 @@ import { createOrder, unwrap, type ApiProblem } from "@amadya/api-client";
 import { formatMoney, normalizePhone, type AppLocale } from "@amadya/i18n";
 import { Button, Card, CardContent, cn, Input, Label, RadioGroup, RadioGroupItem, Separator, Textarea, toast } from "@amadya/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeftIcon, ShieldCheckIcon } from "lucide-react";
+import { ArrowLeftIcon, ShieldCheckIcon, WalletIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -194,6 +194,9 @@ export function CheckoutScreen() {
         </CardContent>
       </Card>
 
+      <p className="mb-3 flex items-center justify-center gap-1.5 text-center text-sm text-muted-foreground">
+        <WalletIcon className="size-4" /> {settings.features.onlinePayments ? t("payOnline") : t("payAtPickup")}
+      </p>
       <Button type="submit" size="lg" className="h-14 w-full text-base" disabled={submitting || !settings.features.takeaway}>
         {submitting ? t("placing") : t("placeOrder", { total })}
       </Button>

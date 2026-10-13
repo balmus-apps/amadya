@@ -1,9 +1,9 @@
-import { simulatePaymentCapture, startGuestPayment, unwrap, type GuestView, type PaymentIntent, type TableRound } from "@amadya/api-client";
+import { getPublicSettings, simulatePaymentCapture, startGuestPayment, unwrap, type GuestView, type PaymentIntent, type TableRound } from "@amadya/api-client";
 import { formatMoney, formatTime, type AppLocale } from "@amadya/i18n";
 import { Badge, Button, cn, QuantityStepper, Sheet, SheetContent, SheetDescription, SheetTitle, toast } from "@amadya/ui";
 import { Elements, ExpressCheckoutElement, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClockIcon, FlaskConicalIcon, LockIcon, WalletIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
@@ -45,6 +45,9 @@ export function BillTab({ view, token }: { view: GuestView; token: string }) {
   const chosenCents = lines.reduce((sum, l) => sum + Math.round((Number(l.total.amount) * 100 * (selection[l.lineId] ?? 0)) / l.quantity), 0);
   const money = (amount: { amount: string; currency: string }) => formatMoney(amount, locale);
   const payable = Number(view.payable.amount) > 0;
+  // Same cached query as App.tsx: paying from the phone only when the restaurant takes online payments.
+  const settings = useQuery({ queryKey: ["settings"], queryFn: () => unwrap(getPublicSettings()), staleTime: Infinity });
+  const onlinePayments = settings.data?.features.onlinePayments ?? false;
 
   return (
     <div className="space-y-3">
@@ -108,6 +111,8 @@ export function BillTab({ view, token }: { view: GuestView; token: string }) {
           </dl>
           {!payable ? (
             <p className="text-center text-sm text-muted-foreground">{t("bill.nothing")}</p>
+          ) : !onlinePayments ? (
+            <p className="text-center text-sm text-muted-foreground">{t("bill.askWaiter")}</p>
           ) : !choosing ? (
             <div className="grid gap-2">
               <Button size="lg" disabled={start.isPending} onClick={() => start.mutate({ all: true })}>

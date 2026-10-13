@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
+import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.context.ActiveProfiles
 import java.time.Duration
 import java.util.UUID
@@ -26,6 +27,9 @@ class ApiIntegrationTests {
     @org.springframework.beans.factory.annotation.Autowired
     private lateinit var push: RecordingPushSender
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private lateinit var jdbc: JdbcClient
+
     @LocalServerPort
     private var port: Int = 0
     private lateinit var api: ApiClient
@@ -40,6 +44,7 @@ class ApiIntegrationTests {
     @BeforeEach
     fun setUp() {
         api = ApiClient(port)
+        jdbc.onlinePayments(true)
     }
 
     private fun admin() = api.login("admin@test.local", "Admin12345!")

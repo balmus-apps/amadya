@@ -108,6 +108,15 @@
   "customer": "Customer",
   "createdAt": "Created",
   "complete": "Picked up",
+  "pickupPayment": "Paid at pickup with",
+  "methods": {
+   "CASH": "Cash",
+   "CARD_POS": "Card (terminal)"
+  },
+  "tendered": "Cash received (optional)",
+  "change": "Change: {amount}",
+  "tenderedTooLow": "The cash received doesn't cover the total",
+  "completePaid": "Paid and picked up",
   "cancel": "Cancel",
   "cancelReason": "Reason for cancelling",
   "lines": "Items",

@@ -48,6 +48,17 @@ data class OrderStatusChanged(
 
 data class OrderCancelled(val orderId: UUID, val wasPaid: Boolean, val reason: String)
 
+/** Staff took the payment of a takeaway / counter order at pickup; the payments module records it. */
+data class OrderSettledInPerson(
+    val orderId: UUID,
+    /** `CASH` or `CARD_POS`. */
+    val method: String,
+    val amount: BigDecimal,
+    val currency: String,
+    val tendered: BigDecimal?,
+    val recordedBy: UUID?,
+)
+
 // ---------------------------------------------------------------- APIs for other modules
 
 /** Used by the kitchen to move orders forward as tickets progress. */
