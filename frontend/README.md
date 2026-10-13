@@ -10,6 +10,7 @@ pnpm workspace + Turborepo. TypeScript 6, React 19. Run the commands below from 
 | `@amadya/customer-core` | Cart, modifier rules, opening hours, recent orders. Framework-agnostic `zustand/vanilla` stores with injected storage. |
 | `@amadya/i18n` | RO/EN messages (ICU), money/time formatting, Romanian phone normalization (E.164). |
 | `@amadya/theme` | Install branding (`theme` from `/settings/public`) mapped to design tokens and CSS variables, with contrast-safe colours. |
+| `@amadya/staff-pos` | Touch UI shared by the staff apps that take orders and money (waiter, cashier): menu picker with the options sheet, Cash / Card panel with change. Strings under the `pos` namespace (`posMessages`). |
 | `@amadya/ui` | Web design system: shadcn/ui-style components on Tailwind CSS 4 + Radix. |
 | `@amadya/config` | Shared tsconfig. |
 
@@ -25,7 +26,8 @@ pnpm --filter @amadya/menu-web dev         # http://localhost:3000 (RO) and /en
 
 - **Menu:** promotions, sticky categories, a product sheet with sauce/extra rules, and a persistent cart.
 - **Checkout:** guest checkout with name and phone required; pickup as soon as possible or at a chosen time.
-- **Payment:** Stripe Payment Element plus Express Checkout (Apple Pay / Google Pay) when `PAYMENT_PROVIDER=stripe`. With the default `fake` provider, a "Simulate payment" button replaces it.
+- **Payment:** online payments are off by default (Admin → Settings → Features): the customer pays at pickup, and the order waits for the cashier to confirm it (`AWAITING_CONFIRMATION`, confirmed automatically after `takeawayConfirmMinutes`). A refused order shows the cashier's reason.
+  With online payments on: Stripe Payment Element plus Express Checkout (Apple Pay / Google Pay) when `PAYMENT_PROVIDER=stripe`; with the default `fake` provider, a "Simulate payment" button replaces it (demos).
 - **Tracking:** live updates over SSE, with polling when the stream drops; a browser notification when ready; recent orders kept on the device.
 - **Dev vs production API calls:** in dev the browser calls the API directly (`.env.development` sets `NEXT_PUBLIC_API_URL`), because the Next dev proxy buffers SSE. In Docker, Caddy serves the site and `/api` on the same origin.
 
@@ -57,7 +59,7 @@ ADMIN / MANAGER staff only. Sessions use a 15-minute access token kept in memory
 | Menu | **Products**: image upload, modifier groups, recipe tab with portion cost and margin. **Categories**. **Option groups**: each option can have its own recipe. **Promotions**: with an active period |
 | Stock | **Stock on hand**: with FIFO lots. **Movements**. **Documents**: transfer, consumption note, waste, stock count. **Stock items**: with packagings. **Warehouses**. **Units**: unmapped units from invoices can be defined here |
 | Purchasing | **Suppliers**. **Invoices**: e-Factura XML import, line matching remembered per supplier. **NIR**: draft, discrepancy reasons, post, reverse, printable legal layout |
-| Settings | **Restaurant**: profile, branding with live preview, features, languages, opening hours. **VAT rates**, **kitchen stations**, **users and roles** |
+| Settings | **Restaurant**: profile, branding with live preview, features, languages, opening hours, confirmation minutes (QR tables, to-go orders). **VAT rates**, **kitchen stations**, **users and roles** |
 
 ### kitchen — kitchen & bar display (Vite + React, installable PWA)
 
@@ -90,7 +92,7 @@ Vite PWA served at `/waiter`, built for the waiters' phones. Demo login: `ospata
 - **Floor:** tables per area: free (dashed), occupied (orange), a round ready to serve (green, pulsing). Filter "My tables".
 - **Table:** rounds newest first, with the kitchen status in the kitchen display's colours. "Served" and "Cancel" per
   round. Bottom bar with total, paid and what is left.
-- **Order pad:** search (ignores diacritics), category chips, options sheet for sauces and extras, notes per item and per
+- **Order pad** (from `@amadya/staff-pos`): search (ignores diacritics), category chips, options sheet for sauces and extras, notes per item and per
   round. The round being taken stays while the waiter moves between screens.
 - **Payment:** whole bill, equal split, or by item; cash (amount handed over, change) or card terminal. Undo a payment.
 - **Actions:** pre-bill, move to a free table, merge with another table, free a table with nothing owed.
@@ -98,6 +100,29 @@ Vite PWA served at `/waiter`, built for the waiters' phones. Demo login: `ospata
   shows which table to serve.
 
 Rules and bill arithmetic: [docs/domain/tables.md](../docs/domain/tables.md).
+
+## Cashier app (`apps/cashier`)
+
+Vite app served at `/cashier`, for the counter of a fast-food: a landscape tablet or a PC. Roles CASHIER, MANAGER or
+ADMIN; demo login `admin@amadya.local` / `Admin12345!` (or create a Cashier account in Admin → Users).
+
+```bash
+pnpm --filter @amadya/cashier dev          # http://localhost:5178/cashier
+```
+
+- **New order:** the menu picker (`@amadya/staff-pos`) on the left, the ticket on the right. "Încasează" takes Cash
+  (amount handed over, quick banknotes, change) or Card, or leaves it to pickup; the `COUNTER` order is created with its
+  `payment` in one request and reaches the kitchen already paid. A full-width card shows the number to call out and the
+  change. Sending is blocked while offline; the ticket survives a reload (session storage).
+- **De confirmat / To confirm:** phone orders paid at pickup, oldest first, with a tap-to-call phone and a countdown to
+  automatic confirmation. Confirm, or refuse with a ready-made or typed reason the customer sees.
+- **În lucru / In progress** and **Gata / Ready:** takeaway and counter orders (never table rounds). "Predată" hands an
+  order over and asks for Cash or Card when it is not paid yet. Cancel with a reason; food already being prepared only
+  for MANAGER / ADMIN, as the API enforces.
+- **Live:** `/orders/events` (staff-only SSE) with the bearer token on every reconnect; a chime and a toast for each new
+  order to confirm (sound can be muted); a live/offline indicator; lists also reload every 30 s.
+
+Order states and confirmation rules: [docs/domain/order-lifecycle.md](../docs/domain/order-lifecycle.md).
 
 ## Guests at the table (`apps/table`, QR ordering)
 
@@ -121,7 +146,7 @@ The TV above the pickup counter, at `/queue`. Public: no login, and it shows ord
 - **Two columns:** *Se pregătește / Preparing* and *Gata de ridicare / Ready for pickup*, in the restaurant's main language
   with the other one underneath. Takeaway and counter orders of the day; dine-in rounds are served at the table.
 - **Ready numbers:** newest first and largest; a number that just became ready pulses for a minute. It leaves the screen
-  when the order is marked picked up (Admin → Comenzi) or, at the latest, after `QUEUE_READY_VISIBLE` (default 20 min).
+  when the order is marked picked up (cashier app, or Admin → Comenzi) or, at the latest, after `QUEUE_READY_VISIBLE` (default 20 min).
 - **Announcements:** a chime and a spoken "Comanda B 12 este gata" for each new ready number. Browsers allow sound only
   after a tap, so the screen shows "Atingeți pentru sunet" once; the choice is remembered on that TV.
 - **Branding:** the restaurant's name, logo and colours from the settings; promotions rotate along the bottom.
@@ -129,7 +154,7 @@ The TV above the pickup counter, at `/queue`. Public: no login, and it shows ord
   screen. The screen keeps itself awake where the browser allows it.
 - **Live:** `/queue/events` (SSE), reloaded every 30 s as a safety net.
 
-`@amadya/staff-auth` holds the session shared by the staff apps (admin, kitchen, waiter).
+`@amadya/staff-auth` holds the session shared by the staff apps (admin, kitchen, waiter, cashier).
 
 ## Checks
 
