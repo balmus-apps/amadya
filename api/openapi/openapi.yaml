@@ -2379,6 +2379,10 @@ components:
           maximum: 60
           default: 5
           description: "QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long"
+        publicUrl:
+          type: string
+          readOnly: true
+          description: "Address of this install (AMADYA_PUBLIC_URL, from AMADYA_DOMAIN in .env), e.g. https://amadya.alphatech.ro; ignored on update"
         takeawayConfirmMinutes:
           type: integer
           minimum: 0

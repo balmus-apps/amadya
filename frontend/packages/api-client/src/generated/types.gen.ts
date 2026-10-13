@@ -105,6 +105,10 @@ export type RestaurantSettings = {
    */
   guestConfirmMinutes?: number;
   /**
+   * Address of this install (AMADYA_PUBLIC_URL, from AMADYA_DOMAIN in .env), e.g. https://amadya.alphatech.ro; ignored on update
+   */
+  readonly publicUrl?: string;
+  /**
    * A customer's to-go order paid at pickup waits this long for the cashier, then goes to the kitchen anyway; 0 = no confirmation
    */
   takeawayConfirmMinutes?: number;
@@ -1455,6 +1459,41 @@ export type ActivityFilters = {
   actions: Array<string>;
 };
 
+export type RestaurantSettingsWritable = {
+  name: string;
+  legalName?: string;
+  /**
+   * Romanian fiscal code
+   */
+  cui?: string;
+  regCom?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  logoUrl?: string;
+  defaultLocale: Locale;
+  locales: Array<Locale>;
+  currency: string;
+  theme: {
+    [key: string]: string;
+  };
+  features: Features;
+  openingHours: Array<OpeningHours>;
+  orderNumberPrefix?: string;
+  /**
+   * QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long
+   */
+  guestConfirmMinutes?: number;
+  /**
+   * A customer's to-go order paid at pickup waits this long for the cashier, then goes to the kitchen anyway; 0 = no confirmation
+   */
+  takeawayConfirmMinutes?: number;
+  /**
+   * The activity log keeps staff actions for this many days, then deletes them
+   */
+  activityRetentionDays?: number;
+};
+
 export type AcceptLanguage = string;
 
 export type Id = string;
@@ -1525,7 +1564,7 @@ export type GetRestaurantSettingsResponse =
   GetRestaurantSettingsResponses[keyof GetRestaurantSettingsResponses];
 
 export type UpdateRestaurantSettingsData = {
-  body: RestaurantSettings;
+  body: RestaurantSettingsWritable;
   path?: never;
   query?: never;
   url: "/admin/settings";

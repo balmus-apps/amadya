@@ -554,6 +554,20 @@
   "title": "API",
   "description": "Toate operațiile API-ului acestui server, exact cum sunt în versiunea care rulează.",
   "warning": "Cererile trimise cu „Try it out” sunt reale: folosesc sesiunea dumneavoastră de administrator, modifică datele acestui restaurant și apar în jurnalul de activitate.",
-  "notAllowed": "Doar administratorii pot vedea documentația API."
+  "notAllowed": "Doar administratorii pot vedea documentația API.",
+  "links": {
+   "title": "Aplicațiile restaurantului",
+   "copy": "Copiază adresa",
+   "copied": "Adresa a fost copiată",
+   "apps": {
+    "menu": "Meniul pentru clienți",
+    "admin": "Administrare",
+    "waiter": "Aplicația ospătarului",
+    "cashier": "Casa",
+    "kitchen": "Ecranul bucătăriei și al barului",
+    "queue": "Ecranul de comenzi (TV)"
+   },
+   "tableHint": "Comanda de la masă se deschide din codul QR al fiecărei mese ({url}); codurile se tipăresc din Administrare → Mese."
+  }
  }
 }

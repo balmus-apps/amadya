@@ -102,4 +102,12 @@ class AdminFeaturesIntegrationTests {
         assertEquals(422, api.get("/api/v1/admin/reports/dashboard?from=$today&to=${today.minusDays(1)}", token).status)
         assertEquals(403, api.get("/api/v1/admin/reports/dashboard?from=$today&to=$today", cashier).status)
     }
+
+    @Test
+    fun `admin settings tell the address of this install`() {
+        val token = api.login("admin@test.local", "Admin12345!")
+        val settings = api.get("/api/v1/admin/settings", token)
+        assertEquals("http://localhost", settings.text("publicUrl")) // amadya.public-base-url (AMADYA_PUBLIC_URL)
+        assertTrue(api.get("/api/v1/settings/public")["publicUrl"].isMissingNode)
+    }
 }

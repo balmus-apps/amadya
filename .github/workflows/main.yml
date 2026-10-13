@@ -21,7 +21,7 @@ on:
       deploy:
         description: Deploy to the server after building
         type: boolean
-        default: true
+        default: false
       tag:
         description: Redeploy this existing release (7-character tag) instead of building
         type: string
