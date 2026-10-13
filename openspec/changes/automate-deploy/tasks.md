@@ -35,7 +35,7 @@
 
 ## 3. Documentation
 
-- [ ] 3.1 Rewrite `docs/deploy.md`. Sections:
+- [x] 3.1 Rewrite `docs/deploy.md`. Sections:
   - the automatic flow
   - manual build-only and redeploy/rollback via the `tag` input
   - one-time server setup, as exact commands: `deploy` user, `authorized_keys` line, sudoers file checked with
@@ -46,7 +46,7 @@
 
   Verify every command block by running it against a scratch Ubuntu container
   (`docker run --rm -it ubuntu:24.04`), except the GitHub UI steps.
-- [ ] 3.2 Add ADR `docs/adr/0012-automated-deploy.md`, with the decisions and the security model from design.md
+- [x] 3.2 Add ADR `docs/adr/0012-automated-deploy.md`, with the decisions and the security model from design.md
   (short; it links to this change). Verify it is linked from `docs/deploy.md`.
 
 ## 4. Go live (owner + assistant, on the real server)
