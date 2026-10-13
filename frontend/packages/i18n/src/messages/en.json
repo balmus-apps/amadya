@@ -60,6 +60,8 @@
     "notes": "Notes (optional)",
     "summary": "Summary",
     "vatIncluded": "VAT included",
+    "payAtPickup": "You pay when you pick up the order (cash or card).",
+    "payOnline": "You pay online right after placing the order.",
     "placeOrder": "Place order · {total}",
     "placing": "Sending…",
     "invalidName": "Enter your name (at least 2 characters).",

@@ -163,6 +163,7 @@ export type {
   CompleteOrderData,
   CompleteOrderError,
   CompleteOrderErrors,
+  CompleteOrderRequest,
   CompleteOrderResponse,
   CompleteOrderResponses,
   ConfirmGuestRoundData,

@@ -28,7 +28,7 @@ function pickupIso(time: string) {
 
 export default function CheckoutScreen() {
   const t = useTranslations("checkout");
-  const { theme, locale } = useApp();
+  const { theme, locale, settings } = useApp();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
   const remember = useRecentOrders((s) => s.remember);
@@ -137,6 +137,9 @@ export default function CheckoutScreen() {
         </View>
         <Text variant="small" muted style={{ textAlign: "right", marginTop: -8, paddingHorizontal: 4 }}>
           {t("vatIncluded")}
+        </Text>
+        <Text variant="small" muted style={{ textAlign: "center" }}>
+          {settings?.features.onlinePayments ? t("payOnline") : t("payAtPickup")}
         </Text>
         <Button title={busy ? t("placing") : t("placeOrder", { total })} loading={busy} onPress={submit} />
         <Text variant="small" muted style={{ textAlign: "center" }}>

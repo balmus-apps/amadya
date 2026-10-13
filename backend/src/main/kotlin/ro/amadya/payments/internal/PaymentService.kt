@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import ro.amadya.contract.model.PaymentIntent
 import ro.amadya.ordering.OrderCancelled
 import ro.amadya.ordering.OrderPayments
+import ro.amadya.ordering.OrderSettledInPerson
 import ro.amadya.payments.SessionPaymentCaptured
 import ro.amadya.payments.SessionPaymentEnded
 import ro.amadya.shared.ConflictException
@@ -86,6 +87,25 @@ class PaymentService(
     fun simulateCapture(paymentId: UUID) {
         if (provider !is FakePaymentProvider) throw ConflictException("payment.simulation_disabled")
         captured(payments.findByIdOrNull(paymentId) ?: throw NotFoundException("Payment"))
+    }
+
+    /** Staff took the payment at pickup: keep the record next to online payments (the order is already PAID). */
+    @ApplicationModuleListener
+    fun on(event: OrderSettledInPerson) {
+        val payment = payments.save(
+            PaymentEntity(
+                orderId = event.orderId,
+                method = PaymentMethod.valueOf(event.method),
+                provider = "in_person",
+                amount = event.amount,
+                currency = event.currency,
+                status = PaymentState.CAPTURED,
+                tendered = event.tendered,
+                recordedBy = event.recordedBy,
+            ),
+        )
+        payment.capturedAt = clock.instant()
+        log.info("Pickup payment {} {} {} {} recorded for order {}", payment.id, event.method, event.amount, event.currency, event.orderId)
     }
 
     /** A paid order was cancelled (by staff or after a late payment): give the money back. */

@@ -66,7 +66,8 @@
       "chooseHint": "Produsele alese sunt rezervate pentru dumneavoastră cât durează plata.",
       "paySelected": "Plătește {amount}",
       "cancel": "Renunță",
-      "nothing": "Nu mai este nimic de plată."
+      "nothing": "Nu mai este nimic de plată.",
+      "askWaiter": "Cereți nota de plată ospătarului."
     },
     "pay": {
       "title": "Plată {amount}",

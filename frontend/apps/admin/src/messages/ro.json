@@ -108,6 +108,15 @@
   "customer": "Client",
   "createdAt": "Creată",
   "complete": "Predată",
+  "pickupPayment": "Plătită la ridicare cu",
+  "methods": {
+   "CASH": "Numerar",
+   "CARD_POS": "Card (POS)"
+  },
+  "tendered": "Suma primită (opțional)",
+  "change": "Rest: {amount}",
+  "tenderedTooLow": "Suma primită nu acoperă totalul",
+  "completePaid": "Plătită și predată",
   "cancel": "Anulează",
   "cancelReason": "Motivul anulării",
   "lines": "Produse",

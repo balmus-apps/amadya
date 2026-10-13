@@ -3,6 +3,18 @@
 Status on 2026-10-05: about two-thirds built. The Stripe path compiles but has **never run against a real Stripe account**.
 See also ADR 0007 (provider choice).
 
+## Online payments are off by default
+Since 2026-10-13 (migration V17) the **Online payments** switch (Admin → Settings → Restaurant → Features) is off.
+Customers' takeaway orders then go straight to the kitchen and are **paid at pickup**: when staff press
+"Paid and picked up" in Admin → Orders they choose Cash (with the change shown) or Card at the terminal, and the payment
+is recorded.
+
+- **Demo for a business:** turn the switch on. With `PAYMENT_PROVIDER=fake` (the default) customers see
+  "Simulează plata" (simulate payment). Turn the switch off again afterwards.
+- **Keep it off on the public install** until a real provider is configured: with the `fake` provider anyone can mark
+  an order paid through the simulate endpoint.
+- **Going live:** set `PAYMENT_PROVIDER` and the provider keys in the server `.env`, redeploy, then turn the switch on.
+
 ## What already exists
 - **Backend:** a `PaymentProvider` interface with two adapters:
   - `fake` (active now): the "Simulează plata" (simulate payment) button;

@@ -3,6 +3,7 @@ package ro.amadya
 import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -32,6 +33,9 @@ class QrTableOrderingIntegrationTests {
     private val espresso = "0190a000-0000-7000-8000-000000000462" // 9.00, bar
     private val lemonade = "0190a000-0000-7000-8000-000000000461" // 14.00, bar
     private val bar = "0190a000-0000-7000-8000-000000000103"
+
+    @BeforeEach
+    fun onlinePaymentsOn() = jdbc.onlinePayments(true)
 
     private fun line(product: String, quantity: Int) = mapOf("productId" to product, "quantity" to quantity, "modifierOptionIds" to emptyList<String>())
     private fun guest(token: String) = mapOf("X-Table-Guest" to token)

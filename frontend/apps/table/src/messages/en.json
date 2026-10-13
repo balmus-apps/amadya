@@ -66,7 +66,8 @@
       "chooseHint": "The items you choose are kept for you while you pay.",
       "paySelected": "Pay {amount}",
       "cancel": "Cancel",
-      "nothing": "Nothing left to pay."
+      "nothing": "Nothing left to pay.",
+      "askWaiter": "Ask the waiter for the bill to pay."
     },
     "pay": {
       "title": "Payment {amount}",

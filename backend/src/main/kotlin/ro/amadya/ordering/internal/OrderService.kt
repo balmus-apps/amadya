@@ -16,6 +16,7 @@ import ro.amadya.ordering.OrderPayments
 import ro.amadya.ordering.OrderPlaced
 import ro.amadya.ordering.OrderProgress
 import ro.amadya.ordering.OrderQueries
+import ro.amadya.ordering.OrderSettledInPerson
 import ro.amadya.ordering.OrderStatusChanged
 import ro.amadya.ordering.PayableOrder
 import ro.amadya.ordering.PlacedLine
@@ -53,6 +54,13 @@ data class OrderingProperties(
     /** How long a ready takeaway / counter order stays on the queue display when nobody marks it picked up. */
     val queueReadyVisible: Duration = Duration.ofMinutes(20),
 )
+
+/** How staff took the payment of an unpaid takeaway / counter order at pickup. */
+data class PickupPayment(val method: String, val tendered: BigDecimal?) {
+    companion object {
+        const val CASH = "CASH"
+    }
+}
 
 /** The created order together with the raw tracking token, which is only ever returned once. */
 data class CreatedOrder(val order: OrderEntity, val trackingToken: String)
@@ -260,11 +268,27 @@ class OrderService(
     }
 
     // ---------------------------------------------------------------- staff actions
+    /**
+     * Hands the order over. An unpaid takeaway or counter order is paid at pickup, so [payment] is then required;
+     * dine-in rounds are settled on the table bill and paid orders need nothing.
+     */
     @Transactional
-    fun complete(orderId: UUID): OrderEntity {
+    fun complete(orderId: UUID, payment: PickupPayment? = null): OrderEntity {
         val order = load(orderId)
+        val settle = order.channel != OrderChannel.DINE_IN && order.paymentStatus == PaymentStatus.UNPAID
+        if (settle) {
+            if (payment == null) throw UnprocessableException("order.payment_required", order.number)
+            if (payment.tendered != null && payment.method != PickupPayment.CASH) throw UnprocessableException("order.tendered_cash_only")
+            if (payment.tendered != null && payment.tendered < order.total) throw UnprocessableException("order.tendered_too_low", order.total.toPlainString())
+        }
         transition(order, OrderStatus.COMPLETED, OrderStatus.READY)
         order.completedAt = clock.instant()
+        if (settle) {
+            order.paymentStatus = PaymentStatus.PAID
+            events.publishEvent(
+                OrderSettledInPerson(order.id, payment!!.method, order.total, order.currency, payment.tendered, Actor.current()?.userId),
+            )
+        }
         statusChanged(order)
         return order
     }

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.RestController
 import ro.amadya.contract.api.OrderingApi
 import ro.amadya.contract.model.CancelOrderRequest
+import ro.amadya.contract.model.CompleteOrderRequest
 import ro.amadya.contract.model.CreateOrderRequest
 import ro.amadya.contract.model.CustomerContact
 import ro.amadya.contract.model.Order
@@ -15,6 +16,7 @@ import ro.amadya.contract.model.OrderLine
 import ro.amadya.contract.model.QueueBoard
 import ro.amadya.contract.model.QueueBoardReadyOrdersInner
 import ro.amadya.ordering.QueueBoardView
+import ro.amadya.shared.Money
 import ro.amadya.shared.localized
 import ro.amadya.shared.toMoney
 import java.time.Instant
@@ -52,8 +54,10 @@ class OrderController(private val service: OrderService) : OrderingApi {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','WAITER','CASHIER')")
-    override fun completeOrder(orderId: UUID): ResponseEntity<Order> =
-        ResponseEntity.ok(service.complete(orderId).toDto(LocaleContextHolder.getLocale()))
+    override fun completeOrder(orderId: UUID, completeOrderRequest: CompleteOrderRequest?): ResponseEntity<Order> {
+        val payment = completeOrderRequest?.let { PickupPayment(it.method.value, it.tendered?.let(Money::of)) }
+        return ResponseEntity.ok(service.complete(orderId, payment).toDto(LocaleContextHolder.getLocale()))
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','WAITER','CASHIER')")
     override fun cancelOrder(orderId: UUID, cancelOrderRequest: CancelOrderRequest): ResponseEntity<Order> =

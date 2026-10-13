@@ -584,8 +584,16 @@ paths:
     post:
       tags: [ordering]
       operationId: completeOrder
-      summary: Mark a READY order as picked up / served (staff)
+      summary: |
+        Mark a READY order as picked up / served (staff). An unpaid takeaway or counter order is paid at pickup:
+        the body with the payment method is then required (422 `order.payment_required` without it), and the
+        payment is recorded. Paid orders and table rounds complete without a body.
       parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompleteOrderRequest" }
       responses:
         "200":
           description: OK
@@ -593,6 +601,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Order" }
         "409": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
 
   /orders/{orderId}/cancel:
     post:
@@ -2685,6 +2694,14 @@ components:
         total: { $ref: "#/components/schemas/Money" }
         vatTotal: { $ref: "#/components/schemas/Money" }
         createdAt: { type: string, format: date-time }
+
+    CompleteOrderRequest:
+      type: object
+      description: How an unpaid takeaway or counter order was paid at pickup
+      required: [method]
+      properties:
+        method: { $ref: "#/components/schemas/InPersonPaymentMethod" }
+        tendered: { type: string, pattern: '^\d+(\.\d{1,2})?$', description: Cash handed over (CASH only); must cover the total }
 
     CancelOrderRequest:
       type: object
