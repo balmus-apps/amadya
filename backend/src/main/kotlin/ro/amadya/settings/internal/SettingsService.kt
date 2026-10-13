@@ -15,6 +15,7 @@ import ro.amadya.settings.FeatureFlags
 import ro.amadya.settings.RestaurantSettingsApi
 import ro.amadya.settings.StationInfo
 import ro.amadya.settings.VatRateInfo
+import ro.amadya.shared.AmadyaProperties
 import ro.amadya.shared.ConflictException
 import ro.amadya.shared.LocalizedText
 import ro.amadya.shared.NotFoundException
@@ -30,6 +31,7 @@ class SettingsService(
     private val settings: RestaurantSettingsRepository,
     private val vatRates: VatRateRepository,
     private val stations: StationRepository,
+    private val props: AmadyaProperties,
 ) : RestaurantSettingsApi {
 
     private fun row(): RestaurantSettingsEntity = settings.findByIdOrNull(1) ?: error("restaurant_settings row missing")
@@ -193,6 +195,7 @@ class SettingsService(
         orderNumberPrefix = orderNumberPrefix,
         guestConfirmMinutes = guestConfirmMinutes,
         takeawayConfirmMinutes = takeawayConfirmMinutes,
+        publicUrl = props.publicBaseUrl.trimEnd('/'),
         activityRetentionDays = activityRetentionDays,
     )
 

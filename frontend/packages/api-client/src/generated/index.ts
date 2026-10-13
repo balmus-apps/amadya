@@ -689,6 +689,7 @@ export type {
   ReplaceProductRecipeResponse,
   ReplaceProductRecipeResponses,
   RestaurantSettings,
+  RestaurantSettingsWritable,
   ReverseNirData,
   ReverseNirError,
   ReverseNirErrors,

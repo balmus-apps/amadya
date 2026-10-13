@@ -554,6 +554,20 @@
   "title": "API",
   "description": "Every endpoint of this server's API, as built into the running version.",
   "warning": "Requests sent with \"Try it out\" are real: they use your administrator session, change this restaurant's data, and are recorded in the activity log.",
-  "notAllowed": "Only administrators can see the API documentation."
+  "notAllowed": "Only administrators can see the API documentation.",
+  "links": {
+   "title": "Apps of this restaurant",
+   "copy": "Copy the address",
+   "copied": "Address copied",
+   "apps": {
+    "menu": "Customer menu",
+    "admin": "Admin",
+    "waiter": "Waiter app",
+    "cashier": "Cashier",
+    "kitchen": "Kitchen and bar display",
+    "queue": "Order screen (TV)"
+   },
+   "tableHint": "Ordering at the table opens from each table's QR code ({url}); print the codes in Admin → Tables."
+  }
  }
 }
