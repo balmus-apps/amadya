@@ -89,6 +89,7 @@
     "pickupAt": "Pickup at {time}",
     "status": {
       "PENDING_PAYMENT": "Awaiting payment",
+      "AWAITING_CONFIRMATION": "Waiting for confirmation",
       "PLACED": "Order received",
       "PREPARING": "Being prepared",
       "READY": "Ready for pickup!",
@@ -97,6 +98,7 @@
     },
     "statusHint": {
       "PENDING_PAYMENT": "Complete the payment so we can send your order to the kitchen.",
+      "AWAITING_CONFIRMATION": "The restaurant will confirm your order in a few minutes. You pay at pickup.",
       "PLACED": "The kitchen has your order.",
       "PREPARING": "Our cooks are working on your order.",
       "READY": "Come to the counter, it's waiting for you.",
@@ -104,6 +106,7 @@
       "CANCELLED": "The order was cancelled."
     },
     "refunded": "The amount was refunded.",
+    "cancelReason": "Reason: {reason}",
     "live": "Live updates",
     "reconnecting": "Reconnecting…",
     "notifyMe": "Notify me when it's ready",

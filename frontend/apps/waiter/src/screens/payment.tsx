@@ -1,7 +1,7 @@
 import { recordTablePayment, type InPersonPaymentMethod, type TableSession } from "@amadya/api-client";
 import { formatMoney } from "@amadya/i18n";
-import { Button, cn, Input, QuantityStepper, Sheet, SheetContent, SheetDescription, SheetTitle, toast } from "@amadya/ui";
-import { CreditCardIcon, WalletIcon } from "lucide-react";
+import { PaymentFields, Segmented } from "@amadya/staff-pos";
+import { Button, cn, QuantityStepper, Sheet, SheetContent, SheetDescription, SheetTitle, toast } from "@amadya/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { equalShareCents, fromCents, itemsAmountCents, toCents, unpaidUnits } from "../lib/bill";
@@ -124,39 +124,7 @@ export function PaymentSheet({ session: s, open, onClose }: { session: TableSess
             </ul>
           )}
 
-          <Segmented
-            label={t("pay.method")}
-            value={method}
-            onChange={setMethod}
-            options={[
-              { value: "CASH", label: t("payments.method.CASH"), icon: <WalletIcon /> },
-              { value: "CARD_POS", label: t("payments.method.CARD_POS"), icon: <CreditCardIcon /> },
-            ]}
-          />
-
-          {method === "CASH" && amountCents > 0 && (
-            <div className="space-y-2 rounded-xl border p-3">
-              <label htmlFor="tendered" className="text-sm font-semibold">
-                {t("pay.tendered")}
-              </label>
-              <div className="flex gap-2">
-                <Input id="tendered" inputMode="decimal" placeholder={fromCents(amountCents)} value={tendered} onChange={(e) => setTendered(e.target.value.replace(/[^\d.,]/g, ""))} className="text-lg" />
-                {quickNotes(amountCents).map((cents) => (
-                  <Button key={cents} variant="outline" onClick={() => setTendered(fromCents(cents))}>
-                    {cents / 100}
-                  </Button>
-                ))}
-              </div>
-              {tenderedCents > 0 &&
-                (changeCents >= 0 ? (
-                  <p className="text-lg font-extrabold">{t("pay.change", { amount: money(changeCents) })}</p>
-                ) : (
-                  <p role="alert" className="text-sm font-semibold text-destructive">
-                    {t("pay.tenderedTooLow")}
-                  </p>
-                ))}
-            </div>
-          )}
+          <PaymentFields amountCents={amountCents} currency={currency} method={method} onMethodChange={(m) => setMethod(m as InPersonPaymentMethod)} tendered={tendered} onTenderedChange={setTendered} />
 
           {closesTable && unservedRounds > 0 && (
             <p role="note" className="rounded-xl bg-[var(--status-pending)] p-3 text-sm font-semibold text-[var(--status-pending-strong)]">
@@ -173,30 +141,5 @@ export function PaymentSheet({ session: s, open, onClose }: { session: TableSess
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-/** Banknotes worth offering as "handed over": the next round amounts above the bill. */
-function quickNotes(amountCents: number): number[] {
-  const notes = [1000, 2000, 5000, 10_000, 20_000, 50_000];
-  return notes.filter((n) => n >= amountCents).slice(0, 2);
-}
-
-function Segmented<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: { value: T; label: string; icon?: React.ReactNode }[] }) {
-  return (
-    <div role="radiogroup" aria-label={label} className="grid gap-1 rounded-xl bg-muted p-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn("flex h-11 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition [&_svg]:size-4", value === o.value ? "bg-background shadow-sm" : "text-muted-foreground")}
-        >
-          {o.icon}
-          {o.label}
-        </button>
-      ))}
-    </div>
   );
 }

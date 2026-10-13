@@ -1,6 +1,7 @@
 @import "@amadya/ui/styles.css";
 
 @source "./";
+@source "../../../packages/staff-pos/src";
 
 /*
  * Same status colours as the kitchen display, so a round looks the same on both screens:

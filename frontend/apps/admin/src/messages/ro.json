@@ -127,6 +127,7 @@
   },
   "statuses": {
    "PENDING_PAYMENT": "Așteaptă plata",
+   "AWAITING_CONFIRMATION": "De confirmat",
    "PLACED": "Primită",
    "PREPARING": "În preparare",
    "READY": "Gata",
@@ -397,6 +398,8 @@
   "parallelSlots": "Comenzi în paralel",
   "guestConfirmMinutes": "Minute până la confirmarea automată",
   "guestConfirmHint": "Comenzile clienților din QR și mesele deschise de ei, la care nu răspunde niciun ospătar, se confirmă automat după acest timp. Măriți-l în zilele aglomerate.",
+  "takeawayConfirmMinutes": "Confirmare comenzi la pachet (minute, 0 = oprit)",
+  "takeawayConfirmHint": "O comandă la pachet a unui client, cu plata la ridicare, așteaptă atât confirmarea sau refuzul casierului, apoi pleacă oricum la bucătărie. 0 trimite fiecare comandă direct la bucătărie.",
   "activityRetentionDays": "Păstrează jurnalul de activitate (zile)",
   "activityRetentionHint": "Acțiunile mai vechi ale personalului se șterg automat. Măriți valoarea dacă aveți nevoie de un istoric mai lung și aveți spațiu pe disc."
  },
@@ -471,6 +474,7 @@
    "ADMIN": "Admin",
    "WAITER": "Ospătar",
    "KITCHEN": "Bucătărie",
+   "CASHIER": "Casă",
    "OTHER": "Altele"
   },
   "outcomes": {

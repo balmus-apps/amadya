@@ -1,0 +1,90 @@
+{
+  "login": {
+    "title": "Cashier",
+    "subtitle": "Sign in with your staff account",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "error": "Wrong email or password",
+    "notAllowed": "This account cannot use the cashier app"
+  },
+  "tabs": {
+    "new": "New order",
+    "confirm": "To confirm",
+    "progress": "In progress",
+    "ready": "Ready"
+  },
+  "shell": {
+    "live": "Live",
+    "offline": "Offline – reconnecting…",
+    "soundOn": "Sound on",
+    "soundOff": "Sound off",
+    "logout": "Sign out"
+  },
+  "ticket": {
+    "title": "Order",
+    "empty": "Tap products to add them.",
+    "notes": "Order notes",
+    "notesPlaceholder": "e.g. eat in, in a bag",
+    "total": "Total",
+    "charge": "Charge {amount}",
+    "clear": "Clear",
+    "payTitle": "Payment · {amount}",
+    "send": "Send to the kitchen",
+    "sendPaid": "Paid · send to the kitchen",
+    "offline": "No connection: the order cannot be sent now.",
+    "doneTitle": "Order {number}",
+    "donePaid": "Paid · {method}",
+    "doneLater": "Pay at pickup",
+    "giveChange": "Change to give: {amount}",
+    "next": "Next order"
+  },
+  "orders": {
+    "total": "Total",
+    "empty": "Nothing here.",
+    "pickup": "Pickup {time}",
+    "asap": "As soon as possible",
+    "autoIn": "Sent to the kitchen automatically in {time}",
+    "autoNow": "Being sent to the kitchen…",
+    "confirm": "Confirm",
+    "refuse": "Refuse",
+    "pickedUp": "Picked up",
+    "cancel": "Cancel",
+    "paid": "Paid",
+    "unpaid": "Pay at pickup",
+    "call": "Call {phone}",
+    "confirmed": "Order {number} sent to the kitchen",
+    "refused": "Order {number} refused",
+    "cancelled": "Order {number} cancelled",
+    "handedOver": "Order {number} handed over",
+    "newToConfirm": "New phone order {number}",
+    "channels": { "TAKEAWAY": "Phone", "COUNTER": "Counter", "DINE_IN": "Table" },
+    "statuses": {
+      "PENDING_PAYMENT": "Awaiting online payment",
+      "AWAITING_CONFIRMATION": "To confirm",
+      "PLACED": "Received",
+      "PREPARING": "Preparing",
+      "READY": "Ready",
+      "COMPLETED": "Picked up",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "reason": {
+    "refuseTitle": "Refuse order {number}",
+    "cancelTitle": "Cancel order {number}",
+    "hint": "The customer sees this reason.",
+    "presets": {
+      "unavailable": "Product unavailable",
+      "closing": "Closing soon",
+      "unreachable": "Could not reach the customer"
+    },
+    "other": "Other reason",
+    "submitRefuse": "Refuse order",
+    "submitCancel": "Cancel order"
+  },
+  "handover": {
+    "title": "Hand over {number}",
+    "unpaid": "Not paid yet: take the payment.",
+    "submit": "Paid and picked up"
+  }
+}

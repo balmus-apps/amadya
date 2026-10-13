@@ -29,7 +29,7 @@ private val WRITES = setOf("POST", "PUT", "PATCH", "DELETE")
 /** Token refreshes happen every few minutes in every open app: noise, not an action. */
 private val IGNORED_ACTIONS = setOf("refreshToken")
 
-private val APPS = setOf("ADMIN", "WAITER", "KITCHEN")
+private val APPS = setOf("ADMIN", "WAITER", "KITCHEN", "CASHIER")
 
 private fun HttpServletRequest.isWrite() = method in WRITES
 

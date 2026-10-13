@@ -13,7 +13,7 @@ import { session } from "@/lib/session";
 
 export type ActivitySearch = { actorId?: string; role?: Role; app?: ActivityApp; action?: string; outcome?: ActivityOutcome; from?: string; to?: string };
 
-const apps: ActivityApp[] = ["ADMIN", "WAITER", "KITCHEN", "OTHER"];
+const apps: ActivityApp[] = ["ADMIN", "WAITER", "KITCHEN", "CASHIER", "OTHER"];
 const outcomes: ActivityOutcome[] = ["OK", "DENIED", "FAILED"];
 
 export function validateActivitySearch(s: Record<string, unknown>): ActivitySearch {

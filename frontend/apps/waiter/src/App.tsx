@@ -1,5 +1,6 @@
 import { login, unwrap } from "@amadya/api-client";
 import { accessToken, hasAnyRole, hasStoredSession, session, setApiLocale, signIn, signOut } from "@amadya/staff-auth";
+import { posMessages } from "@amadya/staff-pos";
 import { Button, Input, Toaster } from "@amadya/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -38,7 +39,7 @@ export function App() {
     setLocaleState(l);
   };
   return (
-    <IntlProvider locale={locale} messages={locale === "en" ? en : ro} timeZone="Europe/Bucharest">
+    <IntlProvider locale={locale} messages={locale === "en" ? { ...en, ...posMessages.en } : { ...ro, ...posMessages.ro }} timeZone="Europe/Bucharest">
       <QueryClientProvider client={queryClient}>
         <Gate locale={locale} setLocale={setLocale} />
         <Toaster position="top-center" />

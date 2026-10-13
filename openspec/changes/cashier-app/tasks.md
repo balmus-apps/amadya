@@ -56,17 +56,17 @@
 
 ## 4. Shared staff UI
 
-- [ ] 4.1 Create `frontend/packages/staff-pos` (with `package.json`, `tsconfig` and the workspace entry):
+- [x] 4.1 Create `frontend/packages/staff-pos` (with `package.json`, `tsconfig` and the workspace entry):
       - move `MenuPicker` from the waiter's `screens/order.tsx`;
       - move a table-agnostic `PaymentPanel` (Cash/Card, amount received, quick notes, change) from
         `screens/payment.tsx`;
       - include their ro/en strings.
-- [ ] 4.2 Switch the waiter app to `@amadya/staff-pos` with no visible change. Verify with `pnpm --filter waiter test`,
+- [x] 4.2 Switch the waiter app to `@amadya/staff-pos` with no visible change. Verify with `pnpm --filter waiter test`,
       `typecheck`, and on the local stack: send a round and record a cash payment with change at a table.
 
 ## 5. Cashier app
 
-- [ ] 5.1 Scaffold `frontend/apps/cashier`, based on the waiter app:
+- [x] 5.1 Scaffold `frontend/apps/cashier`, based on the waiter app:
       - Vite, React, `staff-auth` gate with the Cashier, Manager and Admin roles;
       - ro/en `use-intl`, with locale and sound preferences;
       - the `/cashier/` base path;
@@ -74,7 +74,7 @@
       - a messages parity test like the other apps.
 
       Verify with `pnpm --filter cashier build`.
-- [ ] 5.2 Live data (`lib/feed.ts`, `lib/data.ts`):
+- [x] 5.2 Live data (`lib/feed.ts`, `lib/data.ts`):
       - the `GET /orders/events` stream with the bearer token on every reconnect;
       - a live/offline indicator;
       - `listOrders` queries for the three lists (TAKEAWAY and COUNTER only), invalidated by events, with a 30 s
@@ -82,7 +82,7 @@
       - a sound and a toast for a new order to confirm.
 
       Verify with a unit test of the list grouping and filtering.
-- [ ] 5.3 **New order** screen:
+- [x] 5.3 **New order** screen:
       - `MenuPicker` and the ticket;
       - Send → `PaymentPanel` (Cash / Card / Pay at pickup) → `createOrder` with `payment`;
       - a confirmation card with the order number and change;
@@ -90,10 +90,10 @@
 
       Verify on the local stack: cash with change, card, pay at pickup, and the order appearing on the kitchen
       display.
-- [ ] 5.4 **To confirm** list: order cards with the countdown and a tap-to-call phone; Confirm; Refuse with ready-made
+- [x] 5.4 **To confirm** list: order cards with the countdown and a tap-to-call phone; Confirm; Refuse with ready-made
       reasons or free text. Verify on the local stack: a website order appears with a sound within seconds; confirm
       sends it to the kitchen; refuse shows the reason on the customer's order page.
-- [ ] 5.5 **In progress** and **Ready** lists:
+- [x] 5.5 **In progress** and **Ready** lists:
       - Picked up (completes directly when paid; otherwise asks Cash or Card with change);
       - Cancel with a reason, offered for `PREPARING` only to Manager and Admin.
 
@@ -101,25 +101,25 @@
 
 ## 6. Other apps and settings
 
-- [ ] 6.1 Add `AWAITING_CONFIRMATION` labels (ro/en) in `packages/i18n` (customer label and description), admin
+- [x] 6.1 Add `AWAITING_CONFIRMATION` labels (ro/en) in `packages/i18n` (customer label and description), admin
       (status badge, filter list, `status.tsx` variant) and the waiter's `bill.ts`. Verify with `pnpm typecheck`; the
       exhaustive switches must compile.
-- [ ] 6.2 menu-web and menu-mobile order screens: show the waiting state, and show `cancelReason` for cancelled orders.
+- [x] 6.2 menu-web and menu-mobile order screens: show the waiting state, and show `cancelReason` for cancelled orders.
       Verify on the local stack by placing an order on the website and refusing it from the cashier app.
-- [ ] 6.3 Admin → Settings → Restaurant: a "To-go confirmation (minutes, 0 = off)" field next to the QR one, in ro and
+- [x] 6.3 Admin → Settings → Restaurant: a "To-go confirmation (minutes, 0 = off)" field next to the QR one, in ro and
       en. Verify on the local stack by setting 0 and placing an order.
 
 ## 7. Deploy and docs
 
-- [ ] 7.1 Add the `cashier` service to `docker-compose.yml` and to `docker-compose.prod.yml` (64 MB limit, same
+- [x] 7.1 Add the `cashier` service to `docker-compose.yml` and to `docker-compose.prod.yml` (64 MB limit, same
       hardening as `waiter`); add `/cashier` to `infra/caddy/Caddyfile`; add `cashier` to the build matrix in
       `.github/workflows/main.yml` and to `scripts/release.sh`. Verify with `docker compose up -d --build cashier
       caddy` and by opening `https://localhost/cashier`.
-- [ ] 7.2 Docs:
+- [x] 7.2 Docs:
       - in the README, add the cashier app to both app tables (ro/en) with the login hint;
       - in `docs/domain/`, document the takeaway order states with confirmation;
       - in `docs/todo/payments.md`, note that counter orders are paid when ordering.
-- [ ] 7.3 End-to-end on the local stack, as a cashier account:
+- [x] 7.3 End-to-end on the local stack, as a cashier account:
       1. Take a counter order paid in cash. The kitchen marks it ready, and it is handed over.
       2. A website order arrives and is confirmed, cooked and handed over with card.
       3. A second website order is refused, and the customer page shows the reason.

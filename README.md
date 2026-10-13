@@ -59,6 +59,7 @@ Pe calculatorul pe care rulează Amadya (datele de test vin deja încărcate):
 | Meniul pentru clienți | <https://localhost> | fără cont |
 | Comandă de la masă (QR) | <https://localhost/t/demo-5> | doar un prenume |
 | Aplicația ospătarului | <https://localhost/waiter> | `ospatar@amadya.local` / `Ospatar12345!` |
+| Casa (comenzi la tejghea, confirmarea comenzilor de pe telefon) | <https://localhost/cashier> | `admin@amadya.local` / `Admin12345!` |
 | Ecranul bucătăriei și al barului | <https://localhost/kitchen> | `admin@amadya.local` / `Admin12345!` |
 | Ecranul de comenzi (TV) | <https://localhost/queue> | fără cont |
 | Administrare | <https://localhost/admin> | `admin@amadya.local` / `Admin12345!` |
@@ -126,6 +127,7 @@ On the computer running Amadya (demo data is already loaded):
 | Customer menu | <https://localhost> | none |
 | Ordering at the table (QR) | <https://localhost/t/demo-5> | just a first name |
 | Waiter app | <https://localhost/waiter> | `ospatar@amadya.local` / `Ospatar12345!` |
+| Cashier (counter orders, confirming phone orders) | <https://localhost/cashier> | `admin@amadya.local` / `Admin12345!` |
 | Kitchen and bar display | <https://localhost/kitchen> | `admin@amadya.local` / `Admin12345!` |
 | Order screen (TV) | <https://localhost/queue> | none |
 | Admin | <https://localhost/admin> | `admin@amadya.local` / `Admin12345!` |

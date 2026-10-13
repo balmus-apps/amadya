@@ -38,6 +38,7 @@ export function roundState(status: OrderStatus): RoundState {
   switch (status) {
     case "PLACED":
     case "PENDING_PAYMENT":
+    case "AWAITING_CONFIRMATION": // takeaway only; listed so every status maps
       return "pending";
     case "PREPARING":
       return "preparing";

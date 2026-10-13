@@ -1,0 +1,31 @@
+{
+  "name": "@amadya/staff-pos",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@amadya/api-client": "workspace:*",
+    "@amadya/customer-core": "workspace:*",
+    "@amadya/i18n": "workspace:*",
+    "@amadya/ui": "workspace:*",
+    "lucide-react": "1.52.0",
+    "use-intl": "4.14.9"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "devDependencies": {
+    "@amadya/config": "workspace:*",
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}

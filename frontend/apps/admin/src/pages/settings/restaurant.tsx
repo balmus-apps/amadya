@@ -105,6 +105,16 @@ export function RestaurantSettingsPage() {
                 className="w-28"
               />
             </Field>
+            <Field label={t("settings.takeawayConfirmMinutes")} hint={t("settings.takeawayConfirmHint")}>
+              <Input
+                type="number"
+                min={0}
+                max={60}
+                value={form.takeawayConfirmMinutes ?? 5}
+                onChange={(e) => set({ takeawayConfirmMinutes: Math.max(0, Math.min(60, Math.trunc(Number(e.target.value)) || 0)) })}
+                className="w-28"
+              />
+            </Field>
             <Field label={t("settings.activityRetentionDays")} hint={t("settings.activityRetentionHint")}>
               <Input
                 type="number"

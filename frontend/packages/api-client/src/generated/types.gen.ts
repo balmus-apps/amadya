@@ -1391,7 +1391,7 @@ export type GuestPaymentRequest = {
 /**
  * The app the action came from (sent by the staff apps in `X-Amadya-App`, otherwise inferred from the endpoint)
  */
-export type ActivityApp = "ADMIN" | "WAITER" | "KITCHEN" | "OTHER";
+export type ActivityApp = "ADMIN" | "WAITER" | "KITCHEN" | "CASHIER" | "OTHER";
 
 /**
  * OK: done; DENIED: not allowed or wrong credentials (401/403); FAILED: refused or failed (other errors)

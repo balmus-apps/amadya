@@ -89,6 +89,7 @@
     "pickupAt": "Ridicare la {time}",
     "status": {
       "PENDING_PAYMENT": "Așteaptă plata",
+      "AWAITING_CONFIRMATION": "Așteaptă confirmarea",
       "PLACED": "Comandă primită",
       "PREPARING": "Se pregătește",
       "READY": "Gata de ridicare!",
@@ -97,6 +98,7 @@
     },
     "statusHint": {
       "PENDING_PAYMENT": "Finalizează plata ca să trimitem comanda la bucătărie.",
+      "AWAITING_CONFIRMATION": "Restaurantul îți confirmă comanda în câteva minute. Plătești la ridicare.",
       "PLACED": "Bucătăria a primit comanda ta.",
       "PREPARING": "Bucătarii lucrează la comanda ta.",
       "READY": "Te așteptăm la tejghea.",
@@ -104,6 +106,7 @@
       "CANCELLED": "Comanda a fost anulată."
     },
     "refunded": "Suma a fost rambursată.",
+    "cancelReason": "Motiv: {reason}",
     "live": "Actualizare în timp real",
     "reconnecting": "Se reconectează…",
     "notifyMe": "Anunță-mă când e gata",

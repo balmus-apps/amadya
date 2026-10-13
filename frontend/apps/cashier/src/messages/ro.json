@@ -1,0 +1,90 @@
+{
+  "login": {
+    "title": "Casă",
+    "subtitle": "Intră cu contul de personal",
+    "email": "Email",
+    "password": "Parolă",
+    "submit": "Intră",
+    "error": "Email sau parolă greșită",
+    "notAllowed": "Acest cont nu poate folosi aplicația de casă"
+  },
+  "tabs": {
+    "new": "Comandă nouă",
+    "confirm": "De confirmat",
+    "progress": "În lucru",
+    "ready": "Gata"
+  },
+  "shell": {
+    "live": "Conectat",
+    "offline": "Fără conexiune – se reconectează…",
+    "soundOn": "Sunet pornit",
+    "soundOff": "Sunet oprit",
+    "logout": "Ieșire"
+  },
+  "ticket": {
+    "title": "Comandă",
+    "empty": "Atinge produsele ca să le adaugi.",
+    "notes": "Mențiuni la comandă",
+    "notesPlaceholder": "ex. pe loc, în pungă",
+    "total": "Total",
+    "charge": "Încasează {amount}",
+    "clear": "Golește",
+    "payTitle": "Plată · {amount}",
+    "send": "Trimite la bucătărie",
+    "sendPaid": "Încasat · trimite la bucătărie",
+    "offline": "Fără conexiune: comanda nu poate fi trimisă acum.",
+    "doneTitle": "Comanda {number}",
+    "donePaid": "Plătită · {method}",
+    "doneLater": "Plată la ridicare",
+    "giveChange": "Rest de dat: {amount}",
+    "next": "Comanda următoare"
+  },
+  "orders": {
+    "total": "Total",
+    "empty": "Nimic aici.",
+    "pickup": "Ridicare {time}",
+    "asap": "Cât mai repede",
+    "autoIn": "Pleacă automat la bucătărie în {time}",
+    "autoNow": "Se trimite la bucătărie…",
+    "confirm": "Confirmă",
+    "refuse": "Refuză",
+    "pickedUp": "Predată",
+    "cancel": "Anulează",
+    "paid": "Plătită",
+    "unpaid": "Plată la ridicare",
+    "call": "Sună la {phone}",
+    "confirmed": "Comanda {number} a plecat la bucătărie",
+    "refused": "Comanda {number} a fost refuzată",
+    "cancelled": "Comanda {number} a fost anulată",
+    "handedOver": "Comanda {number} a fost predată",
+    "newToConfirm": "Comandă nouă de pe telefon {number}",
+    "channels": { "TAKEAWAY": "Telefon", "COUNTER": "Casă", "DINE_IN": "Masă" },
+    "statuses": {
+      "PENDING_PAYMENT": "Așteaptă plata online",
+      "AWAITING_CONFIRMATION": "De confirmat",
+      "PLACED": "Primită",
+      "PREPARING": "În preparare",
+      "READY": "Gata",
+      "COMPLETED": "Predată",
+      "CANCELLED": "Anulată"
+    }
+  },
+  "reason": {
+    "refuseTitle": "Refuză comanda {number}",
+    "cancelTitle": "Anulează comanda {number}",
+    "hint": "Clientul vede acest motiv.",
+    "presets": {
+      "unavailable": "Produs indisponibil",
+      "closing": "Închidem în curând",
+      "unreachable": "Nu am putut contacta clientul"
+    },
+    "other": "Alt motiv",
+    "submitRefuse": "Refuză comanda",
+    "submitCancel": "Anulează comanda"
+  },
+  "handover": {
+    "title": "Predă {number}",
+    "unpaid": "Nu e plătită încă: încasează.",
+    "submit": "Încasat și predat"
+  }
+}

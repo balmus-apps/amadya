@@ -3709,7 +3709,7 @@ components:
     ActivityApp:
       type: string
       description: The app the action came from (sent by the staff apps in `X-Amadya-App`, otherwise inferred from the endpoint)
-      enum: [ADMIN, WAITER, KITCHEN, OTHER]
+      enum: [ADMIN, WAITER, KITCHEN, CASHIER, OTHER]
 
     ActivityOutcome:
       type: string

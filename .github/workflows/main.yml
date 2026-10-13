@@ -74,6 +74,7 @@ jobs:
           - { name: admin, context: frontend, dockerfile: frontend/apps/admin/Dockerfile }
           - { name: kitchen, context: frontend, dockerfile: frontend/apps/kitchen/Dockerfile }
           - { name: waiter, context: frontend, dockerfile: frontend/apps/waiter/Dockerfile }
+          - { name: cashier, context: frontend, dockerfile: frontend/apps/cashier/Dockerfile }
           - { name: queue-display, context: frontend, dockerfile: frontend/apps/queue-display/Dockerfile }
           - { name: table, context: frontend, dockerfile: frontend/apps/table/Dockerfile }
     steps:

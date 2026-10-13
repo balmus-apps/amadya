@@ -14,6 +14,7 @@
     "@amadya/customer-core": "workspace:*",
     "@amadya/i18n": "workspace:*",
     "@amadya/staff-auth": "workspace:*",
+    "@amadya/staff-pos": "workspace:*",
     "@amadya/ui": "workspace:*",
     "@tanstack/react-query": "5.104.1",
     "lucide-react": "1.52.0",

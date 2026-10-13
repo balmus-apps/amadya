@@ -129,7 +129,9 @@
 2. **Deploy:** the merge to `main` deploys the api and every image, including the new `amadya-cashier` (ADR 0012).
    - The deploy script pulls every service in `docker-compose.prod.yml`, so the new service starts with no manual
      step.
-   - Caddy's config is part of the web image, so `/cashier` is routed after the deploy.
+   - Caddy reads `infra/caddy/Caddyfile` through a single-file bind mount, which keeps the old file after the deploy's
+     checkout. `scripts/deploy.sh` therefore restarts Caddy (about one second) when the file on disk differs from the
+     one the container serves, so `/cashier` is routed after the deploy.
 3. **After deploy:** create a Cashier account in Admin → Users and open `https://<domain>/cashier` on the counter
    tablet.
 4. **Rollback:** redeploy the previous tag.

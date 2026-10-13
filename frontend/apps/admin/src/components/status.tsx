@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n";
 
 const tone: Record<OrderStatus, "muted" | "default" | "accent" | "success" | "secondary" | "outline"> = {
   PENDING_PAYMENT: "outline",
+  AWAITING_CONFIRMATION: "outline",
   PLACED: "default",
   PREPARING: "accent",
   READY: "success",
