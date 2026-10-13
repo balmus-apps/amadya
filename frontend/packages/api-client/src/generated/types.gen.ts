@@ -73,6 +73,10 @@ export type PublicSettings = {
   };
   features: Features;
   openingHours: Array<OpeningHours>;
+  /**
+   * Minutes a to-go order paid at pickup waits for the restaurant before it is confirmed automatically; 0 = no confirmation
+   */
+  takeawayConfirmMinutes?: number;
 };
 
 export type RestaurantSettings = {
@@ -100,6 +104,10 @@ export type RestaurantSettings = {
    * QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long
    */
   guestConfirmMinutes?: number;
+  /**
+   * A customer's to-go order paid at pickup waits this long for the cashier, then goes to the kitchen anyway; 0 = no confirmation
+   */
+  takeawayConfirmMinutes?: number;
   /**
    * The activity log keeps staff actions for this many days, then deletes them
    */
@@ -342,6 +350,7 @@ export type OrderChannel = "TAKEAWAY" | "DINE_IN" | "COUNTER";
 
 export type OrderStatus =
   | "PENDING_PAYMENT"
+  | "AWAITING_CONFIRMATION"
   | "PLACED"
   | "PREPARING"
   | "READY"
@@ -368,6 +377,7 @@ export type CreateOrderRequest = {
   pickupAt?: string;
   customer?: CustomerContact;
   notes?: string;
+  payment?: OrderPayment;
   lines: Array<CreateOrderLine>;
 };
 
@@ -412,6 +422,17 @@ export type Order = {
 };
 
 /**
+ * Payment taken by staff when a COUNTER order is created
+ */
+export type OrderPayment = {
+  method: InPersonPaymentMethod;
+  /**
+   * Cash handed over (CASH only); must cover the total
+   */
+  tendered?: string;
+};
+
+/**
  * How an unpaid takeaway or counter order was paid at pickup
  */
 export type CompleteOrderRequest = {
@@ -430,6 +451,7 @@ export type OrderStatusChanged = {
   orderId: string;
   number: string;
   status: OrderStatus;
+  channel?: OrderChannel;
   estimatedReadyAt?: string;
   at: string;
 };
@@ -2374,6 +2396,62 @@ export type CompleteOrderResponses = {
 export type CompleteOrderResponse =
   CompleteOrderResponses[keyof CompleteOrderResponses];
 
+export type ConfirmOrderData = {
+  body?: never;
+  path: {
+    orderId: string;
+  };
+  query?: never;
+  url: "/orders/{orderId}/confirm";
+};
+
+export type ConfirmOrderErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type ConfirmOrderError = ConfirmOrderErrors[keyof ConfirmOrderErrors];
+
+export type ConfirmOrderResponses = {
+  /**
+   * OK
+   */
+  200: Order;
+};
+
+export type ConfirmOrderResponse =
+  ConfirmOrderResponses[keyof ConfirmOrderResponses];
+
+export type RefuseOrderData = {
+  body: CancelOrderRequest;
+  path: {
+    orderId: string;
+  };
+  query?: never;
+  url: "/orders/{orderId}/refuse";
+};
+
+export type RefuseOrderErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  409: Problem;
+};
+
+export type RefuseOrderError = RefuseOrderErrors[keyof RefuseOrderErrors];
+
+export type RefuseOrderResponses = {
+  /**
+   * OK
+   */
+  200: Order;
+};
+
+export type RefuseOrderResponse =
+  RefuseOrderResponses[keyof RefuseOrderResponses];
+
 export type CancelOrderData = {
   body: CancelOrderRequest;
   path: {
@@ -2658,6 +2736,33 @@ export type RegisterPushSubscriptionResponses = {
 
 export type RegisterPushSubscriptionResponse =
   RegisterPushSubscriptionResponses[keyof RegisterPushSubscriptionResponses];
+
+export type StreamStaffOrderEventsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/orders/events";
+};
+
+export type StreamStaffOrderEventsErrors = {
+  /**
+   * Error (RFC 9457)
+   */
+  401: Problem;
+};
+
+export type StreamStaffOrderEventsError =
+  StreamStaffOrderEventsErrors[keyof StreamStaffOrderEventsErrors];
+
+export type StreamStaffOrderEventsResponses = {
+  /**
+   * Event stream; event name `order-status`, data OrderStatusChanged
+   */
+  200: OrderStatusChanged;
+};
+
+export type StreamStaffOrderEventsResponse =
+  StreamStaffOrderEventsResponses[keyof StreamStaffOrderEventsResponses];
 
 export type StreamOrderEventsData = {
   body?: never;

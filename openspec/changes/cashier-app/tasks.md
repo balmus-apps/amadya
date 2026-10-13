@@ -1,6 +1,6 @@
 ## 1. Contract and database
 
-- [ ] 1.1 In `api/openapi/openapi.yaml`:
+- [x] 1.1 In `api/openapi/openapi.yaml`:
       - add `AWAITING_CONFIRMATION` to `OrderStatus`;
       - add `OrderPayment { method, tendered? }`, used by `CreateOrderRequest.payment` (staff `COUNTER` only);
       - add `POST /orders/{orderId}/confirm` (`confirmOrder`) and `POST /orders/{orderId}/refuse` (`refuseOrder`, body
@@ -9,23 +9,23 @@
       - add `takeawayConfirmMinutes` (0–60) to `RestaurantSettings` and `PublicSettings`.
 
       Verify with `./gradlew openApiGenerate` in `backend/` and `pnpm gen:api` in `frontend/`.
-- [ ] 1.2 Add migration `V18__takeaway_confirmation.sql`: re-create the `customer_order` status CHECK with
+- [x] 1.2 Add migration `V18__takeaway_confirmation.sql`: re-create the `customer_order` status CHECK with
       `AWAITING_CONFIRMATION`, and add `restaurant_settings.takeaway_confirm_minutes INT NOT NULL DEFAULT 5 CHECK
       (0..60)`. Verify that the API starts against the local DB (`docker compose up -d --build api`).
 
 ## 2. Backend: confirmation
 
-- [ ] 2.1 In `settings`, expose `takeawayConfirmMinutes` through `RestaurantSettingsApi`, the admin DTO (saved when
+- [x] 2.1 In `settings`, expose `takeawayConfirmMinutes` through `RestaurantSettingsApi`, the admin DTO (saved when
       present) and public settings. Verify with an integration test: default 5, saving 0 works, saving 90 returns 400.
-- [ ] 2.2 In `ordering`:
+- [x] 2.2 In `ordering`:
       - `create()` puts an unpaid customer `TAKEAWAY` order in `AWAITING_CONFIRMATION` when the minutes are > 0;
       - add `confirm()` (→ `PLACED` + `place()`) and `refuse()` (→ `CANCELLED` with the reason, no refund);
       - add a `@Scheduled(PT1M)` automatic confirmation job;
       - in the controller, both endpoints are allowed for Cashier, Waiter, Manager and Admin.
 
       Add the ro/en messages.
-- [ ] 2.3 In `reporting`, exclude `AWAITING_CONFIRMATION` from sales.
-- [ ] 2.4 Add integration tests, in a new `TakeawayConfirmationIntegrationTests`:
+- [x] 2.3 In `reporting`, exclude `AWAITING_CONFIRMATION` from sales.
+- [x] 2.4 Add integration tests, in a new `TakeawayConfirmationIntegrationTests`:
       - a waiting order has no kitchen ticket;
       - confirm → `PLACED` and a ticket exists;
       - refuse → `CANCELLED` with the reason;
@@ -40,14 +40,14 @@
 
 ## 3. Backend: paying when ordering and the staff stream
 
-- [ ] 3.1 In `ordering`:
+- [x] 3.1 In `ordering`:
       - accept `CreateOrderRequest.payment` only for staff `COUNTER` orders (422 otherwise);
       - share the validation with `complete()`;
       - mark the order `PAID` and publish `OrderSettledInPerson`.
 
       Add tests for: cash with change, card, low cash → 422 with no order created, a customer request with `payment` →
       422, a payment row recorded, and an order created with a payment completing without a body.
-- [ ] 3.2 In `notifications`, add the staff subscribers to `SseHub` and the `GET /orders/events` endpoint fed by
+- [x] 3.2 In `notifications`, add the staff subscribers to `SseHub` and the `GET /orders/events` endpoint fed by
       `OrderStatusChanged`. In `SecurityConfig`, put a staff-only matcher before the public `/orders/*` rule. Add tests:
       - 401 without a token;
       - a cashier receives the event of a new phone order and of its confirmation.

@@ -37,7 +37,7 @@ class ReportingService(
     private val props: AmadyaProperties,
     private val json: JsonMapper,
 ) {
-    private val sold = "status NOT IN ('CANCELLED', 'PENDING_PAYMENT')"
+    private val sold = "status NOT IN ('CANCELLED', 'PENDING_PAYMENT', 'AWAITING_CONFIRMATION')"
 
     fun dashboard(from: LocalDate, to: LocalDate): Dashboard {
         if (to.isBefore(from) || from.plusDays(366).isBefore(to)) throw UnprocessableException("reporting.invalid_range")

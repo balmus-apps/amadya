@@ -29,6 +29,9 @@ import type {
   ConfirmGuestRoundData,
   ConfirmGuestRoundErrors,
   ConfirmGuestRoundResponses,
+  ConfirmOrderData,
+  ConfirmOrderErrors,
+  ConfirmOrderResponses,
   ConfirmTableSessionData,
   ConfirmTableSessionErrors,
   ConfirmTableSessionResponses,
@@ -266,6 +269,9 @@ import type {
   RefreshTokenData,
   RefreshTokenErrors,
   RefreshTokenResponses,
+  RefuseOrderData,
+  RefuseOrderErrors,
+  RefuseOrderResponses,
   RegenerateTableQrData,
   RegenerateTableQrErrors,
   RegenerateTableQrResponses,
@@ -314,6 +320,10 @@ import type {
   StreamQueueEventsData,
   StreamQueueEventsResponse,
   StreamQueueEventsResponses,
+  StreamStaffOrderEventsData,
+  StreamStaffOrderEventsErrors,
+  StreamStaffOrderEventsResponse,
+  StreamStaffOrderEventsResponses,
   StreamTableEventsData,
   StreamTableEventsErrors,
   StreamTableEventsResponse,
@@ -961,7 +971,9 @@ export const listOrders = <ThrowOnError extends boolean = false>(
 
 /**
  * Create an order. TAKEAWAY is public (guest checkout: name + phone required) and starts in PENDING_PAYMENT
- * when online payments are enabled, otherwise PLACED. COUNTER and DINE_IN require a staff role and start PLACED.
+ * when online payments are enabled; otherwise it waits in AWAITING_CONFIRMATION for the restaurant (PLACED when
+ * `takeawayConfirmMinutes` is 0). COUNTER and DINE_IN require a staff role and start PLACED. Staff may pay a
+ * COUNTER order when creating it (`payment`); it is then PAID.
  *
  */
 export const createOrder = <ThrowOnError extends boolean = false>(
@@ -1013,6 +1025,42 @@ export const completeOrder = <ThrowOnError extends boolean = false>(
   >({
     security: [{ scheme: "bearer", type: "http" }],
     url: "/orders/{orderId}/complete",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Confirm a customer order AWAITING_CONFIRMATION; it goes to the kitchen (staff)
+ */
+export const confirmOrder = <ThrowOnError extends boolean = false>(
+  options: Options<ConfirmOrderData, ThrowOnError>,
+): RequestResult<ConfirmOrderResponses, ConfirmOrderErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    ConfirmOrderResponses,
+    ConfirmOrderErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/orders/{orderId}/confirm",
+    ...options,
+  });
+
+/**
+ * Refuse a customer order AWAITING_CONFIRMATION with a reason the customer sees (staff)
+ */
+export const refuseOrder = <ThrowOnError extends boolean = false>(
+  options: Options<RefuseOrderData, ThrowOnError>,
+): RequestResult<RefuseOrderResponses, RefuseOrderErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    RefuseOrderResponses,
+    RefuseOrderErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/orders/{orderId}/refuse",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1210,6 +1258,26 @@ export const registerPushSubscription = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Server-Sent Events with every order status change (staff; the cashier app)
+ */
+export const streamStaffOrderEvents = <ThrowOnError extends boolean = false>(
+  options?: Options<
+    StreamStaffOrderEventsData,
+    ThrowOnError,
+    StreamStaffOrderEventsResponse
+  >,
+): Promise<ServerSentEventsResult<StreamStaffOrderEventsResponses>> =>
+  (options?.client ?? client).sse.get<
+    StreamStaffOrderEventsResponses,
+    StreamStaffOrderEventsErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/orders/events",
+    ...options,
   });
 
 /**

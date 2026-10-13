@@ -520,7 +520,9 @@ paths:
       operationId: createOrder
       summary: |
         Create an order. TAKEAWAY is public (guest checkout: name + phone required) and starts in PENDING_PAYMENT
-        when online payments are enabled, otherwise PLACED. COUNTER and DINE_IN require a staff role and start PLACED.
+        when online payments are enabled; otherwise it waits in AWAITING_CONFIRMATION for the restaurant (PLACED when
+        `takeawayConfirmMinutes` is 0). COUNTER and DINE_IN require a staff role and start PLACED. Staff may pay a
+        COUNTER order when creating it (`payment`); it is then PAID.
       security: [{}, { bearerAuth: [] }]
       parameters:
         - $ref: "#/components/parameters/AcceptLanguage"
@@ -602,6 +604,39 @@ paths:
               schema: { $ref: "#/components/schemas/Order" }
         "409": { $ref: "#/components/responses/Problem" }
         "422": { $ref: "#/components/responses/Problem" }
+
+  /orders/{orderId}/confirm:
+    post:
+      tags: [ordering]
+      operationId: confirmOrder
+      summary: Confirm a customer order AWAITING_CONFIRMATION; it goes to the kitchen (staff)
+      parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "409": { $ref: "#/components/responses/Problem" }
+
+  /orders/{orderId}/refuse:
+    post:
+      tags: [ordering]
+      operationId: refuseOrder
+      summary: Refuse a customer order AWAITING_CONFIRMATION with a reason the customer sees (staff)
+      parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelOrderRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "409": { $ref: "#/components/responses/Problem" }
 
   /orders/{orderId}/cancel:
     post:
@@ -761,6 +796,19 @@ paths:
         "404": { $ref: "#/components/responses/Problem" }
 
   # ---------------------------------------------------------------- streams (hand-implemented)
+  /orders/events:
+    get:
+      tags: [streams]
+      operationId: streamStaffOrderEvents
+      summary: Server-Sent Events with every order status change (staff; the cashier app)
+      responses:
+        "200":
+          description: "Event stream; event name `order-status`, data OrderStatusChanged"
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/OrderStatusChanged" }
+        "401": { $ref: "#/components/responses/Problem" }
+
   /orders/{orderId}/events:
     get:
       tags: [streams]
@@ -2302,6 +2350,7 @@ components:
           description: Design tokens, e.g. {"primary":"#FFC800","radius":"12px"}
         features: { $ref: "#/components/schemas/Features" }
         openingHours: { type: array, items: { $ref: "#/components/schemas/OpeningHours" } }
+        takeawayConfirmMinutes: { type: integer, description: "Minutes a to-go order paid at pickup waits for the restaurant before it is confirmed automatically; 0 = no confirmation" }
 
     RestaurantSettings:
       type: object
@@ -2330,6 +2379,12 @@ components:
           maximum: 60
           default: 5
           description: "QR ordering: a guest round or table the waiter has not answered is confirmed automatically after this long"
+        takeawayConfirmMinutes:
+          type: integer
+          minimum: 0
+          maximum: 60
+          default: 5
+          description: "A customer's to-go order paid at pickup waits this long for the cashier, then goes to the kitchen anyway; 0 = no confirmation"
         activityRetentionDays:
           type: integer
           minimum: 1
@@ -2618,7 +2673,7 @@ components:
 
     OrderStatus:
       type: string
-      enum: [PENDING_PAYMENT, PLACED, PREPARING, READY, COMPLETED, CANCELLED]
+      enum: [PENDING_PAYMENT, AWAITING_CONFIRMATION, PLACED, PREPARING, READY, COMPLETED, CANCELLED]
 
     PaymentStatus:
       type: string
@@ -2641,6 +2696,7 @@ components:
         pickupAt: { type: string, format: date-time, description: Requested pickup time (TAKEAWAY); omitted = as soon as possible }
         customer: { $ref: "#/components/schemas/CustomerContact" }
         notes: { type: string, maxLength: 500 }
+        payment: { $ref: "#/components/schemas/OrderPayment" }
         lines:
           type: array
           minItems: 1
@@ -2695,6 +2751,14 @@ components:
         vatTotal: { $ref: "#/components/schemas/Money" }
         createdAt: { type: string, format: date-time }
 
+    OrderPayment:
+      type: object
+      description: Payment taken by staff when a COUNTER order is created
+      required: [method]
+      properties:
+        method: { $ref: "#/components/schemas/InPersonPaymentMethod" }
+        tendered: { type: string, pattern: '^\d+(\.\d{1,2})?$', description: Cash handed over (CASH only); must cover the total }
+
     CompleteOrderRequest:
       type: object
       description: How an unpaid takeaway or counter order was paid at pickup
@@ -2716,6 +2780,7 @@ components:
         orderId: { type: string, format: uuid }
         number: { type: string }
         status: { $ref: "#/components/schemas/OrderStatus" }
+        channel: { $ref: "#/components/schemas/OrderChannel" }
         estimatedReadyAt: { type: string, format: date-time }
         at: { type: string, format: date-time }
 

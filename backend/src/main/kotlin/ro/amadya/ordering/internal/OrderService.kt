@@ -55,7 +55,7 @@ data class OrderingProperties(
     val queueReadyVisible: Duration = Duration.ofMinutes(20),
 )
 
-/** How staff took the payment of an unpaid takeaway / counter order at pickup. */
+/** How staff took the payment of a takeaway / counter order: at the counter when ordering, or at pickup. */
 data class PickupPayment(val method: String, val tendered: BigDecimal?) {
     companion object {
         const val CASH = "CASH"
@@ -101,11 +101,22 @@ class OrderService(
             OrderChannel.DINE_IN -> throw UnprocessableException("order.dine_in_via_tables")
         }
 
-        // Guests pay online first when online payments are on; staff-created orders go straight to the kitchen.
-        val awaitPayment = channel == OrderChannel.TAKEAWAY && features.onlinePayments && !staff
+        // Staff may take the money of a counter order when they create it (the cashier app).
+        val payment = req.payment?.let { PickupPayment(it.method.value, it.tendered?.let(Money::of)) }
+        if (payment != null && !(staff && channel == OrderChannel.COUNTER)) throw UnprocessableException("order.payment_counter_only")
+
+        // Guests pay online first when online payments are on; otherwise their order waits for the cashier to confirm
+        // it (unless the restaurant turned confirmation off). Staff-created orders go straight to the kitchen.
+        val customerTakeaway = channel == OrderChannel.TAKEAWAY && !staff
+        val status = when {
+            customerTakeaway && features.onlinePayments -> OrderStatus.PENDING_PAYMENT
+            customerTakeaway && settings.takeawayConfirmMinutes() > 0 -> OrderStatus.AWAITING_CONFIRMATION
+            else -> OrderStatus.PLACED
+        }
         return createOrder(
             channel = channel,
-            status = if (awaitPayment) OrderStatus.PENDING_PAYMENT else OrderStatus.PLACED,
+            status = status,
+            payment = payment,
             lines = req.lines.map { LineSelection(it.productId, it.quantity, it.modifierOptionIds.orEmpty(), it.notes) },
             locale = locale,
             notes = req.notes,
@@ -191,6 +202,7 @@ class OrderService(
         customerUserId: UUID? = null,
         tableSessionId: UUID? = null,
         tableLabel: String? = null,
+        payment: PickupPayment? = null,
     ): CreatedOrder {
         val actor = Actor.current()
         val priced = catalog.priceLines(lines)
@@ -232,7 +244,12 @@ class OrderService(
             trackingTokenHash = hash(token),
             lines = orderLines.toMutableList(),
         )
+        if (payment != null) {
+            checkPayment(order, payment)
+            order.paymentStatus = PaymentStatus.PAID
+        }
         orders.save(order)
+        if (payment != null) settledInPerson(order, payment)
         if (order.status == OrderStatus.PLACED) place(order, tableLabel) else statusChanged(order)
         log.info("Order {} created: channel={} status={} total={}", order.number, channel, order.status, order.total)
         return CreatedOrder(order, token)
@@ -276,20 +293,34 @@ class OrderService(
     fun complete(orderId: UUID, payment: PickupPayment? = null): OrderEntity {
         val order = load(orderId)
         val settle = order.channel != OrderChannel.DINE_IN && order.paymentStatus == PaymentStatus.UNPAID
-        if (settle) {
-            if (payment == null) throw UnprocessableException("order.payment_required", order.number)
-            if (payment.tendered != null && payment.method != PickupPayment.CASH) throw UnprocessableException("order.tendered_cash_only")
-            if (payment.tendered != null && payment.tendered < order.total) throw UnprocessableException("order.tendered_too_low", order.total.toPlainString())
-        }
+        if (settle) checkPayment(order, payment ?: throw UnprocessableException("order.payment_required", order.number))
         transition(order, OrderStatus.COMPLETED, OrderStatus.READY)
         order.completedAt = clock.instant()
         if (settle) {
             order.paymentStatus = PaymentStatus.PAID
-            events.publishEvent(
-                OrderSettledInPerson(order.id, payment!!.method, order.total, order.currency, payment.tendered, Actor.current()?.userId),
-            )
+            settledInPerson(order, payment!!)
         }
         statusChanged(order)
+        return order
+    }
+
+    /** A customer's order paid at pickup was checked by the cashier: send it to the kitchen. */
+    @Transactional
+    fun confirm(orderId: UUID): OrderEntity {
+        val order = load(orderId)
+        Activity.describe(target = order.number)
+        transition(order, OrderStatus.PLACED, OrderStatus.AWAITING_CONFIRMATION)
+        place(order)
+        return order
+    }
+
+    /** The cashier refuses a waiting order; the customer sees the reason on the order page. */
+    @Transactional
+    fun refuse(orderId: UUID, reason: String): OrderEntity {
+        val order = load(orderId)
+        Activity.describe(target = order.number, detail = reason.trim().ifBlank { null })
+        transition(order, OrderStatus.CANCELLED, OrderStatus.AWAITING_CONFIRMATION)
+        cancelInternal(order, reason.trim())
         return order
     }
 
@@ -300,7 +331,10 @@ class OrderService(
         if (order.status in setOf(OrderStatus.PREPARING, OrderStatus.READY) && Actor.current()?.hasAny(Roles.ADMIN, Roles.MANAGER) != true) {
             throw ForbiddenException("order.cancel_requires_manager")
         }
-        transition(order, OrderStatus.CANCELLED, OrderStatus.PENDING_PAYMENT, OrderStatus.PLACED, OrderStatus.PREPARING, OrderStatus.READY)
+        transition(
+            order, OrderStatus.CANCELLED,
+            OrderStatus.PENDING_PAYMENT, OrderStatus.AWAITING_CONFIRMATION, OrderStatus.PLACED, OrderStatus.PREPARING, OrderStatus.READY,
+        )
         cancelInternal(order, reason.trim())
         return order
     }
@@ -313,6 +347,20 @@ class OrderService(
         orders.findAllByStatusAndCreatedAtBefore(OrderStatus.PENDING_PAYMENT, cutoff).forEach {
             log.info("Order {} cancelled: payment timeout", it.number)
             cancelInternal(it, "payment timeout")
+        }
+    }
+
+    /**
+     * Orders nobody confirmed in time go to the kitchen anyway, so a busy counter never loses one. The setting is read on
+     * every run: lowering it (or 0, confirmation off) also releases orders already waiting.
+     */
+    @Scheduled(fixedDelayString = "PT1M", initialDelayString = "PT1M")
+    @Transactional
+    fun confirmWaitingOrders() {
+        val cutoff = clock.instant().minus(Duration.ofMinutes(settings.takeawayConfirmMinutes().toLong()))
+        orders.findAllByStatusAndCreatedAtBefore(OrderStatus.AWAITING_CONFIRMATION, cutoff).forEach {
+            log.info("Order {} confirmed automatically", it.number)
+            place(it)
         }
     }
 
@@ -413,6 +461,16 @@ class OrderService(
         )
         statusChanged(order)
     }
+
+    /** Same rules at the counter (paid when ordering) and at pickup: cash handed over must cover the total. */
+    private fun checkPayment(order: OrderEntity, payment: PickupPayment) {
+        if (payment.tendered != null && payment.method != PickupPayment.CASH) throw UnprocessableException("order.tendered_cash_only")
+        if (payment.tendered != null && payment.tendered < order.total) throw UnprocessableException("order.tendered_too_low", order.total.toPlainString())
+    }
+
+    private fun settledInPerson(order: OrderEntity, payment: PickupPayment) = events.publishEvent(
+        OrderSettledInPerson(order.id, payment.method, order.total, order.currency, payment.tendered, Actor.current()?.userId),
+    )
 
     private fun cancelInternal(order: OrderEntity, reason: String) {
         order.status = OrderStatus.CANCELLED

@@ -19,17 +19,23 @@ class SseHub {
     private val log = LoggerFactory.getLogger(javaClass)
     private val orderSubscribers = ConcurrentHashMap<UUID, MutableSet<SseEmitter>>()
     private val queueSubscribers = CopyOnWriteArraySet<SseEmitter>()
+    private val staffSubscribers = CopyOnWriteArraySet<SseEmitter>()
 
     fun subscribeOrder(orderId: UUID): SseEmitter = newEmitter { orderSubscribers[orderId]?.remove(it) }
         .also { orderSubscribers.computeIfAbsent(orderId) { CopyOnWriteArraySet() }.add(it) }
 
     fun subscribeQueue(): SseEmitter = newEmitter { queueSubscribers.remove(it) }.also { queueSubscribers.add(it) }
 
+    /** Every order status change, for staff screens (the cashier app). */
+    fun subscribeStaff(): SseEmitter = newEmitter { staffSubscribers.remove(it) }.also { staffSubscribers.add(it) }
+
     fun publishOrder(orderId: UUID, data: Any) {
         orderSubscribers[orderId]?.forEach { send(it, EVENT_ORDER, data) }
     }
 
     fun publishQueue(data: Any) = queueSubscribers.forEach { send(it, EVENT_QUEUE, data) }
+
+    fun publishStaff(data: Any) = staffSubscribers.forEach { send(it, EVENT_ORDER, data) }
 
     fun send(emitter: SseEmitter, name: String, data: Any) {
         try {
@@ -43,7 +49,7 @@ class SseHub {
     /** Keeps proxies (Caddy, mobile networks) from closing idle streams. */
     @Scheduled(fixedRate = 20_000)
     fun heartbeat() {
-        (orderSubscribers.values.flatten() + queueSubscribers).forEach {
+        (orderSubscribers.values.flatten() + queueSubscribers + staffSubscribers).forEach {
             try {
                 it.send(SseEmitter.event().comment("ping"))
             } catch (e: Exception) {
@@ -52,7 +58,7 @@ class SseHub {
         }
     }
 
-    fun subscriberCount() = orderSubscribers.values.sumOf { it.size } + queueSubscribers.size
+    fun subscriberCount() = orderSubscribers.values.sumOf { it.size } + queueSubscribers.size + staffSubscribers.size
 
     private fun newEmitter(onDone: (SseEmitter) -> Unit): SseEmitter {
         val emitter = SseEmitter(TIMEOUT.toMillis())

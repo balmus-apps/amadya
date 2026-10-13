@@ -21,7 +21,7 @@ import java.util.UUID
 
 enum class OrderChannel { TAKEAWAY, DINE_IN, COUNTER }
 
-enum class OrderStatus { PENDING_PAYMENT, PLACED, PREPARING, READY, COMPLETED, CANCELLED }
+enum class OrderStatus { PENDING_PAYMENT, AWAITING_CONFIRMATION, PLACED, PREPARING, READY, COMPLETED, CANCELLED }
 
 enum class PaymentStatus { UNPAID, PAID, REFUNDED }
 
