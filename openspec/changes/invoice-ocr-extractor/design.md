@@ -82,7 +82,7 @@ photo/PDF ──► InvoiceScanService.scan (unchanged: size check, private stor
 ## Risks
 
 - **Poor photos:** folded, angled or dark photos give partial rows. The review page, the totals cross-check and the
-  printed original next to the form catch this. A shooting tip is shown at the Import button.
+  "Original document" button (opens the photo in a new tab) catch this. A shooting tip is shown at the Import button.
 - **CPU:** OCR takes about 1–5 s of the shared vCPU per photo, one photo at a time.
 - **Template drift:** if Selgros changes its layout, the generic template takes over and the owner fixes rows by hand
   until the template is updated.

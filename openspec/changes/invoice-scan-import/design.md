@@ -148,7 +148,7 @@ supplier by CUI. The supplier's head office goes on `supplier` and the store bra
   - The header uses a form grid of `Field`s.
   - The "Import photo / PDF" button shows a spinner while scanning, then fills the form. Warnings appear above the
     table.
-  - The original file opens in a side preview so the user can compare it with the form.
+  - An "Original document" button opens the uploaded file in a new tab, so the user can compare it with the form.
 - **Line row:**
   - original text (muted);
   - name combobox (stock items plus "create '…'");

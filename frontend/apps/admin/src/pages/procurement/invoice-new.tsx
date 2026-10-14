@@ -18,9 +18,9 @@ import {
   type StockItem,
   type SupplierRequest,
 } from "@amadya/api-client";
-import { Badge, Button, Card, CardContent, Dialog, DialogContent, DialogDescription, DialogTitle, Input, NativeSelect, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, toast } from "@amadya/ui";
+import { Badge, Button, buttonVariants, Card, CardContent, Dialog, DialogContent, DialogDescription, DialogTitle, Input, NativeSelect, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, toast } from "@amadya/ui";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangleIcon, FileUpIcon, Loader2Icon, PlusIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
+import { AlertTriangleIcon, FileTextIcon, FileUpIcon, Loader2Icon, PlusIcon, Trash2Icon, WandSparklesIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Field, PageHeader } from "@/components/kit";
 import { useApi, useApiMutation } from "@/lib/data";
@@ -111,7 +111,8 @@ export function InvoiceNewPage() {
   const [lines, setLines] = useState<Line[]>([]);
   const [warnings, setWarnings] = useState<InvoiceDraftWarning[]>([]);
   const [printed, setPrinted] = useState<InvoiceDraft["printed"]>();
-  const [preview, setPreview] = useState<{ url: string; pdf: boolean }>();
+  /** The uploaded document, opened in a new tab from the "Original document" button. */
+  const [preview, setPreview] = useState<{ url: string }>();
   const [scanning, setScanning] = useState(false);
   const [parityFor, setParityFor] = useState<Line>();
   const [ruleFor, setRuleFor] = useState<Line>();
@@ -173,7 +174,7 @@ export function InvoiceNewPage() {
       );
       setWarnings(draft.warnings);
       setPrinted(draft.printed);
-      setPreview({ url: URL.createObjectURL(file), pdf: file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf") });
+      setPreview({ url: URL.createObjectURL(file) });
       toast.success(t("invoiceNew.scanned", { count: drafted.length }));
     } catch (e) {
       toast.error((e as Error).message);
@@ -269,6 +270,11 @@ export function InvoiceNewPage() {
           scanStatus?.enabled && (
             <>
               <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" hidden onChange={(e) => e.target.files?.[0] && importFile(e.target.files[0])} />
+              {preview && (
+                <a href={preview.url} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
+                  <FileTextIcon /> {t("invoiceNew.original")}
+                </a>
+              )}
               <Button onClick={() => fileInput.current?.click()} disabled={scanning}>
                 {scanning ? <Loader2Icon className="animate-spin" /> : <FileUpIcon />} {scanning ? t("invoiceNew.reading") : t("invoiceNew.import")}
               </Button>
@@ -289,8 +295,7 @@ export function InvoiceNewPage() {
         </Card>
       )}
 
-      <div className={preview ? "grid gap-6 xl:grid-cols-[1fr_380px]" : ""}>
-        <div className="min-w-0 space-y-6">
+      <div className="space-y-6">
           {/* ---- supplier & document */}
           <section className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -519,15 +524,6 @@ export function InvoiceNewPage() {
               <p className="text-center text-xs text-muted-foreground">{t("invoiceNew.saveHint")}</p>
             </div>
           </section>
-        </div>
-
-        {preview && (
-          <aside className="xl:sticky xl:top-4 xl:self-start">
-            <Card>
-              <CardContent className="p-2">{preview.pdf ? <iframe src={preview.url} title={t("invoiceNew.original")} className="h-[80vh] w-full rounded" /> : <img src={preview.url} alt={t("invoiceNew.original")} className="w-full rounded" />}</CardContent>
-            </Card>
-          </aside>
-        )}
       </div>
 
       {parityFor && (
