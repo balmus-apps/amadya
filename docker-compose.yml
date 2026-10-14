@@ -66,9 +66,6 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-}
       S3_BUCKET: ${S3_BUCKET:-amadya}
       INVOICE_SCAN_ENABLED: ${INVOICE_SCAN_ENABLED:-false}
-      INVOICE_SCAN_MODEL: ${INVOICE_SCAN_MODEL:-claude-sonnet-5-5}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      INVOICE_SCAN_BASE_URL: ${INVOICE_SCAN_BASE_URL:-}
     volumes:
       - mediadata:/var/lib/amadya/files
     ports:

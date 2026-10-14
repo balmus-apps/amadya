@@ -30,7 +30,7 @@ import kotlin.test.assertTrue
 @ActiveProfiles("test")
 class InvoiceScanIntegrationTests {
 
-    /** Stands in for Claude: returns what it read from the Selgros delivery note photographed in the change proposal. */
+    /** Stands in for the OCR reader: returns the Selgros delivery note from the change proposal, as read. */
     @TestConfiguration(proxyBeanMethods = false)
     class FakeReader {
         @Bean

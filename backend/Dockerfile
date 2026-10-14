@@ -10,6 +10,10 @@ COPY backend/src backend/src
 RUN cd backend && ./gradlew --no-daemon -q bootJar -x test
 
 FROM eclipse-temurin:25-jre
+# Tesseract OCR reads scanned supplier documents on this server (invoice import, ADR 0006): Romanian + English data.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-ron tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system amadya && useradd --system --gid amadya amadya
 # Media storage (MEDIA_DIR): owned by the app user, so a new volume mounted here is writable (Docker copies this
 # ownership into an empty named volume on first use).

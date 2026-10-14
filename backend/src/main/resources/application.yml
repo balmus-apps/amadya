@@ -89,13 +89,10 @@ amadya:
     access-key: ${S3_ACCESS_KEY:}
     secret-key: ${S3_SECRET_KEY:}
     bucket: ${S3_BUCKET:amadya}
-  # Read supplier documents from a photo or PDF with Claude (ADR 0006). Off unless enabled; each scan is a paid API call.
+  # Read supplier documents from a photo or PDF with Tesseract OCR on this server (ADR 0006); nothing leaves the server.
   invoice-scan:
     enabled: ${INVOICE_SCAN_ENABLED:false}
-    model: ${INVOICE_SCAN_MODEL:claude-sonnet-5-5}
-    api-key: ${ANTHROPIC_API_KEY:}
-    # empty = api.anthropic.com; set for an HTTP proxy in front of the Claude API
-    base-url: ${INVOICE_SCAN_BASE_URL:}
+    tesseract-path: ${TESSERACT_PATH:tesseract}
   printing:
     mode: ${PRINTING_MODE:log}
     out-dir: ${PRINTING_OUT_DIR:}

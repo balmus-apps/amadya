@@ -576,7 +576,7 @@
   "title": "Factură nouă",
   "description": "Introduceți o factură, un aviz sau un bon de la furnizor, sau importați o poză ori un PDF.",
   "import": "Import poză / PDF",
-  "reading": "Se citește documentul…",
+  "reading": "Se citește poza…",
   "scanned": "S-au citit {count} linii. Verificați-le înainte de salvare.",
   "existingSupplier": "Furnizor",
   "supplierFromFields": "Nou sau din document (câmpurile de mai jos)",
@@ -631,7 +631,8 @@
   "parityHint": "Cât înseamnă un {unit} de {item}? Se salvează ca unitate secundară a produsului.",
   "ruleTitle": "Salvează ca regulă de denumire",
   "ruleHint": "Data viitoare, produsele care se potrivesc vor fi numite automat „{name}”.",
-  "saveRule": "Salvează regula"
+  "saveRule": "Salvează regula",
+  "photoTip": "Pentru o citire bună, fotografiați documentul întreg, întins, drept de sus, la lumină bună."
  },
  "nameRules": {
   "title": "Reguli de denumire",

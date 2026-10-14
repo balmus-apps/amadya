@@ -24,10 +24,23 @@ Paper or PDF invoices and delivery notes still exist.
   run before the supplier mappings.
 - **Warehouses:** lines carry a warehouse. Saving creates **one draft NIR per warehouse**.
 - **Manual entry:** the full manual entry form shares the same page and review flow as the scan.
-- **Extraction:** Claude (`claude-sonnet-5-5` by default, `INVOICE_SCAN_MODEL`) uses **structured outputs**, a JSON
-  schema in `output_config.format`, rather than a forced tool call, which current models reject. Server-side refusal
-  fallbacks are on.
 - **Feature flag:** the flag is `INVOICE_SCAN_ENABLED`, off by default.
 - **Draft:** a scan returns an unsaved draft. Only the original file is stored, under a private key that the public
   `/files` endpoint refuses. Staff open it through `GET /admin/invoices/{id}/file`.
+
+## Amendment (2026-10-14) — `openspec/changes/invoice-ocr-extractor`: no AI
+The owner decided that documents are read **without AI**, on the restaurant's own server. The Claude adapter is
+removed. The only reader is **Tesseract OCR**, plus a text parser with one template per supplier layout and a generic
+fallback. A PDF's text layer is read directly with PDFBox.
+
+**Measured on the Selgros photo:**
+- the read takes about 2 s on one core;
+- every quantity, price, VAT rate and total is right, as are the document number, date, client, card, register and
+  cashier numbers, and the buyer CUI;
+- the time, the buyer person and some product names were too blurred to read, and are typed or matched on the review
+  page.
+
+**Cost:**
+- about 100 MB is added to the API image;
+- one OCR runs at a time.
 

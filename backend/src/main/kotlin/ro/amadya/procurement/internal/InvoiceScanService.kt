@@ -45,10 +45,10 @@ class InvoiceScanService(
     private val amadya: AmadyaProperties,
     private val clock: Clock,
 ) {
-    fun enabled(): Boolean = extractor.ifAvailable != null
+    fun enabled(): Boolean = extractor.ifAvailable?.available() == true
 
     fun scan(file: MultipartFile): InvoiceDraft {
-        val reader = extractor.ifAvailable ?: throw DomainException(HttpStatus.NOT_FOUND, "procurement.scan_disabled")
+        val reader = extractor.ifAvailable?.takeIf { it.available() } ?: throw DomainException(HttpStatus.NOT_FOUND, "procurement.scan_disabled")
         if (file.isEmpty || file.size > props.maxBytes) throw UnprocessableException("procurement.scan_too_large", props.maxBytes / 1024 / 1024)
         val stored = files.store(file.bytes)
         val extraction = try {

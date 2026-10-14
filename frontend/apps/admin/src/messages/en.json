@@ -576,7 +576,7 @@
   "title": "New invoice",
   "description": "Type a supplier invoice, delivery note or receipt, or import a photo or PDF of it.",
   "import": "Import photo / PDF",
-  "reading": "Reading the document…",
+  "reading": "Reading the photo…",
   "scanned": "Read {count} lines. Check them before saving.",
   "existingSupplier": "Supplier",
   "supplierFromFields": "New or from the document (fields below)",
@@ -631,7 +631,8 @@
   "parityHint": "How much is one {unit} of {item}? It is saved as a secondary unit of the product.",
   "ruleTitle": "Save as name rule",
   "ruleHint": "Next time, products matching this are named “{name}” automatically.",
-  "saveRule": "Save rule"
+  "saveRule": "Save rule",
+  "photoTip": "For a good read, photograph the whole document flat, straight from above, in good light."
  },
  "nameRules": {
   "title": "Product name rules",

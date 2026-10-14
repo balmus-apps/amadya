@@ -84,6 +84,9 @@ supplier by CUI. The supplier's head office goes on `supplier` and the store bra
 
 ## Extraction
 
+> **Superseded by `invoice-ocr-extractor`:** the owner chose no AI. The reader is Tesseract OCR with supplier
+> templates; the Claude adapter described below was removed before merge.
+
 - **Port:** `InvoiceExtractor.extract(bytes, mediaType): ExtractedInvoice`, inside `procurement/internal`.
 - **Adapter:** `ClaudeInvoiceExtractor` calls the Anthropic Messages API with the official Java SDK.
   - **Input:** an image block for JPEG, PNG or WebP, or a document block for PDF.

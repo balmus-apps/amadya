@@ -2,34 +2,38 @@ package ro.amadya.procurement.internal
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.math.BigDecimal
+import java.time.Duration
 
 /** Port from ADR 0006: reads a supplier document (photo or PDF) into structured data. A human always reviews it. */
 interface InvoiceExtractor {
+    /** False when the engine is configured but cannot run here (e.g. the OCR program is missing). */
+    fun available(): Boolean = true
+
     /** [mediaType] is one of image/jpeg, image/png, image/webp, application/pdf. Throws [ExtractionFailed]. */
     fun extract(bytes: ByteArray, mediaType: String): Extraction
 }
 
-/** [raw] is the JSON exactly as returned, kept with the saved invoice for audit. */
+/** [raw] is a JSON record of how the document was read (engine, template, recognised text), kept for audit. */
 data class Extraction(val invoice: ExtractedInvoice, val raw: String)
 
 class ExtractionFailed(val reason: String, cause: Throwable? = null) : RuntimeException(reason, cause)
 
 @ConfigurationProperties("amadya.invoice-scan")
 data class InvoiceScanProperties(
-    /** Off by default: each scan is a paid Claude API call. */
+    /** Off by default; turning it on needs the `tesseract` program (installed in the API image). */
     val enabled: Boolean = false,
-    val model: String = "claude-sonnet-5-5",
-    val apiKey: String = "",
+    val tesseractPath: String = "tesseract",
+    /** Tesseract language packs: Romanian first, English for brand names. */
+    val languages: String = "ron+eng",
+    val timeout: Duration = Duration.ofSeconds(60),
     val maxBytes: Long = 10 * 1024 * 1024,
-    /** Longest edge photos are scaled down to before sending (keeps requests small, text stays readable). */
+    /** Longest edge photos are scaled to before OCR. */
     val maxImageEdge: Int = 2400,
-    /** Empty = the Anthropic API; set for a proxy (or a stub in tests). */
-    val baseUrl: String = "",
 )
 
 /**
- * What the extractor reads. Numbers are strings with "." as the decimal separator, exactly as printed (never
- * rounded); they are parsed with [num]. Every field may be null when it is not on the document.
+ * What the extractor reads. Numbers are strings as printed (never rounded); they are parsed with [num].
+ * Every field may be null when it is not on the document.
  */
 data class ExtractedInvoice(
     val docType: String? = null,

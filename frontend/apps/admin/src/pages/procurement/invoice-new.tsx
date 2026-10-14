@@ -264,7 +264,7 @@ export function InvoiceNewPage() {
     <>
       <PageHeader
         title={t("invoiceNew.title")}
-        description={t("invoiceNew.description")}
+        description={scanStatus?.enabled ? `${t("invoiceNew.description")} ${t("invoiceNew.photoTip")}` : t("invoiceNew.description")}
         actions={
           scanStatus?.enabled && (
             <>
