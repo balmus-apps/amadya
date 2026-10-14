@@ -33,3 +33,10 @@ production deploy of a migration (V16) went out without its backup because that 
   protected: PRs only, no force-push.
 - **The server checkout is managed by deploys** and sits in "detached HEAD" state. Nobody edits it by hand.
 - **Backups stay on the server.** Copying them off the server is a separate, later change.
+
+## Amendment (2026-10-14): automatic deploy paused
+The owner put automatic deploys out of scope for now. The Release workflow only builds and pushes the images, on every
+push to `main`. The deploy job, its `deploy`/`tag` inputs and the SSH step are removed. The server is updated by hand
+with `scripts/deploy.sh <tag>`, which keeps the backup, pull, restart, health check and rollback described above. The
+server gate (`scripts/server/amadya-deploy`) stays in the repo for when automatic deploys are switched back on.
+

@@ -42,5 +42,5 @@ build table    frontend frontend/apps/table/Dockerfile
 build menu-web frontend frontend/apps/menu-web/Dockerfile
 
 if [[ $PUSH == 1 ]]; then
-  echo "Pushed $TAG. Deploy it: Actions → Release → Run workflow with tag $TAG (docs/deploy.md)."
+  echo "Pushed $TAG. Deploy it on the server, as root: scripts/deploy.sh $TAG (docs/deploy.md)."
 fi
