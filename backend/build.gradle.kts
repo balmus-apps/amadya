@@ -43,6 +43,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.stripe:stripe-java:34.0.0")
     implementation("io.minio:minio:9.0.3")
+    implementation("org.apache.pdfbox:pdfbox:3.0.5")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

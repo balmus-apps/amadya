@@ -1,0 +1,43 @@
+{
+  "docType": "AVIZ",
+  "series": null,
+  "number": "2636528510371144",
+  "issueDate": "2026-10-12",
+  "issueTime": "09:38",
+  "dueDate": null,
+  "currency": "RON",
+  "supplier": {
+    "name": "Selgros Cash & Carry S.R.L.",
+    "cui": "RO11805367",
+    "regCom": "J2001000464089",
+    "address": "Calea Bucuresti, nr 231, 500299 Brașov, Jud. Brașov",
+    "iban": "RO12RZBR0000060002406165",
+    "phone": "+40 236 305000"
+  },
+  "supplierBranch": "Selgros Galați, B-dul Galați nr. 1-C, 800654 Galați, jud. Galați",
+  "buyer": { "name": "NARCLOD SRL", "cui": "52934920", "regCom": null, "address": "GARLEI 7, RO 807292 SERBESTII VECHI, GALATI", "iban": null, "phone": null },
+  "buyerPerson": "ANTOANELA MOCANU",
+  "clientNo": "0408401926",
+  "cardNo": "9000858122",
+  "registerNo": "105",
+  "cashierNo": "15600597",
+  "lines": [
+    { "code": "4337271360073", "description": "PLESKAVICA SARBEASCA(S) CG.KG", "lot": "5660410002", "unit": "KG", "quantity": "1.146", "unitPrice": "28.240", "vatPercent": "11.0", "net": "32.36", "vat": "3.56", "gross": "35.92" },
+    { "code": "4337271360073", "description": "PLESKAVICA SARBEASCA(S) CG.KG", "lot": "5660410002", "unit": "KG", "quantity": "1.152", "unitPrice": "28.240", "vatPercent": "11.0", "net": "32.53", "vat": "3.57", "gross": "36.10" },
+    { "code": "5941168005368", "description": "UNIVER SOS USTUROI 430G", "lot": null, "unit": "BU", "quantity": "2", "unitPrice": "9.690", "vatPercent": "11.0", "net": "19.38", "vat": "2.14", "gross": "21.52" },
+    { "code": "5941486003916", "description": "TOMI KETCHUP DULCE 1KG", "lot": null, "unit": "BU", "quantity": "2", "unitPrice": "12.480", "vatPercent": "21.0", "net": "24.96", "vat": "5.24", "gross": "30.20" },
+    { "code": "8697400271868", "description": "DEF.CASTR.OT.6-9CM 670G", "lot": null, "unit": "BU", "quantity": "2", "unitPrice": "6.050", "vatPercent": "11.0", "net": "12.10", "vat": "1.33", "gross": "13.43" }
+  ],
+  "vatBreakdown": [
+    { "percent": "11.0", "net": "96.37", "vat": "10.60", "gross": "106.97" },
+    { "percent": "21.0", "net": "24.96", "vat": "5.24", "gross": "30.20" }
+  ],
+  "totalNet": "121.33",
+  "totalVat": "15.84",
+  "totalGross": "137.17",
+  "discountTotal": "-4.78",
+  "payments": [
+    { "method": "CASH", "amount": "150.00" },
+    { "method": "CASH", "amount": "-12.83" }
+  ]
+}

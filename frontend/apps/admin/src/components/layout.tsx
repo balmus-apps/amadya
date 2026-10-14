@@ -22,6 +22,7 @@ import {
   TruckIcon,
   UsersIcon,
   UtensilsIcon,
+  WandSparklesIcon,
   WarehouseIcon,
   ChefHatIcon,
   ArmchairIcon,
@@ -70,6 +71,7 @@ export function AppLayout() {
       items: [
         { to: "/suppliers", label: t("nav.suppliers"), icon: TruckIcon },
         { to: "/invoices", label: t("nav.invoices"), icon: ReceiptIcon },
+        { to: "/name-rules", label: t("nav.nameRules"), icon: WandSparklesIcon },
         { to: "/nirs", label: t("nav.nirs"), icon: FileInputIcon },
       ],
     },

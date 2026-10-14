@@ -10,7 +10,9 @@ import { PromotionsPage } from "@/pages/catalog/promotions";
 import { DashboardPage } from "@/pages/dashboard";
 import { LoginPage } from "@/pages/login";
 import { OrdersPage } from "@/pages/orders";
+import { InvoiceNewPage } from "@/pages/procurement/invoice-new";
 import { InvoiceDetailPage, InvoicesPage } from "@/pages/procurement/invoices";
+import { NameRulesPage } from "@/pages/procurement/name-rules";
 import { NirDetailPage, NirPrintPage, NirsPage } from "@/pages/procurement/nirs";
 import { SuppliersPage } from "@/pages/procurement/suppliers";
 import { StationsPage, UsersPage, VatPage } from "@/pages/settings/lists";
@@ -57,7 +59,9 @@ const routeTree = root.addChildren([
     page("/stock/units", UnitsPage),
     page("/suppliers", SuppliersPage),
     page("/invoices", InvoicesPage),
+    page("/invoices/new", InvoiceNewPage),
     page("/invoices/$id", InvoiceDetailPage),
+    page("/name-rules", NameRulesPage),
     page("/nirs", NirsPage),
     page("/nirs/$id", NirDetailPage),
     page("/nirs/$id/print", NirPrintPage),

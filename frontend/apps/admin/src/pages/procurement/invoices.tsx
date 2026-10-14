@@ -1,7 +1,7 @@
 import { client, createNir, getPurchaseInvoice, listMeasureUnits, listPurchaseInvoices, listStockItems, listWarehouses, matchInvoiceLine, type PurchaseInvoice, type PurchaseInvoiceLine } from "@amadya/api-client";
 import { Badge, Button, Checkbox, Dialog, DialogContent, DialogTitle, NativeSelect, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, toast } from "@amadya/ui";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { CheckCircle2Icon, FileUpIcon, Loader2Icon } from "lucide-react";
+import { CheckCircle2Icon, FileTextIcon, FileUpIcon, Loader2Icon, PlusIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { Empty, Field, PageHeader } from "@/components/kit";
 import { useApi, useApiMutation } from "@/lib/data";
@@ -48,8 +48,11 @@ export function InvoicesPage() {
         actions={
           <>
             <input ref={input} type="file" accept=".xml,application/xml,text/xml" hidden onChange={(e) => e.target.files?.[0] && importXml(e.target.files[0])} />
-            <Button onClick={() => input.current?.click()} disabled={busy}>
+            <Button variant="outline" onClick={() => input.current?.click()} disabled={busy}>
               {busy ? <Loader2Icon className="animate-spin" /> : <FileUpIcon />} {t("procurement.importEFactura")}
+            </Button>
+            <Button onClick={() => navigate({ to: "/invoices/new" })}>
+              <PlusIcon /> {t("invoiceNew.title")}
             </Button>
           </>
         }
@@ -115,6 +118,21 @@ export function InvoiceDetailPage() {
   if (!invoice) return null;
   const allMatched = invoice.lines.every((l) => l.matched);
   const money = (amount: string) => formatMoney({ amount, currency: invoice.currency }, locale);
+  const warehouseName = (id?: string) => lt(warehouses.find((w) => w.id === id)?.name, locale);
+  const details: [string, string | undefined][] = [
+    [t("common.type"), invoice.docType && t(`invoiceNew.docTypes.${invoice.docType}`)],
+    [t("invoiceNew.time"), invoice.issueTime],
+    [t("invoiceNew.branch"), invoice.supplierBranch],
+    [t("invoiceNew.clientNo"), invoice.clientNo],
+    [t("invoiceNew.cardNo"), invoice.cardNo],
+    [t("invoiceNew.registerNo"), invoice.registerNo],
+    [t("invoiceNew.cashierNo"), invoice.cashierNo],
+    [t("invoiceNew.buyer"), [invoice.buyerName, invoice.buyerCui].filter(Boolean).join(" · ") || undefined],
+    [t("invoiceNew.buyerPerson"), invoice.buyerPerson],
+    [t("invoiceNew.payment"), invoice.paymentMethod && `${t(`invoiceNew.payments.${invoice.paymentMethod}`)}${invoice.paidAmount ? ` · ${money(invoice.paidAmount)}` : ""}`],
+    [t("invoiceNew.discount"), invoice.discountTotal && money(invoice.discountTotal)],
+  ];
+  const nirIds = invoice.nirIds ?? (invoice.nirId ? [invoice.nirId] : []);
 
   return (
     <>
@@ -122,25 +140,49 @@ export function InvoiceDetailPage() {
         title={`${t("procurement.invoice")} ${invoice.number}`}
         description={`${invoice.supplierName} · ${formatDate(invoice.issueDate, locale)} · ${t(`procurement.sources.${invoice.source}`)}`}
         actions={
-          invoice.nirId ? (
-            <Button onClick={() => navigate({ to: "/nirs/$id", params: { id: invoice.nirId! } })}>{t("procurement.viewNir")}</Button>
-          ) : (
-            <>
-              <NativeSelect className="w-52" value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} aria-label={t("common.warehouse")}>
-                <option value="">{t("common.warehouse")}…</option>
-                {warehouses.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {lt(w.name, locale)}
-                  </option>
-                ))}
-              </NativeSelect>
-              <Button disabled={!allMatched || !warehouseId || nir.isPending} onClick={() => nir.mutate(undefined)}>
-                {t("procurement.createNir")}
+          <>
+            {invoice.hasFile && (
+              <Button variant="outline" onClick={() => openInvoiceFile(invoice.id)}>
+                <FileTextIcon /> {t("invoiceNew.original")}
               </Button>
-            </>
-          )
+            )}
+            {nirIds.length > 0 ? (
+              nirIds.map((nirId, i) => (
+                <Button key={nirId} onClick={() => navigate({ to: "/nirs/$id", params: { id: nirId } })}>
+                  {t("procurement.viewNir")}
+                  {nirIds.length > 1 ? ` ${i + 1}` : ""}
+                </Button>
+              ))
+            ) : (
+              <>
+                <NativeSelect className="w-52" value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} aria-label={t("common.warehouse")}>
+                  <option value="">{t("common.warehouse")}…</option>
+                  {warehouses.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {lt(w.name, locale)}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <Button disabled={!allMatched || !warehouseId || nir.isPending} onClick={() => nir.mutate(undefined)}>
+                  {t("procurement.createNir")}
+                </Button>
+              </>
+            )}
+          </>
         }
       />
+      {details.some(([, v]) => v) && (
+        <dl className="mb-6 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          {details
+            .filter(([, v]) => v)
+            .map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd className="font-medium">{value}</dd>
+              </div>
+            ))}
+        </dl>
+      )}
       <Table>
         <TableHeader>
           <TableRow>
@@ -160,7 +202,10 @@ export function InvoiceDetailPage() {
               <TableCell>{l.position}</TableCell>
               <TableCell>
                 <span className="font-medium">{l.description}</span>
-                {l.supplierCode && <span className="block font-mono text-xs text-muted-foreground">{l.supplierCode}</span>}
+                {l.originalDescription && l.originalDescription !== l.description && <span className="block text-xs text-muted-foreground">{l.originalDescription}</span>}
+                {(l.supplierCode || l.lot || l.warehouseId) && (
+                  <span className="block font-mono text-xs text-muted-foreground">{[l.supplierCode, l.lot && `lot ${l.lot}`, l.warehouseId && warehouseName(l.warehouseId)].filter(Boolean).join(" · ")}</span>
+                )}
               </TableCell>
               <TableCell className="text-right tabular-nums">{Number(l.quantity)}</TableCell>
               <TableCell>{l.unitCode}</TableCell>
@@ -169,7 +214,7 @@ export function InvoiceDetailPage() {
               <TableCell className="text-right tabular-nums">{money(l.lineNet)}</TableCell>
               <TableCell className="text-right">
                 {l.matched ? (
-                  <Button variant="ghost" size="sm" onClick={() => setMatching(l)} disabled={!!invoice.nirId}>
+                  <Button variant="ghost" size="sm" onClick={() => setMatching(l)} disabled={nirIds.length > 0}>
                     <CheckCircle2Icon className="text-success" /> {t("procurement.matched")}
                   </Button>
                 ) : (
@@ -260,4 +305,20 @@ function MatchDialog({ invoice, line, onClose }: { invoice: PurchaseInvoice; lin
       </DialogContent>
     </Dialog>
   );
+}
+
+/** The stored photo or PDF needs the staff token, so it is fetched and opened as a local blob. */
+async function openInvoiceFile(id: string) {
+  const tab = window.open("", "_blank");
+  try {
+    const res = await fetch(`${client.getConfig().baseUrl}/admin/invoices/${id}/file`, { headers: { Authorization: `Bearer ${await accessToken()}` } });
+    if (!res.ok) throw new Error(res.statusText);
+    const url = URL.createObjectURL(await res.blob());
+    if (tab) tab.location.href = url;
+    else window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (e) {
+    tab?.close();
+    toast.error((e as Error).message);
+  }
 }

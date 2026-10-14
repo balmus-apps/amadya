@@ -65,6 +65,7 @@ services:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-}
       S3_BUCKET: ${S3_BUCKET:-amadya}
+      INVOICE_SCAN_ENABLED: ${INVOICE_SCAN_ENABLED:-false}
     volumes:
       - mediadata:/var/lib/amadya/files
     ports:

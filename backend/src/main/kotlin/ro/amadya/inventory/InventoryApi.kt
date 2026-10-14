@@ -41,10 +41,25 @@ interface StockCatalog {
     fun unitCode(unitId: UUID?, packagingId: UUID?): String?
 
     fun findItemByName(name: String): StockItemInfo?
+
+    /** Like [resolveUnit] but never creates anything; null when the code or alias is unknown. */
+    fun findUnit(code: String): UnitInfo?
+
+    /** The item's default warehouse, else the first active warehouse of its type; without an item, the first ingredients warehouse. */
+    fun defaultWarehouse(stockItemId: UUID?): UUID?
+
+    /**
+     * Creates a stock item whose primary unit is [unitId] (it must be a mapped unit): the base unit is the reference unit
+     * of that unit's dimension and the primary unit becomes the display unit. The SKU is generated from the name.
+     */
+    fun createItem(name: String, unitId: UUID, type: String?, defaultWarehouseId: UUID?): StockItemInfo
+
+    /** Adds (or updates, by name) a packaging of the item: a secondary unit worth [qtyInBase] base units. Returns its id. */
+    fun addPackaging(stockItemId: UUID, name: String, qtyInBase: BigDecimal): UUID
 }
 
-data class StockItemInfo(val id: UUID, val sku: String, val name: LocalizedText, val baseUnitCode: String, val type: String, val defaultWarehouseId: UUID?)
+data class StockItemInfo(val id: UUID, val sku: String, val name: LocalizedText, val baseUnitCode: String, val type: String, val defaultWarehouseId: UUID?, val primaryUnitId: UUID? = null)
 
 data class WarehouseInfo(val id: UUID, val code: String, val name: LocalizedText, val type: String)
 
-data class UnitInfo(val id: UUID, val code: String, val mapped: Boolean)
+data class UnitInfo(val id: UUID, val code: String, val mapped: Boolean, val dimension: String? = null)

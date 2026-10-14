@@ -65,3 +65,15 @@ other `allowed_unit_ids` for input, such as recipes in g, purchases in kg, and d
 | Recipe: 150 g pork | −150 g |
 | NIR: 3 bax Cola (24 buc each) at 96 RON/bax | +72 buc at 4.00 RON/buc |
 | Recipe: 0.03 l sauce | −30 ml |
+
+## Primary and secondary units on invoices
+This is the rule from `event-planner`, applied on Admin → Invoices → New invoice:
+- **New product:** the unit on the line becomes the item's **primary** unit, stored as `display_unit_id`. The base unit
+  is the reference unit of that dimension, so "kg" gives base `g` and primary `kg`. The unit must be a known, mapped unit.
+- **Existing product:** a typed line starts with the primary unit.
+- **Same dimension:** a unit with a known factor, e.g. `l` for an item in `ml`, converts on its own. The page shows "1 l = 1000 ml".
+- **Anything else:** for a unit such as `BU` on an item measured in `ml`, the page asks for the **parity** ("1 BU = 430 ml").
+  It is saved as a `stock_item_packaging` of that item, so it acts as a secondary unit. The supplier mapping remembers
+  it for the next document.
+- **Saving:** an invoice is refused while any line's unit cannot be converted.
+

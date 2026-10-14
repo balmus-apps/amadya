@@ -1856,7 +1856,7 @@ paths:
     post:
       tags: [procurement]
       operationId: createPurchaseInvoice
-      summary: Enter a purchase invoice manually
+      summary: Save a purchase invoice typed in or reviewed after a scan; can create the missing stock items and one draft NIR per warehouse
       requestBody:
         required: true
         content:
@@ -1869,6 +1869,40 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/PurchaseInvoice" }
         "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/invoices/scan:
+    get:
+      tags: [procurement]
+      operationId: getInvoiceScanStatus
+      summary: Whether reading invoices from a photo or PDF is turned on for this install
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceScanStatus" }
+    post:
+      tags: [procurement]
+      operationId: scanPurchaseInvoice
+      summary: Read a photo or PDF of a supplier document and return an unsaved draft (nothing is written except the stored original)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: "JPEG, PNG, WebP or PDF, max 10 MB" }
+      responses:
+        "200":
+          description: Draft to review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceDraft" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+        "502": { $ref: "#/components/responses/Problem" }
 
   /admin/invoices/import/efactura:
     post:
@@ -1900,6 +1934,93 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PurchaseInvoice" }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/invoices/{id}/file:
+    get:
+      tags: [procurement]
+      operationId: getPurchaseInvoiceFile
+      summary: The original photo or PDF the invoice was read from (private, staff only)
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: File content
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { $ref: "#/components/responses/Problem" }
+
+  /admin/product-name-rules:
+    get:
+      tags: [procurement]
+      operationId: listProductNameRules
+      summary: Keyword rules that turn printed product names into our names, in the order they are tried
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ProductNameRule" } }
+    post:
+      tags: [procurement]
+      operationId: createProductNameRule
+      summary: Add a name rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductNameRuleRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductNameRule" }
+        "422": { $ref: "#/components/responses/Problem" }
+
+  /admin/product-name-rules/test:
+    post:
+      tags: [procurement]
+      operationId: testProductNameRule
+      summary: Show what name the active rules give a printed product name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductNameTestRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductNameTestResult" }
+
+  /admin/product-name-rules/{id}:
+    put:
+      tags: [procurement]
+      operationId: updateProductNameRule
+      summary: Change a name rule
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductNameRuleRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductNameRule" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "422": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [procurement]
+      operationId: deleteProductNameRule
+      summary: Delete a name rule
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "204": { description: Deleted }
         "404": { $ref: "#/components/responses/Problem" }
 
   /admin/invoices/{id}/lines/{lineId}/match:
@@ -2083,7 +2204,7 @@ paths:
     post:
       tags: [media]
       operationId: uploadFile
-      summary: Upload an image (JPEG, PNG, WebP; max 5 MB) for products, promotions or the logo
+      summary: Upload an image (JPEG, PNG, WebP) or a PDF, max 5 MB, for products, promotions or the logo
       requestBody:
         required: true
         content:
@@ -2111,7 +2232,7 @@ paths:
         - name: key
           in: path
           required: true
-          schema: { type: string, pattern: '^[0-9a-f-]{36}\.(jpg|png|webp)$' }
+          schema: { type: string, pattern: '^[0-9a-f-]{36}\.(jpg|png|webp|pdf)$' }
       responses:
         "200":
           description: File content
@@ -3161,6 +3282,11 @@ components:
         lineNet: { type: string }
         stockItemId: { type: string, format: uuid }
         matched: { type: boolean, description: True when stock item and a convertible unit are known }
+        originalDescription: { type: string, description: The product name as printed on the document }
+        lot: { type: string }
+        warehouseId: { type: string, format: uuid }
+        lineVat: { type: string }
+        lineGross: { type: string }
 
     PurchaseInvoice:
       type: object
@@ -3179,7 +3305,22 @@ components:
         totalGross: { type: string }
         source: { $ref: "#/components/schemas/InvoiceSource" }
         nirId: { type: string, format: uuid, description: "NIR created from this invoice, if any" }
+        nirIds: { type: array, items: { type: string, format: uuid }, description: "Every NIR of this invoice (one per warehouse)" }
         lines: { type: array, items: { $ref: "#/components/schemas/PurchaseInvoiceLine" } }
+        docType: { $ref: "#/components/schemas/InvoiceDocType" }
+        issueTime: { type: string, pattern: '^\d{2}:\d{2}$', examples: ["09:38"] }
+        supplierBranch: { type: string }
+        clientNo: { type: string }
+        cardNo: { type: string }
+        registerNo: { type: string }
+        cashierNo: { type: string }
+        buyerName: { type: string }
+        buyerCui: { type: string }
+        buyerPerson: { type: string }
+        paymentMethod: { $ref: "#/components/schemas/InvoicePaymentMethod" }
+        paidAmount: { type: string }
+        discountTotal: { type: string }
+        hasFile: { type: boolean, description: The original photo or PDF is stored }
 
     PurchaseInvoiceLineRequest:
       type: object
@@ -3194,18 +3335,145 @@ components:
         unitPrice: { type: string, pattern: '^\d{1,9}(\.\d{1,6})?$' }
         vatPercent: { type: string, pattern: '^\d{1,2}(\.\d{1,2})?$' }
         stockItemId: { type: string, format: uuid }
+        originalDescription: { type: string, maxLength: 300, description: The name as printed; `description` is our normalised name }
+        lot: { type: string, maxLength: 60 }
+        warehouseId: { type: string, format: uuid, description: Required when the invoice creates NIRs }
+        newStockItem: { $ref: "#/components/schemas/NewStockItemRequest" }
+        newPackaging: { $ref: "#/components/schemas/NewPackagingRequest" }
+
+    NewStockItemRequest:
+      type: object
+      description: Create the stock item for this line; the unit becomes its primary unit
+      required: [name, unitId]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        unitId: { type: string, format: uuid, description: "Primary unit (must be a known unit: kg, l, buc...)" }
+        type: { $ref: "#/components/schemas/WarehouseType" }
+
+    NewPackagingRequest:
+      type: object
+      description: "Secondary unit of the line's stock item, e.g. 1 BU = 430 g; the line then uses it"
+      required: [name, qtyInBase]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        qtyInBase: { $ref: "#/components/schemas/Quantity" }
 
     PurchaseInvoiceRequest:
       type: object
-      required: [supplierId, number, issueDate, lines]
+      required: [number, issueDate, lines]
+      description: Give `supplierId`, or `supplier` to find it by fiscal code or create it
       properties:
         supplierId: { type: string, format: uuid }
+        supplier: { $ref: "#/components/schemas/SupplierRequest" }
         series: { type: string, maxLength: 20 }
         number: { type: string, minLength: 1, maxLength: 40 }
         issueDate: { type: string, format: date }
         dueDate: { type: string, format: date }
         currency: { type: string, pattern: '^[A-Z]{3}$', default: RON }
         lines: { type: array, minItems: 1, items: { $ref: "#/components/schemas/PurchaseInvoiceLineRequest" } }
+        docType: { $ref: "#/components/schemas/InvoiceDocType" }
+        issueTime: { type: string, pattern: '^\d{2}:\d{2}$' }
+        supplierBranch: { type: string, maxLength: 300 }
+        clientNo: { type: string, maxLength: 40 }
+        cardNo: { type: string, maxLength: 40 }
+        registerNo: { type: string, maxLength: 40 }
+        cashierNo: { type: string, maxLength: 40 }
+        buyerName: { type: string, maxLength: 200 }
+        buyerCui: { type: string, maxLength: 20 }
+        buyerPerson: { type: string, maxLength: 120 }
+        paymentMethod: { $ref: "#/components/schemas/InvoicePaymentMethod" }
+        paidAmount: { type: string, pattern: '^-?\d{1,12}(\.\d{1,2})?$' }
+        discountTotal: { type: string, pattern: '^-?\d{1,12}(\.\d{1,2})?$' }
+        fileKey: { type: string, maxLength: 80, description: From the scan; the stored original }
+        rawExtraction: { type: string, description: From the scan; kept untouched for audit }
+        createNirs: { type: boolean, default: false, description: Also create one draft NIR per line warehouse }
+
+    InvoiceDocType:
+      type: string
+      enum: [FACTURA, AVIZ, BON]
+
+    InvoicePaymentMethod:
+      type: string
+      enum: [CASH, CARD, TRANSFER, OTHER]
+
+    InvoiceScanStatus:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+
+    InvoiceDraftWarning:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, enum: [LINE_TOTAL, VAT_TOTAL, DOCUMENT_TOTAL, CUI_INVALID, DUPLICATE, UNKNOWN_UNIT, MISSING_FIELD] }
+        message: { type: string }
+        line: { type: integer, description: 1-based line number, when it is about one line }
+
+    InvoiceDraftTotals:
+      type: object
+      description: Totals as printed on the document
+      properties:
+        totalNet: { type: string }
+        totalVat: { type: string }
+        totalGross: { type: string }
+
+    InvoiceDraft:
+      type: object
+      required: [invoice, printed, warnings]
+      properties:
+        invoice: { $ref: "#/components/schemas/PurchaseInvoiceRequest" }
+        printed: { $ref: "#/components/schemas/InvoiceDraftTotals" }
+        warnings: { type: array, items: { $ref: "#/components/schemas/InvoiceDraftWarning" } }
+        lineInfo:
+          type: array
+          description: One entry per draft line, in the same order
+          items:
+            type: object
+            properties:
+              ruleId: { type: string, format: uuid, description: The name rule that renamed this line }
+              printedUnit: { type: string, description: The unit as printed }
+
+    ProductNameMatchType:
+      type: string
+      enum: [CONTAINS, STARTS_WITH, REGEX]
+
+    ProductNameRule:
+      type: object
+      required: [id, matchType, pattern, targetName, priority, active]
+      properties:
+        id: { type: string, format: uuid }
+        matchType: { $ref: "#/components/schemas/ProductNameMatchType" }
+        pattern: { type: string, description: "Words separated by | (any of them), or a regular expression" }
+        targetName: { type: string }
+        stockItemId: { type: string, format: uuid }
+        priority: { type: integer, description: Lower is tried first }
+        active: { type: boolean }
+
+    ProductNameRuleRequest:
+      type: object
+      required: [matchType, pattern, targetName]
+      properties:
+        matchType: { $ref: "#/components/schemas/ProductNameMatchType" }
+        pattern: { type: string, minLength: 1, maxLength: 200 }
+        targetName: { type: string, minLength: 1, maxLength: 120 }
+        stockItemId: { type: string, format: uuid }
+        priority: { type: integer, minimum: 0, maximum: 100000, default: 100 }
+        active: { type: boolean, default: true }
+
+    ProductNameTestRequest:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 1, maxLength: 300 }
+
+    ProductNameTestResult:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        ruleId: { type: string, format: uuid }
+        stockItemId: { type: string, format: uuid }
 
     InvoiceLineMatchRequest:
       type: object

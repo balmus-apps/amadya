@@ -27,6 +27,7 @@ import {
   createOrder,
   createPaymentIntent,
   createProduct,
+  createProductNameRule,
   createPromotion,
   createPurchaseInvoice,
   createStation,
@@ -40,6 +41,7 @@ import {
   deleteCategory,
   deleteModifierGroup,
   deleteProduct,
+  deleteProductNameRule,
   deletePromotion,
   getActivityFilters,
   getCurrentUser,
@@ -48,6 +50,7 @@ import {
   getFloor,
   getGuestTable,
   getGuestView,
+  getInvoiceScanStatus,
   getMenu,
   getNir,
   getOpenApiSpec,
@@ -57,6 +60,7 @@ import {
   getProductRecipe,
   getPublicSettings,
   getPurchaseInvoice,
+  getPurchaseInvoiceFile,
   getQueueBoard,
   getRestaurantSettings,
   getStockDocument,
@@ -74,6 +78,7 @@ import {
   listModifierGroups,
   listNirs,
   listOrders,
+  listProductNameRules,
   listProducts,
   listPromotions,
   listPurchaseInvoices,
@@ -107,11 +112,13 @@ import {
   replaceOptionRecipe,
   replaceProductRecipe,
   reverseNir,
+  scanPurchaseInvoice,
   sendGuestRound,
   simulatePaymentCapture,
   startGuestPayment,
   startKitchenTicket,
   stripeWebhook,
+  testProductNameRule,
   transferTableSession,
   updateCategory,
   updateDiningTable,
@@ -120,6 +127,7 @@ import {
   updateModifierGroup,
   updateNir,
   updateProduct,
+  updateProductNameRule,
   updatePromotion,
   updateRestaurantSettings,
   updateStation,
@@ -181,6 +189,9 @@ import type {
   CreatePaymentIntentResponse,
   CreateProductData,
   CreateProductError,
+  CreateProductNameRuleData,
+  CreateProductNameRuleError,
+  CreateProductNameRuleResponse,
   CreateProductResponse,
   CreatePromotionData,
   CreatePromotionError,
@@ -220,6 +231,9 @@ import type {
   DeleteModifierGroupResponse,
   DeleteProductData,
   DeleteProductError,
+  DeleteProductNameRuleData,
+  DeleteProductNameRuleError,
+  DeleteProductNameRuleResponse,
   DeleteProductResponse,
   DeletePromotionData,
   DeletePromotionError,
@@ -245,6 +259,8 @@ import type {
   GetGuestViewData,
   GetGuestViewError,
   GetGuestViewResponse,
+  GetInvoiceScanStatusData,
+  GetInvoiceScanStatusResponse,
   GetMenuData,
   GetMenuResponse,
   GetNirData,
@@ -269,6 +285,9 @@ import type {
   GetPublicSettingsResponse,
   GetPurchaseInvoiceData,
   GetPurchaseInvoiceError,
+  GetPurchaseInvoiceFileData,
+  GetPurchaseInvoiceFileError,
+  GetPurchaseInvoiceFileResponse,
   GetPurchaseInvoiceResponse,
   GetQueueBoardData,
   GetQueueBoardResponse,
@@ -318,6 +337,8 @@ import type {
   ListOrdersData,
   ListOrdersError,
   ListOrdersResponse,
+  ListProductNameRulesData,
+  ListProductNameRulesResponse,
   ListProductsData,
   ListProductsError,
   ListProductsResponse,
@@ -413,6 +434,9 @@ import type {
   ReverseNirData,
   ReverseNirError,
   ReverseNirResponse,
+  ScanPurchaseInvoiceData,
+  ScanPurchaseInvoiceError,
+  ScanPurchaseInvoiceResponse,
   SendGuestRoundData,
   SendGuestRoundError,
   SendGuestRoundResponse,
@@ -427,6 +451,8 @@ import type {
   StartKitchenTicketResponse,
   StripeWebhookData,
   StripeWebhookError,
+  TestProductNameRuleData,
+  TestProductNameRuleResponse,
   TransferTableSessionData,
   TransferTableSessionError,
   TransferTableSessionResponse,
@@ -450,6 +476,9 @@ import type {
   UpdateNirResponse,
   UpdateProductData,
   UpdateProductError,
+  UpdateProductNameRuleData,
+  UpdateProductNameRuleError,
+  UpdateProductNameRuleResponse,
   UpdateProductResponse,
   UpdatePromotionData,
   UpdatePromotionError,
@@ -3167,7 +3196,7 @@ export const listPurchaseInvoicesOptions = (
   });
 
 /**
- * Enter a purchase invoice manually
+ * Save a purchase invoice typed in or reviewed after a scan; can create the missing stock items and one draft NIR per warehouse
  */
 export const createPurchaseInvoiceMutation = (
   options?: Partial<Options<CreatePurchaseInvoiceData>>,
@@ -3183,6 +3212,61 @@ export const createPurchaseInvoiceMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await createPurchaseInvoice({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getInvoiceScanStatusQueryKey = (
+  options?: Options<GetInvoiceScanStatusData>,
+) => createQueryKey("getInvoiceScanStatus", options);
+
+/**
+ * Whether reading invoices from a photo or PDF is turned on for this install
+ */
+export const getInvoiceScanStatusOptions = (
+  options?: Options<GetInvoiceScanStatusData>,
+) =>
+  queryOptions<
+    GetInvoiceScanStatusResponse,
+    DefaultError,
+    GetInvoiceScanStatusResponse,
+    ReturnType<typeof getInvoiceScanStatusQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getInvoiceScanStatus({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getInvoiceScanStatusQueryKey(options),
+  });
+
+/**
+ * Read a photo or PDF of a supplier document and return an unsaved draft (nothing is written except the stored original)
+ */
+export const scanPurchaseInvoiceMutation = (
+  options?: Partial<Options<ScanPurchaseInvoiceData>>,
+): UseMutationOptions<
+  ScanPurchaseInvoiceResponse,
+  ScanPurchaseInvoiceError,
+  Options<ScanPurchaseInvoiceData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ScanPurchaseInvoiceResponse,
+    ScanPurchaseInvoiceError,
+    Options<ScanPurchaseInvoiceData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await scanPurchaseInvoice({
         ...options,
         ...fnOptions,
         throwOnError: true,
@@ -3247,6 +3331,170 @@ export const getPurchaseInvoiceOptions = (
     },
     queryKey: getPurchaseInvoiceQueryKey(options),
   });
+
+export const getPurchaseInvoiceFileQueryKey = (
+  options: Options<GetPurchaseInvoiceFileData>,
+) => createQueryKey("getPurchaseInvoiceFile", options);
+
+/**
+ * The original photo or PDF the invoice was read from (private, staff only)
+ */
+export const getPurchaseInvoiceFileOptions = (
+  options: Options<GetPurchaseInvoiceFileData>,
+) =>
+  queryOptions<
+    GetPurchaseInvoiceFileResponse,
+    GetPurchaseInvoiceFileError,
+    GetPurchaseInvoiceFileResponse,
+    ReturnType<typeof getPurchaseInvoiceFileQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getPurchaseInvoiceFile({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getPurchaseInvoiceFileQueryKey(options),
+  });
+
+export const listProductNameRulesQueryKey = (
+  options?: Options<ListProductNameRulesData>,
+) => createQueryKey("listProductNameRules", options);
+
+/**
+ * Keyword rules that turn printed product names into our names, in the order they are tried
+ */
+export const listProductNameRulesOptions = (
+  options?: Options<ListProductNameRulesData>,
+) =>
+  queryOptions<
+    ListProductNameRulesResponse,
+    DefaultError,
+    ListProductNameRulesResponse,
+    ReturnType<typeof listProductNameRulesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listProductNameRules({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listProductNameRulesQueryKey(options),
+  });
+
+/**
+ * Add a name rule
+ */
+export const createProductNameRuleMutation = (
+  options?: Partial<Options<CreateProductNameRuleData>>,
+): UseMutationOptions<
+  CreateProductNameRuleResponse,
+  CreateProductNameRuleError,
+  Options<CreateProductNameRuleData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateProductNameRuleResponse,
+    CreateProductNameRuleError,
+    Options<CreateProductNameRuleData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createProductNameRule({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Show what name the active rules give a printed product name
+ */
+export const testProductNameRuleMutation = (
+  options?: Partial<Options<TestProductNameRuleData>>,
+): UseMutationOptions<
+  TestProductNameRuleResponse,
+  DefaultError,
+  Options<TestProductNameRuleData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    TestProductNameRuleResponse,
+    DefaultError,
+    Options<TestProductNameRuleData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await testProductNameRule({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Delete a name rule
+ */
+export const deleteProductNameRuleMutation = (
+  options?: Partial<Options<DeleteProductNameRuleData>>,
+): UseMutationOptions<
+  DeleteProductNameRuleResponse,
+  DeleteProductNameRuleError,
+  Options<DeleteProductNameRuleData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DeleteProductNameRuleResponse,
+    DeleteProductNameRuleError,
+    Options<DeleteProductNameRuleData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await deleteProductNameRule({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Change a name rule
+ */
+export const updateProductNameRuleMutation = (
+  options?: Partial<Options<UpdateProductNameRuleData>>,
+): UseMutationOptions<
+  UpdateProductNameRuleResponse,
+  UpdateProductNameRuleError,
+  Options<UpdateProductNameRuleData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateProductNameRuleResponse,
+    UpdateProductNameRuleError,
+    Options<UpdateProductNameRuleData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateProductNameRule({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
 
 /**
  * Link an invoice line to a stock item (optionally remembered for this supplier)
@@ -3536,7 +3784,7 @@ export const updatePromotionMutation = (
 };
 
 /**
- * Upload an image (JPEG, PNG, WebP; max 5 MB) for products, promotions or the logo
+ * Upload an image (JPEG, PNG, WebP) or a PDF, max 5 MB, for products, promotions or the logo
  */
 export const uploadFileMutation = (
   options?: Partial<Options<UploadFileData>>,
