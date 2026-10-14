@@ -7,10 +7,9 @@ Why deploys work the way they do: [ADR 0012](adr/0012-automated-deploy.md).
 
 ```
 merge to main ─▶ GitHub Actions "Release"
-                  ├─ build & push ghcr.io/balmus-apps/amadya-{api,menu-web,admin,kitchen,waiter,queue-display,table}:<tag>
-                  └─ ssh deploy@server "deploy <sha>"   (that key can run nothing else)
-                        └─ /usr/local/sbin/amadya-deploy ─▶ scripts/deploy.sh <tag>
-                              backup ─▶ pull ─▶ restart ─▶ api ready? ── no ──▶ previous release again, run fails
+                  └─ build & push ghcr.io/balmus-apps/amadya-{api,menu-web,admin,kitchen,waiter,cashier,queue-display,table}:<tag>
+on the server, by hand (root) ─▶ scripts/deploy.sh <tag>
+                              backup ─▶ pull ─▶ restart ─▶ api ready? ── no ──▶ previous release again
 Server: proxy (80/443, TLS) ──web network──▶ amadya-web (internal Caddy) ─▶ api, menu-web, admin, kitchen, waiter, queue-display, table, postgres
 ```
 
@@ -19,15 +18,13 @@ says which one, and `.deploy/current` / `.deploy/previous` in the checkout recor
 
 ## Releasing
 
-**Automatically.** Merge a pull request into `main`. The Release workflow builds the 7 images and deploys them. It
-takes about 5 minutes, and the api is down for 30–60 s while it restarts. A push that only changes `docs/`,
-`openspec/` or Markdown files neither builds nor deploys.
+**Automatic deploys are switched off for now** (out of scope; see ADR 0012). Releasing has two steps:
 
-**By hand.** Go to Actions → **Release** → **Run workflow** on branch `main`.
-- `deploy` unticked: builds and pushes only.
-- `tag` set to an earlier release, e.g. `3598903`: deploys that release without building. **This is the rollback.**
-  The previous tag is in `.deploy/previous` on the server, and every Release run shows its tag in the "Deploy" step
-  name.
+1. **Build.** Merge a pull request into `main`. The Release workflow builds and pushes the images, tagged with the first
+   7 characters of the commit sha. This takes about 5 minutes. A push that only changes `docs/`, `openspec/` or
+   Markdown files does not build. Actions → **Release** → **Run workflow** builds on demand.
+2. **Deploy, by hand.** On the server, as root, run `scripts/deploy.sh <tag>`. The api is down for 30–60 s while it
+   restarts. **Rollback** is the same command with an earlier tag; the previous one is in `.deploy/previous`.
 
 **What a deploy does** (`scripts/deploy.sh`):
 1. Waits if another deploy is running.
@@ -42,8 +39,8 @@ A migration is **not** undone by step 5: the previous release then runs on the m
 here only add, so that is normally fine. If it is not, restore the backup (see below).
 
 **From the Mac, without GitHub Actions** (fallback): `scripts/release.sh` builds and pushes the same images (one-time
-`gh auth token | docker login ghcr.io -u <github-user> --password-stdin`, token with `write:packages`). Then run
-Release with that `tag`, or on the server run `scripts/deploy.sh <tag>` as root.
+`gh auth token | docker login ghcr.io -u <github-user> --password-stdin`, token with `write:packages`). Then, on the
+server, run `scripts/deploy.sh <tag>` as root.
 
 ## Server: first time
 
@@ -68,11 +65,15 @@ Release with that `tag`, or on the server run `scripts/deploy.sh <tag>` as root.
    ```
 7. In `repo/proxy`, pull the Caddyfile that has the `amadya.alphatech.ro` block. Validate it with the command in that
    README, then `docker compose restart caddy`.
-8. Set up automatic deploys and backups (next section).
+8. Set up backups (next section; automatic deploys are switched off for now).
 
 ## Server: automatic deploys and backups (one time)
 
 All of this runs as root on the server, except where it says "on the Mac".
+
+> **Automatic deploys are switched off for now.** The Release workflow has no deploy job, so steps 1–4 and 6–8 (the
+> `deploy` user, its key, the gate, the GitHub secrets and the first run) are not needed until they are switched back
+> on. Step 5 (nightly backups) and step 9 (protect `main`) still apply.
 
 **1. The `deploy` user.** It has no password and is not in the `docker` group. Its key can only run the deploy gate.
 ```
