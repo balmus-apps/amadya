@@ -66,6 +66,7 @@ Pe calculatorul pe care rulează Amadya (datele de test vin deja încărcate):
 | Comandă de la masă (QR) | <https://localhost/t/demo-5> | doar un prenume |
 | Aplicația ospătarului | <https://localhost/waiter> | `ospatar@amadya.local` / `Ospatar12345!` |
 | Casa (comenzi la tejghea, confirmarea comenzilor de pe telefon) | <https://localhost/cashier> | `admin@amadya.local` / `Admin12345!` |
+| Casa pe tabletă Android (Amadya POS) | aplicația din [android-pos](android-pos/README.md) | `admin@amadya.local` / `Admin12345!` |
 | Ecranul bucătăriei și al barului | <https://localhost/kitchen> | `admin@amadya.local` / `Admin12345!` |
 | Ecranul de comenzi (TV) | <https://localhost/queue> | fără cont |
 | Administrare | <https://localhost/admin> | `admin@amadya.local` / `Admin12345!` |
@@ -141,6 +142,7 @@ On the computer running Amadya (demo data is already loaded):
 | Ordering at the table (QR) | <https://localhost/t/demo-5> | just a first name |
 | Waiter app | <https://localhost/waiter> | `ospatar@amadya.local` / `Ospatar12345!` |
 | Cashier (counter orders, confirming phone orders) | <https://localhost/cashier> | `admin@amadya.local` / `Admin12345!` |
+| Cashier on an Android tablet (Amadya POS) | the app in [android-pos](android-pos/README.md) | `admin@amadya.local` / `Admin12345!` |
 | Kitchen and bar display | <https://localhost/kitchen> | `admin@amadya.local` / `Admin12345!` |
 | Order screen (TV) | <https://localhost/queue> | none |
 | Admin | <https://localhost/admin> | `admin@amadya.local` / `Admin12345!` |
@@ -170,6 +172,7 @@ Modular restaurant platform, single-tenant per install, customizable through set
 | `api/openapi` | Contract-first OpenAPI spec, the source of truth for the backend and the frontend clients |
 | `backend/` | Kotlin + Spring Boot (Spring Modulith) core API, see [backend/README.md](backend/README.md) |
 | `frontend/` | pnpm + Turborepo: menu-web, menu-mobile, admin, kitchen, waiter, cashier, table (QR), queue-display, see [frontend/README.md](frontend/README.md) |
+| `android-pos/` | Android counter app: the cashier full-screen, plus device access for printing, see [android-pos/README.md](android-pos/README.md) |
 | `print-bridge/` | On-site Kotlin agent for ESC/POS and fiscal printers *(Phase 6)* |
 | `infra/` | Reverse proxy config |
 | `branding/` | Default logo and colours (overridable per install) |

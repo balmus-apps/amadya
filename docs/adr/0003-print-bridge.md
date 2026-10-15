@@ -26,3 +26,14 @@ only be issued by the AMEF.
 ## Consequences
 - No inbound ports at the restaurant; works whether the platform runs on-site or in the cloud.
 - One extra component to install on-site, packaged as a native installer or a systemd service.
+
+## Note — 2026-10-15: Android first
+The owner chose Android as the first bridge host, built one scope at a time (OpenSpec change `android-pos-app`):
+1. An Android app ("Amadya POS") that runs the cashier web app and exposes `window.AmadyaDevice`.
+2. Bluetooth/USB ESC/POS printing behind `AmadyaDevice.print`.
+3. Fiscal receipts on the AMEF.
+4. The outbound WSS bridge for kitchen tickets.
+5. Offline counter selling.
+
+No iOS is planned: iOS can't use Bluetooth Classic (SPP) printers without MFi, nor USB printers. A PC or Pi bridge
+can still reuse the same Kotlin drivers later.
