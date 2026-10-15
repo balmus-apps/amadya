@@ -57,17 +57,18 @@ itself when the network comes back.
 - **THEN** the offline banner shows, and when Wi-Fi comes back the cashier loads without a tap
 
 ### Requirement: Device API
-The app SHALL expose `window.AmadyaDevice` to pages from the configured server origin only, with:
+The app SHALL expose `window.AmadyaDevice` to the main frame of pages from the configured server origin only. Each
+call SHALL return a Promise:
 - `info()`: the app version, the device model, the Android version and the list of printers, empty for now;
 - `print(text)`: in this change, shows the text in a preview dialog and reports that it was a preview.
 
 #### Scenario: Web page asks for device info
 - **WHEN** the cashier page calls `AmadyaDevice.info()`
-- **THEN** it gets the app version, the device model, the Android version and an empty printer list
+- **THEN** the Promise resolves to the app version, the device model, the Android version and an empty printer list
 
 #### Scenario: Print preview
 - **WHEN** the page calls `AmadyaDevice.print("#B-042")`
-- **THEN** a dialog shows the text in a monospace font, and the call returns `ok` with `preview: true`
+- **THEN** a dialog shows the text in a monospace font, and the Promise resolves to `ok` with `preview: true`
 
 #### Scenario: Other origins get nothing
 - **WHEN** a page from another origin is open

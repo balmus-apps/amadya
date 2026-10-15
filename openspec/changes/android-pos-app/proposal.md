@@ -68,9 +68,13 @@ Each decision lists the recommended option, which this change assumes.
    Updates to the cashier reach the tablet with a normal deploy, with no new APK. Bundling the UI inside the APK only
    matters for offline selling, so it waits for that change.
 2. **Default server address.** *Recommended: production*, changeable on the setup screen.
-3. **Testing against the laptop.** *Recommended: the Vite dev server reachable on Wi-Fi*
-   (`pnpm --filter @amadya/cashier dev --host`, then `http://<laptop-ip>:5178/cashier/` on the tablet). Plain HTTP is
-   allowed only in debug builds. The local Docker stack uses Caddy's internal certificate, which the tablet won't trust.
+3. **Testing against the laptop.** *Recommended: plain HTTP to the laptop, in debug builds only.* There are two ways:
+   - **The local stack:** set `AMADYA_LAN_SITE=http://<laptop-ip>` in `.env`, then the server address is
+     `http://<laptop-ip>`.
+   - **The Vite dev server, for live edits:** run `pnpm --filter @amadya/cashier dev --host`, then the address is
+     `http://<laptop-ip>:5178`.
+
+   Release builds stay HTTPS only.
 4. **Opening the setup screen.** *Recommended: a 3-second long press in the top-left corner.* A PIN can be added when
    the app reaches real counters.
 5. **Package name.** *Recommended: `ro.amadya.pos`*, matching the backend's `ro.amadya` packages.

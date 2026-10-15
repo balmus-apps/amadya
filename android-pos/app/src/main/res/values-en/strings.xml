@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="offline_title">The cashier can\'t be opened</string>
+    <string name="offline_detail">Check the Wi-Fi and the server. The app retries by itself when the network is back.</string>
+    <string name="offline_retry">Retry</string>
+
+    <string name="preview_title">Print preview</string>
+    <string name="preview_ok">OK</string>
+
+    <string name="setup_title">Amadya POS setup</string>
+    <string name="setup_server_label">Server address</string>
+    <string name="setup_dev_hint" tools:ignore="TypographyDashes">To test on the laptop (debug build only): http://&lt;laptop-ip&gt; with AMADYA_LAN_SITE, or http://&lt;laptop-ip&gt;:5178 with “pnpm --filter @amadya/cashier dev --host”.</string>
+    <string name="setup_test">Test connection</string>
+    <string name="setup_save">Save</string>
+    <string name="setup_testing">Checking…</string>
+    <string name="setup_ok">Connection OK (HTTP %1$d)</string>
+    <string name="setup_http_status">The server answered HTTP %1$d</string>
+    <string name="setup_failed">No answer: %1$s</string>
+    <string name="setup_error_empty">Enter the server address.</string>
+    <string name="setup_error_invalid">The address isn\'t valid. Example: https://amadya.alphatech.ro</string>
+    <string name="setup_error_http">This build only accepts https:// addresses.</string>
+    <string name="setup_open_hint">Come back here by pressing the top-left corner of the cashier for 3 seconds.</string>
+    <string name="setup_version">Version %1$s</string>
+</resources>

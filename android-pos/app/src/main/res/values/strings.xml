@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Romanian is the default language; English is in values-en. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ro">
+    <string name="app_name" translatable="false">Amadya POS</string>
+
+    <string name="offline_title">Casa nu se poate deschide</string>
+    <string name="offline_detail">Verifică Wi-Fi-ul și serverul. Aplicația reîncearcă singură când revine rețeaua.</string>
+    <string name="offline_retry">Reîncearcă</string>
+
+    <string name="preview_title">Previzualizare tipărire</string>
+    <string name="preview_ok">OK</string>
+
+    <string name="setup_title">Configurare Amadya POS</string>
+    <string name="setup_server_label">Adresa serverului</string>
+    <string name="setup_dev_hint" tools:ignore="TypographyDashes">Pentru testare pe laptop (doar în versiunea de test): http://&lt;ip-laptop&gt; cu AMADYA_LAN_SITE, sau http://&lt;ip-laptop&gt;:5178 cu „pnpm --filter @amadya/cashier dev --host”.</string>
+    <string name="setup_test">Testează conexiunea</string>
+    <string name="setup_save">Salvează</string>
+    <string name="setup_testing">Se verifică…</string>
+    <string name="setup_ok">Conexiune OK (HTTP %1$d)</string>
+    <string name="setup_http_status">Serverul a răspuns cu HTTP %1$d</string>
+    <string name="setup_failed">Niciun răspuns: %1$s</string>
+    <string name="setup_error_empty">Introdu adresa serverului.</string>
+    <string name="setup_error_invalid">Adresa nu e validă. Exemplu: https://amadya.alphatech.ro</string>
+    <string name="setup_error_http">Această versiune acceptă doar adrese https://.</string>
+    <string name="setup_open_hint">Revii aici ținând apăsat 3 secunde colțul din stânga sus al casei.</string>
+    <string name="setup_version">Versiunea %1$s</string>
+</resources>

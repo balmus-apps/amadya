@@ -10,7 +10,7 @@
   Wi-Fi.
 - **Print bridge** (ADR 0003): a Kotlin agent with ESC/POS and fiscal drivers. Nothing is built. This app becomes its
   first host in later changes.
-- **The laptop** has Java (Homebrew OpenJDK 25) but no Android SDK or `adb`.
+- **The laptop** has Java (Homebrew OpenJDK 25). The Android SDK lives at `/opt/homebrew/share/android-commandlinetools`.
 
 ## Goals / Non-Goals
 
@@ -32,8 +32,11 @@
    Views keep the build small and fast.
 3. **Toolchain:**
    - Gradle wrapper in `android-pos/`, with the Kotlin DSL, like `backend/`;
-   - Android Gradle Plugin and Kotlin at current stable versions, compile and target SDK at the latest stable level,
-     min SDK 26 (Android 8);
+   - Android Gradle Plugin 9.4 (with its built-in Kotlin) and Gradle 9.8, like `backend/`;
+   - compile SDK 37, min SDK 26 (Android 8);
+   - **target SDK 35, on purpose.** From target SDK 36, Android 16 ignores a fixed orientation on screens 600 dp and
+     wider, which are tablets. The counter must stay in landscape. Raise it when the app supports both orientations or
+     is published on Play;
    - JDK 17 or newer to build.
 
    `android-pos/` stays out of the frontend pnpm workspace and the backend Gradle build. CI does not build it in this
@@ -42,8 +45,9 @@
    - The default `https://amadya.alphatech.ro` comes from a `BuildConfig` field.
    - The app always opens `<server>/cashier/`.
    - The setup screen checks the address with `GET <server>/api/v1/settings/public` and shows OK or the error.
-5. **HTTP only in debug.** A debug-only network security config allows cleartext, so the tablet can reach
-   `http://<laptop-ip>:5178`. Release builds are HTTPS only.
+5. **HTTP only in debug.** A debug-only network security config allows cleartext. The tablet can then reach the
+   laptop at `http://<laptop-ip>` (the local stack with `AMADYA_LAN_SITE`) or `http://<laptop-ip>:5178` (Vite).
+   Release builds are HTTPS only.
 6. **Navigation stays inside the server.**
    - Links to the same origin open in the WebView.
    - `tel:` links (the tap-to-call on phone orders) open the dialer.
@@ -56,13 +60,21 @@
    - A main-frame load error shows a native banner over the WebView, with Retry.
    - A connectivity callback retries automatically when the network returns.
    - The cashier's own live/offline indicator still handles drops after the page has loaded.
-9. **Device API stub** via `addJavascriptInterface(..., "AmadyaDevice")`, exposed only to pages from the configured
-   server origin:
-   - `info()` returns JSON with `appVersion`, `model`, `androidVersion` and `printers: []`.
-   - `print(text)` shows the text in a monospace preview dialog and returns `{"ok":true,"preview":true}`.
+9. **Device API stub: an origin-restricted message channel, not `addJavascriptInterface`.** A JavaScript interface
+   is visible to every frame of every page, so it can't be limited to the server's origin.
+   - Instead, androidx.webkit's `addWebMessageListener` and `addDocumentStartJavaScript` are both registered with the
+     server origin as the only allowed rule.
+   - A small script defines `window.AmadyaDevice` before the page's own code. It is frozen, and only in the main frame.
+   - On a WebView too old for these features, nothing is exposed.
+   - Each call returns a Promise, which suits printing that takes time:
+     - `info()` resolves to `{ appVersion, model, androidVersion, printers: [] }`;
+     - `print(text)` shows the text in a monospace preview dialog and resolves to `{ ok: true, preview: true }`.
 
    Later changes keep these names. `print` will take the printer-neutral document from ADR 0003 alongside plain text.
 10. **Setup screen access:** a 3-second long press on an invisible 48 dp area in the top-left corner, and first launch.
+    The press is watched at the activity level, so taps in that corner still reach the cashier.
+11. **Renderer crash:** if the WebView's renderer dies (a crash, or killed for memory), the cashier restarts instead
+    of the app crashing.
 
 ## Risks / Trade-offs
 
