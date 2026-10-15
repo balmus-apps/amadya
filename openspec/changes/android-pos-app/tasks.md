@@ -76,10 +76,13 @@ loading the cashier through a same-origin test proxy.
   - the 3-second corner hold opened setup, and the server switched;
   - login, the live feed ("Conectat"), the menu, and a cash order with change, which arrived PAID;
   - `AmadyaDevice` was present and frozen, and `info()` returned the device details.
+- **Second run, the same day:**
+  - the session survived an app restart and a reinstall;
+  - `AmadyaDevice.print()` showed the preview and resolved `{ ok: true, preview: true }`;
+  - Back pressed twice kept the cashier open;
+  - with the server stopped, the offline notice showed the error. After the server returned, the cashier reloaded by
+    itself, still logged in.
 - **Not covered, left for section 4:**
-  - the print preview dialog;
-  - the offline banner;
   - tap-to-call;
-  - Back;
-  - the session after a restart;
-  - another origin getting no `AmadyaDevice`.
+  - another origin getting no `AmadyaDevice`;
+  - all of the above on a real tablet, over cable and Wi-Fi.
